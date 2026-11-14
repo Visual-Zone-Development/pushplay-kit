@@ -1,0 +1,15 @@
+{
+  "name": "pushplay-plugin",
+  "private": true,
+  "type": "module",
+  "description": "Agent skills for making web games: general game-making craft (game-craft) and everything specific to PushPlay (pushplay).",
+  "scripts": {
+    "lint": "node scripts/lint-skills.mjs",
+    "test": "node --test \"scripts/*.test.mjs\" \"plugins/pushplay/skills/new-game/scripts/*.test.mjs\"",
+    "test:browser": "node --test \"plugins/pushplay/skills/input-walkthrough/scripts/*.test.mjs\"",
+    "build-template": "node scripts/build-template.mjs"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

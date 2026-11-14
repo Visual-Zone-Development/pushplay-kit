@@ -1,0 +1,19 @@
+{
+  "name": "pushplay",
+  "owner": { "name": "Visual Zone Development" },
+  "metadata": {
+    "description": "Skills for making web games with a coding agent: general game-making craft, and everything specific to PushPlay."
+  },
+  "plugins": [
+    {
+      "name": "game-craft",
+      "source": "./plugins/game-craft",
+      "description": "Game-making skills for any web game: design briefs, game feel, levels, enemy AI, art direction, pixel art, 3D models, audio, UI, playtesting and performance."
+    },
+    {
+      "name": "pushplay",
+      "source": "./plugins/pushplay",
+      "description": "Make games for the PushPlay launcher: start a whole game project from one request, the manifest, runtime files, library art, phone and party play, and the build kit. Works together with game-craft."
+    }
+  ]
+}
