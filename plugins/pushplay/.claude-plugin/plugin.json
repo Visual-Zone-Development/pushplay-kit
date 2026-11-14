@@ -1,6 +1,5 @@
 {
   "name": "pushplay",
-  "version": "13.0.0",
   "description": "Make games for the PushPlay launcher: start a whole game project from one request, the manifest, runtime files, library art, phone and party play, and the build kit. Works together with game-craft.",
   "author": { "name": "Visual Zone Development" },
   "homepage": "https://pushplay.gg",
