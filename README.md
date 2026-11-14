@@ -41,7 +41,7 @@ The `new-game` skill asks a few questions, then sets up the whole project from t
 
 ### In a game repo, the skills are committed
 
-A PushPlay game repo carries its own copy of every skill in `.claude/skills/` (with `.agents/skills` pointing at it), pinned to the build kit it uses, so every agent and every cloud session sees them with nothing installed. `npm run update-kit` refreshes them. If you also have these plugins installed, each skill shows up twice inside a game repo: disable the plugins there (in Claude Code: `/plugin`, or `"enabledPlugins": { "pushplay@pushplay": false, "game-craft@pushplay": false }` in the repo's `.claude/settings.json`).
+A PushPlay game repo carries its own copy of every skill in `.claude/skills/` (with `.agents/skills` pointing at it), pinned to the build kit it uses, so every agent and every cloud session sees them with nothing installed. `npm run update-kit` refreshes them. If you also have these plugins installed, each skill shows up twice inside a game repo: disable the plugins for that project (in Claude Code: `/plugin`).
 
 ## Layout
 
