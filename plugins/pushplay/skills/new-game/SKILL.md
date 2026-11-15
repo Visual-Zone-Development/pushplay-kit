@@ -89,7 +89,7 @@ The `pushplay-manifest` skill has the field-by-field rules for `pushplay.json`, 
 - **Manifest:**
   - `description`: what you do and why it's fun, 1–3 sentences.
   - `players`, `version`.
-  - `tags` (required): 2–5 lowercase genre/style words, reusing tags other games already use; add `online multiplayer` for online games and `party` for party games.
+  - `tags` (the check notes their absence; never ship without them): 2–5 lowercase genre/style words, reusing tags other games already use; add `online multiplayer` for online games and `party` for party games.
   - `inputs` (required): the inputs the whole game is playable with; drop `"mouse"` or `"touch"` only when gameplay genuinely can't, and say so on the title screen.
   - `online` if the game is networked (the `--online` scaffold sets it), or `party` for a party game (`--party` sets it), or `phone: { orientation }` for a phone game (`--phone` sets it; it needs `"touch"` in `inputs`).
 - **Art** (use the `cover-art` skill):

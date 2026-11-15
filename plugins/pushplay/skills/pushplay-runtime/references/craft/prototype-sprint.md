@@ -20,4 +20,4 @@ The general `prototype-sprint` skill covers building two or three small playable
 
 ## Art and tools
 
-- Make a simple cover (title "<Name> Prototypes") and hero so the check passes; see the `cover-art` skill.
+- Make a simple cover (title "<Name> Prototypes") and hero so the library tile isn't the starter's placeholder; see the `cover-art` skill.

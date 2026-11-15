@@ -51,7 +51,7 @@ Read `DESIGN.md` if the game has one and play the game (`pushplay dev` for a Jav
 | `controls` | `"gamepad"` once the game works with a controller (every game on the runtime files). `"keyboard-mapped"` is only for an existing game that has no controller support yet. |
 | `inputs` | **Required.** Which inputs the whole game, gameplay included, can be played with: any of `"gamepad"`, `"keyboard"`, `"mouse"`, `"touch"`, each once. `"gamepad"` and `"keyboard"` are always there in a game on the runtime files; an existing game in another engine lists only what it really supports. Drop `"mouse"` or `"touch"` only when gameplay genuinely can't work with them, and then say so on the title screen ("Needs a controller or keyboard"). Menus must work with all four regardless. |
 | `players` | `"1"`, or a range like `"1-4"` or `"2-4"`. |
-| `tags` | **Required.** 2–5 is right, 8 the limit: lowercase words players filter the library by. Genre first (`"racing"`, `"puzzle"`, `"platformer"`, `"shooter"`), then setting or style (`"space"`, `"pixel art"`, `"cozy"`), then `"local multiplayer"`, `"online multiplayer"` or `"party"` when they apply. Letters, digits, spaces, `-`, `&` and `'`, up to 24 characters each. |
+| `tags` | **Asked for by the check** with a ⚠; a finished game always has them. 2–5 is right, 8 the limit: lowercase words players filter the library by. Genre first (`"racing"`, `"puzzle"`, `"platformer"`, `"shooter"`), then setting or style (`"space"`, `"pixel art"`, `"cozy"`), then `"local multiplayer"`, `"online multiplayer"` or `"party"` when they apply. Letters, digits, spaces, `-`, `&` and `'`, up to 24 characters each. |
 | `online` | `true` only for a game scaffolded with `--online` (it may then connect to the relay). |
 | `party` | `true` only for a game scaffolded with `--party`. |
 | `phone` | Only for a game laid out in a phone space: `{ "orientation": "portrait" \| "landscape" \| "any" }`, matching the size passed to `fitCanvas` (720×1280, 1280×720, or both). `inputs` must then include `"touch"`. Leave it out of a 1280×800 game. |
@@ -67,7 +67,7 @@ Read `DESIGN.md` if the game has one and play the game (`pushplay dev` for a Jav
 
 ### Which fields for which kind of game
 
-On top of `id`, `name`, `description`, `version`, `art`, `controls`, `inputs`, `players` and `tags`, which every game has:
+On top of `id`, `name`, `description`, `version`, `art`, `controls`, `inputs`, `players` and `tags`, which every finished game has (a game that plays from its normal releases needs only `id`, `name` and `release`):
 
 | Kind of game | `entry` | `build` | Also |
 |---|---|---|---|

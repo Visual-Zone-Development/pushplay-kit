@@ -1,6 +1,6 @@
 ---
 name: cover-art
-description: Make or improve the library art for the game in this repo — the 720×500 cover with the title (art/cover.svg or cover.html) and the 1920×450 hero banner (art/hero.svg) — so it reads at thumbnail size, shows what the game is, uses the game's palette and bundled fonts, and keeps clear of the areas the launcher draws over. Use for "make the cover", "the cover looks bad / generic", "new banner", a failing check about placeholder art, or the art step of new-game.
+description: Make or improve the library art for the game in this repo — the 720×500 cover with the title (art/cover.svg or cover.html) and the 1920×450 hero banner (art/hero.svg) — so it reads at thumbnail size, shows what the game is, uses the game's palette and bundled fonts, and keeps clear of the areas the launcher draws over. Use for "make the cover", "the cover looks bad / generic", "new banner", the check's note about placeholder art, or the art step of new-game.
 ---
 
 # Cover art

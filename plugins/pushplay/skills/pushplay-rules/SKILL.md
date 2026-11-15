@@ -11,21 +11,22 @@ PushPlay is a launcher: it follows a game's GitHub repo and plays its builds on 
 
 ## 1. What every game must do, whatever it is built with
 
-1. **A manifest.** `pushplay.json` next to the game (the repo root, or `games/<id>/` in a workshop repo of many games). Required: `id` (permanent: saves and the listing follow it), `name`, `entry`; the check also requires `description`, `tags` and `inputs`. Fields and fixes: the `pushplay-manifest` skill.
-2. **Art.** `art/cover` at 720×500 **with** the title, `art/hero` at 1920×450 **without** it (`.svg`, `.html` or `.png`). The check passes a new game with placeholder art but notes it: a game isn't finished until it has its own. The `cover-art` skill makes both.
+1. **A manifest.** `pushplay.json` next to the game (the repo root, or `games/<id>/` in a workshop repo of many games). Required: `id` (permanent: saves and the listing follow it), `name`, `entry` (or `release`, for a game that plays from its normal releases) and `inputs`, which the check plays the game by. The check asks for a `description` and `tags` with a ⚠; a finished game always has both. Fields and fixes: the `pushplay-manifest` skill.
+2. **Art.** `art/cover` at 720×500 **with** the title, `art/hero` at 1920×450 **without** it (`.svg`, `.html`, `.png`, `.jpg` or `.webp`). The check passes a new game with placeholder art but notes it: a game isn't finished until it has its own. The `cover-art` skill makes both.
 3. **A build PushPlay can use**, one of:
    - the folder as it is (`entry.web`, usually `index.html`), or the repo's npm `build` script (output `dist`);
    - the game's own build: `"build": { "outputs": { "web": "export/web", "linux-x64": "export/linux" } }` names the finished folder per platform and each `entry.<platform>` is a path inside it. The folders are committed, made by `"build": { "command": "…" }`, or handed over by the repo's own workflow as an Actions artifact;
    - nothing at all: the launcher can follow a repo as it is (a plain HTML repo from its latest commit, or the zips on its ordinary GitHub releases). Then none of this skill applies.
+   - a `pushplay.json` with `"release"` and no workflow: the launcher reads the manifest first (name, description, tags, art) and plays the zips on the repo's normal releases. Only the manifest rules apply; the `port-game` skill sets it up.
 4. **Works offline inside the launcher.** No internet requests, and no `alert()` / `confirm()` / `prompt()` dialogs or new tabs. The check runs the game with `window.pushplay` present, so code for the normal release goes behind `if (!window.pushplay) { … }` (analytics, an ad, an online leaderboard) and is not judged. Only `"online": true` and `"party": true` games use the network, through the relay.
 5. **Playable with a controller on a handheld**, start to finish, menus included. `inputs` lists what the whole game, gameplay included, really plays with (`gamepad`, `keyboard`, `mouse`, `touch`).
 6. **A way back to the library.** A web game with its own menus adds "Quit to library" to its pause menu only when `window.pushplay?.quit` exists, and calls `window.pushplay.quit()`. A native game needs its own quit; the environment variable `PUSHPLAY=1` tells it it is in the launcher (the launcher's hold Start+Select 3 s works on Linux only).
 7. **Never bind F10, Start+Select or a held Esc.** They open the launcher's own menu.
-8. **The normal release doesn't change.** The PushPlay build is separate (its own workflow file, its own `pushplay-latest` prerelease). Nothing PushPlay asks for may alter what the game does elsewhere: use `window.pushplay`, `PUSHPLAY=1` (native) and `PUSHPLAY_BUILD=1` (build time) to tell the two apart.
+8. **The normal release doesn't change.** The PushPlay build, when a game has one, is separate (its own workflow file, its own `pushplay-latest` prerelease); a game that plays from its normal releases has neither. Nothing PushPlay asks for may alter what the game does elsewhere: use `window.pushplay`, `PUSHPLAY=1` (native) and `PUSHPLAY_BUILD=1` (build time) to tell the two apart.
 
 Web builds play everywhere (the phone app and Discover take web builds only). A native build plays only on the system it was built for: a Windows-only game does not run on a Steam Deck (no Proton).
 
-**The repo holds only the game.** The only PushPlay-specific files are `pushplay.json`, the art and `.github/workflows/pushplay.yml` (about 20 lines, calling the shared build; `pushplay new-game` writes it). So:
+**The repo holds only the game.** The only PushPlay-specific files are `pushplay.json`, the art and, for a game with checked builds, `.github/workflows/pushplay.yml` (about 20 lines, calling the shared build; `pushplay new-game` writes it). So:
 
 - Don't add agent instruction files (an `AGENTS` or `CLAUDE` file), skills, a kit folder, `tools/`, `docs/` or npm scripts for PushPlay. A `package.json` exists only when the game itself uses npm packages.
 - Don't copy the kit or anything from `pushplay where` into the repo; the kit lives in a cache in the user's home folder.
