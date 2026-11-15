@@ -16,7 +16,7 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { BETA_RELEASE_TAG, INDEX_ASSET, KIT_VERSION, RELAY_URL, RELEASE_TAG, releaseTagFor, WORKFLOW_FILE } from './config.mjs'
-import { distDir, layout, listGames, log, ROOT, validateIndex, WORK_DIR } from './repo.mjs'
+import { distDir, layout, listGames, log, readManifest, ROOT, validateIndex, WORK_DIR } from './repo.mjs'
 
 const env = process.env
 const dryRun = Boolean(env.DRY_RUN)
@@ -24,6 +24,8 @@ const stage = env.STAGE || 'all'
 const repo = env.GITHUB_REPOSITORY ?? 'local/dry-run'
 const defaultBranch = env.DEFAULT_BRANCH || 'main'
 const resultsPath = join(distDir, 'build-results.json')
+// A published release: only the games that play from the repo's releases are packaged, from its files.
+const fromRelease = env.EVENT_NAME === 'release'
 
 const gh = (...args) => execFileSync('gh', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 const ghOk = (...args) => spawnSync('gh', args, { cwd: ROOT }).status === 0
@@ -63,7 +65,16 @@ async function build() {
   // A change to how the repo builds (its workflows, its packages) can affect every game.
   const setupChanged = changed?.some((f) => f.startsWith('.github/workflows/') || f === 'package.json' || f === 'package-lock.json')
   const buildAll = env.BUILD_ALL === 'true' || changed === null || setupChanged
-  const targets = games.filter((game) => buildAll || changed.some((f) => relevant(f) && (game.rel ? f.startsWith(`${game.rel}/`) : !f.startsWith('.github/'))))
+  const playsFromReleases = (game) => {
+    try {
+      return Boolean(readManifest(game).release)
+    } catch {
+      return false
+    }
+  }
+  const targets = fromRelease
+    ? games.filter(playsFromReleases)
+    : games.filter((game) => buildAll || changed.some((f) => relevant(f) && (game.rel ? f.startsWith(`${game.rel}/`) : !f.startsWith('.github/'))))
   log(`${repo} · ${layout()} repo · branch ${branch} @ ${sha.slice(0, 7)} · build #${buildNumber}`)
   log(targets.length ? `Building: ${targets.map((g) => g.id).join(', ')}` : 'No game changes to build.')
 
@@ -76,6 +87,13 @@ async function build() {
       try {
         const built = await buildGame(game, browser, { beforePack: onlinePass })
         for (const w of built.warnings) log(`  ⚠ ${w}`)
+        if (built.fromRelease) {
+          // No release files here (a push, not a release): the manifest was checked, and the
+          // build from the last release stays as it is.
+          out.games.push({ id, ok: true, warnings: built.warnings, unchanged: true })
+          log('  ✓ checked')
+          continue
+        }
         const m = built.manifest
         out.games.push({
           id,
@@ -85,7 +103,7 @@ async function build() {
             id,
             name: m.name,
             description: m.description,
-            version: m.version ?? null,
+            version: m.version ?? (fromRelease ? branch : null),
             players: m.players ?? null,
             controls: m.controls ?? null,
             tags: m.tags ?? [],
@@ -156,10 +174,16 @@ async function onlinePass(out, manifest) {
 // --- Stage 2: merge into the release index and upload ---
 async function publish(results) {
   // Local runs and tests (no STAGE) publish like the default branch, whatever the branch is called.
-  const releaseTag = releaseTagFor(results.branch, defaultBranch) ?? (stage === 'all' ? RELEASE_TAG : null)
+  const releaseTag = releaseTagFor(results.branch, defaultBranch) ?? (stage === 'all' || fromRelease ? RELEASE_TAG : null)
   const beta = releaseTag === BETA_RELEASE_TAG
   if (!releaseTag) {
     log(`Branch ${results.branch} only builds and checks; nothing published.`)
+    return
+  }
+  // Only games that play from the repo's releases, and no release files this time: leave things
+  // as they are (the launcher keeps playing the normal release until one is packaged).
+  if (results.games.length && results.games.every((r) => r.unchanged)) {
+    log('Nothing to publish: the games here are packaged when a release is published.')
     return
   }
   log(`Publishing to ${releaseTag}`)
@@ -178,6 +202,7 @@ async function publish(results) {
   }
 
   for (const r of results.games) {
+    if (r.unchanged) continue
     if (r.ok) {
       if (!dryRun) gh('release', 'upload', releaseTag, '--clobber', ...r.files.map((f) => join(distDir, f)))
       index.games[r.id] = r.entry
@@ -210,7 +235,7 @@ function summary(results) {
   if (!env.GITHUB_STEP_SUMMARY || !existsSync(env.GITHUB_STEP_SUMMARY)) return
   const verb = stage === 'build' ? 'built' : 'published'
   const rows = results.games.map((r) =>
-    r.ok ? `| ${r.id} | ✅ ${verb} | ${r.warnings.join('<br>')} |` : `| ${r.id} | ❌ failed | ${r.message.replaceAll('\n', '<br>')} |`
+    r.ok ? `| ${r.id} | ✅ ${r.unchanged ? 'checked' : verb} | ${r.warnings.join('<br>')} |` : `| ${r.id} | ❌ failed | ${r.message.replaceAll('\n', '<br>')} |`
   )
   appendFileSync(
     env.GITHUB_STEP_SUMMARY,

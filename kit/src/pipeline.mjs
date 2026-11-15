@@ -6,6 +6,7 @@ import { basename, dirname, join } from 'node:path'
 import { chromium } from 'playwright'
 import { ART, ART_FONTS, brand, CHECK_RUN_MS, CMD, CHECK_FIRST_PICTURE_MS, MANIFEST_FILE, NET_MEET_MS, NET_PLAY_MS, NET_WARN_BYTES_PER_SEC, ONLINE_RUNTIME_FILES, PARTY_RUNTIME_FILES, PHONE_MIN_TEXT_PX, RUNTIME_FILES, RUNTIME_HEADER_RE, VIEWPORT, VIEWPORT_DENSE, VIEWPORT_PHONE } from './config.mjs'
 import { startLocalRelay } from './local-relay.mjs'
+import { PLATFORMS, releaseFolder } from './release-files.mjs'
 import { buildMode, display, distDir, GameError, ignored, ignorePatterns, inside, npmSpawn, outDir, quote, readManifest, ROOT, validateManifest, WORK_DIR } from './repo.mjs'
 import { serve } from './server.mjs'
 
@@ -60,8 +61,36 @@ export async function buildGame(game, browser, { pack = true, beforePack } = {})
   const mode = buildMode(game, manifest)
   const command = manifest.build?.command
   let webEntry = null
+  let webDir = null
   const natives = {}
-  if (mode === 'outputs') {
+  if (mode === 'release') {
+    // The files are the zips on the repo's normal releases. The shared build fetches them when a
+    // release is published; anywhere else there is nothing to play, only the manifest and art to check.
+    const problems = []
+    for (const platform of PLATFORMS) {
+      const dir = releaseFolder(WORK_DIR, id, platform)
+      if (!dir) continue
+      const entry = manifest.entry?.[platform] ?? findEntry(platform, dir)
+      if (!entry) {
+        problems.push(`the ${platform} zip from the release has no single obvious ${platform === 'web' ? 'index.html' : 'program'} in it: say which file starts the game with "entry": { "${platform}": "<file>" }`)
+        continue
+      }
+      const file = inside(dir, entry)
+      if (!file || !existsSync(file)) problems.push(`entry.${platform} "${entry}" isn't in the ${platform} zip from the release`)
+      else if (platform === 'web') [webDir, webEntry] = [dir, entry]
+      else if (notAProgram(platform, file)) problems.push(`entry.${platform} "${entry}" ${notAProgram(platform, file)}`)
+      else natives[platform] = { dir, entry }
+    }
+    if (problems.length) throw new GameError(id, problems.join('\n'))
+    if (!webEntry && !Object.keys(natives).length) {
+      warnings.push(`the game's files come from the repo's normal releases, so they aren't checked here: only ${display(game.manifestPath)} and the art are. The launcher plays the newest release as it is`)
+      return { id, manifest, out, files: {}, warnings, platforms: [], fromRelease: true }
+    }
+    if (!webEntry && !(manifest.art?.cover && manifest.art?.hero)) {
+      throw new GameError(id, `to publish a ${brand.name} build of a game with no web build, add art.cover and art.hero (there is no screenshot to make them from)`)
+    }
+    if (webDir) cpSync(webDir, out, { recursive: true })
+  } else if (mode === 'outputs') {
     if (command) runCommand(game, command)
     const problems = []
     for (const [platform, rel] of Object.entries(manifest.build.outputs)) {
@@ -98,12 +127,13 @@ export async function buildGame(game, browser, { pack = true, beforePack } = {})
     if (!existsSync(join(game.dir, webEntry))) throw new GameError(id, `entry.web "${webEntry}" doesn't exist${command ? ` after \`${command}\`` : ''}`)
     copyGameFiles(game.dir, out, ignorePatterns(game))
   }
-  const source = sourceChecks(game, manifest, { kit, scan: mode !== 'outputs' })
+  const prebuilt = mode === 'outputs' || mode === 'release'
+  const source = sourceChecks(game, manifest, { kit, scan: !prebuilt })
   warnings.push(...source.warnings)
   if (source.errors.length) throw new GameError(id, source.errors.join('\n'))
   const platforms = [...(webEntry ? ['web'] : []), ...Object.keys(natives)]
   /** The manifest each build ships with: no build settings, its own entry, the rendered art. */
-  const { $schema: _schema, build: _build, ...rest } = manifest
+  const { $schema: _schema, build: _build, release: _release, ...rest } = manifest
   const shippedFor = (entry, art) => ({ ...rest, entry, ...(art ? { art } : {}) })
 
   // 2. Play it headlessly (online games against a local relay, then two copies together), 3. render art
@@ -119,7 +149,7 @@ export async function buildGame(game, browser, { pack = true, beforePack } = {})
   const server = await serve({ '/': out, '/__src/': game.dir, '/__fonts/': FONTSOURCE }, relay ? { '/__net.json': JSON.stringify({ url: relay.url }) } : {}, { isolated: manifest.web?.isolated })
   try {
     if (webEntry) {
-      const play = await playCheck(browser, server, out, webEntry, manifest, { kit, hints: kit || mode !== 'outputs' })
+      const play = await playCheck(browser, server, out, webEntry, manifest, { kit, hints: kit || !prebuilt })
       if (manifest.party && !play.errors.length) {
         const phones = await partyCheck(browser, server, webEntry, relay, manifest)
         play.errors.push(...phones.errors)
@@ -176,6 +206,16 @@ export function usesKitRuntime(game) {
     }
   }
   return false
+}
+
+/** The file that starts a build nobody named an entry for: index.html, or the only program at the top of the folder. */
+function findEntry(platform, dir) {
+  if (platform === 'web') return existsSync(join(dir, 'index.html')) ? 'index.html' : null
+  const programs = readdirSync(dir, { withFileTypes: true })
+    .filter((f) => f.isFile() && !/\.(dll|so|dylib|pck|txt|md|json|dat|bin)$/i.test(f.name) && !/\.so\.\d/.test(f.name))
+    .filter((f) => !notAProgram(platform, join(dir, f.name)))
+    .map((f) => f.name)
+  return programs.length === 1 ? programs[0] : null
 }
 
 /**

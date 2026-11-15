@@ -8,6 +8,7 @@
     "test:kit": "vitest run",
     "test:browser": "node --test \"plugins/pushplay/skills/input-walkthrough/scripts/*.test.mjs\"",
     "kit:build": "node kit/src/zip.mjs",
+    "template": "node kit/src/template.mjs",
     "kit:lock": "UPDATE_KIT_LOCK=${UPDATE_KIT_LOCK:-1} vitest run kit/src/kit-lock.test.mjs -t 'KIT_VERSION was bumped'",
     "kit:install": "npm ci --prefix kit --no-audit --no-fund"
   },
@@ -17,7 +18,7 @@
   "bin": {
     "pushplay": "plugins/pushplay/skills/pushplay-rules/scripts/pushplay.mjs"
   },
-  "version": "14.0.0",
+  "version": "15.0.0",
   "files": [
     "plugins/pushplay/skills/pushplay-rules/scripts/pushplay.mjs",
     "plugins/pushplay/skills/pushplay-rules/kit.zip"

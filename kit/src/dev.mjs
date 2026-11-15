@@ -2,12 +2,12 @@
 // Serves a game with live reload at http://localhost:5173 for playing in a browser.
 // --host also listens on the LAN, to try the game on a phone or a handheld on the same Wi-Fi.
 import { spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { CMD, LOCAL_RELAY_PORT } from './config.mjs'
 import { startLocalRelay } from './local-relay.mjs'
-import { findGame, listGames, log, readManifest, ROOT } from './repo.mjs'
+import { findGame, listGames, log, readManifest, ROOT, WORK_DIR } from './repo.mjs'
 
 const args = process.argv.slice(2)
 const host = args.includes('--host')
@@ -37,5 +37,13 @@ if (manifest.online || manifest.party) {
 // apply; any other game by the kit's, so a game repo needs nothing installed to be played.
 const own = [game.dir, ROOT].map((dir) => join(dir, 'node_modules/vite/bin/vite.js')).find((file) => existsSync(file))
 const vite = own ?? join(dirname(createRequire(import.meta.url).resolve('vite/package.json')), 'bin/vite.js')
-const child = spawn(process.execPath, [vite, game.dir, '--port', '5173', ...(host ? ['--host'] : [])], { cwd: own ? ROOT : game.dir, stdio: 'inherit' })
+// The kit's Vite keeps its cache in the kit's work folder, so playing a game leaves nothing in its repo.
+let config = []
+if (!own && !['vite.config.js', 'vite.config.mjs', 'vite.config.ts'].some((f) => existsSync(join(game.dir, f)))) {
+  const file = join(WORK_DIR, 'vite', 'vite.config.mjs')
+  mkdirSync(dirname(file), { recursive: true })
+  writeFileSync(file, `export default { cacheDir: ${JSON.stringify(join(WORK_DIR, 'vite', game.id))} }\n`)
+  config = ['--config', file]
+}
+const child = spawn(process.execPath, [vite, game.dir, ...config, '--port', '5173', ...(host ? ['--host'] : [])], { cwd: own ? ROOT : game.dir, stdio: 'inherit' })
 child.on('exit', (code) => process.exit(code ?? 0))

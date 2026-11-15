@@ -6,14 +6,16 @@
 // skipped with a note; KIT_BROWSER=/path/to/chrome uses an installed browser instead.
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { ART, CHECK_RUN_MS, CMD, OLD_KIT_DIR, VIEWPORT, VIEWPORT_PHONE } from './config.mjs'
+import { ART, brand, CHECK_RUN_MS, CMD, DOCS_URL, MANIFEST_FILE, OLD_KIT_DIR, VIEWPORT, VIEWPORT_PHONE } from './config.mjs'
 import { display, listGames, log, layout, ROOT } from './repo.mjs'
 import { ART_DIR, buildGame, launchBrowser } from './pipeline.mjs'
 
 const wanted = process.argv.slice(2).filter((a) => !a.startsWith('--'))
 const games = listGames()
 if (!games.length) {
-  log(layout() === 'collection' ? `No games yet. Create one with: ${CMD} new-game <id>` : 'No game manifest found.')
+  log(`There is no ${MANIFEST_FILE} here, so there is nothing to check yet.`)
+  log(`  A game you already have (any engine): add a ${MANIFEST_FILE} at the top of the repo. ${DOCS_URL}`)
+  log(`  A new JavaScript game: ${CMD} new-game <id>`)
   process.exit(1)
 }
 const selected = wanted.length ? games.filter((g) => wanted.includes(g.id)) : games
@@ -36,6 +38,10 @@ for (const game of selected) {
   try {
     const result = await buildGame(game, browser, { pack: false })
     for (const w of result.warnings) log(`  ⚠ ${w}`)
+    if (result.fromRelease) {
+      log(`  ✓ ${MANIFEST_FILE} is fine. Connect GitHub in ${brand.name} and watch this repo to play the newest release.`)
+      continue
+    }
     if (result.skipped) {
       log('  ✓ builds (not played: no browser)')
       continue

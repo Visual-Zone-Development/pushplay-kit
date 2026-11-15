@@ -127,6 +127,50 @@
       },
       "additionalProperties": false
     },
+    "release": {
+      "anyOf": [
+        {
+          "type": "boolean",
+          "const": true
+        },
+        {
+          "type": "object",
+          "properties": {
+            "web": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "linux-x64": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "linux-arm64": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "windows-x64": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "darwin-arm64": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "darwin-x64": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "launch": {
       "type": "object",
       "properties": {
@@ -351,8 +395,19 @@
   },
   "required": [
     "id",
-    "name",
-    "entry"
+    "name"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "anyOf": [
+    {
+      "required": [
+        "entry"
+      ]
+    },
+    {
+      "required": [
+        "release"
+      ]
+    }
+  ]
 }

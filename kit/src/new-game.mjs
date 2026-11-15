@@ -212,4 +212,5 @@ log(`  2. Fill in "description" and "tags" in ${at}${MANIFEST_FILE} (drop inputs
 log(`  3. Replace ${at}art/cover.svg and hero.svg with real art.`)
 log(`  4. ${CMD} dev${target}   → play it in a browser (add ?debug to the URL for the state overlay)`)
 log(`  5. ${CMD} check${target} → must pass before pushing`)
+log(`  6. Push the repo to GitHub. In ${brand.name}: Add game → Connect GitHub → pick this repo. It is in your library from then on, and every push updates it.`)
 if (vite) log(`  npm packages: npm install <pkg>${single ? '' : ` (in games/${id}/)`}`)

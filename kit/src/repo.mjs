@@ -149,6 +149,8 @@ function packageJson(dir) {
  * 'static' ships the folder as-is. The manifest's build.preset wins ("vite" means npm).
  */
 export function buildMode(game, manifest) {
+  // Nothing is built: the game's files are the zips on the repo's normal releases.
+  if (manifest.release && !manifest.build?.outputs) return 'release'
   // The game's own build makes a folder per platform (any engine); the kit packages them.
   if (manifest.build?.outputs) return 'outputs'
   const preset = manifest.build?.preset
@@ -174,13 +176,21 @@ export function validateManifest(game, manifest) {
     }
   }
   if (game.rel && manifest.id !== game.id) errors.push(`${where}: "id" must match the folder name ("${game.id}")`)
+  const mode = buildMode(game, manifest)
+  // A game that plays from its normal releases needs nothing beyond its name: the rest only
+  // makes it look and filter better in the library.
+  const wanted = (message) => (mode === 'release' ? warnings : errors).push(message)
+  if (manifest.release && manifest.build) errors.push(`${where}: "release" plays the game from the repo's normal releases, so there is nothing to build: remove "build" (or remove "release" to have it built here)`)
   if (!manifest.description || manifest.description.trim().length < MIN_DESCRIPTION) {
-    errors.push(`${where}: add a "description" of 1–3 sentences (at least ${MIN_DESCRIPTION} characters)`)
+    wanted(`${where}: add a "description" of 1–3 sentences (at least ${MIN_DESCRIPTION} characters)`)
   }
 
-  const mode = buildMode(game, manifest)
   const command = manifest.build?.command
-  if (mode === 'outputs') {
+  if (mode === 'release') {
+    for (const platform of Object.keys(manifest.entry ?? {})) {
+      if (typeof manifest.release === 'object' && !manifest.release[platform]) errors.push(`${where}: entry.${platform} has no file in "release": add "release": { "${platform}": "<the zip's name in your release>" }`)
+    }
+  } else if (mode === 'outputs') {
     // Every platform the game says it plays on needs its folder; the folders themselves are
     // checked after the build command has run.
     for (const platform of Object.keys(manifest.entry ?? {})) {
@@ -208,20 +218,23 @@ export function validateManifest(game, manifest) {
     const rel = manifest.art?.[kind]
     if (!rel) {
       // A cover can be made from a screenshot, and only web builds are played to take one.
-      if (web) warnings.push(`no art.${kind}: one will be generated from a screenshot, but custom art looks much better`)
+      if (mode === 'release') warnings.push(`no art.${kind}: the launcher makes one up. Add a ${kind === 'cover' ? '720×500' : '1920×450'} picture to the repo and name it in "art" for a real one`)
+      else if (web) warnings.push(`no art.${kind}: one will be generated from a screenshot, but custom art looks much better`)
       else if (!errors.some((e) => e.includes('needs art.cover and art.hero'))) errors.push(`${where}: a game with no web build needs art.cover and art.hero (there is no screenshot to make them from)`)
       continue
     }
     if (!/\.(svg|html|png|jpe?g|webp)$/i.test(rel)) errors.push(`${where}: art.${kind} must be .svg, .html, .png, .jpg or .webp`)
     const file = inside(game.dir, rel)
     if (!file || !existsSync(file) || !statSync(file).isFile()) errors.push(`${where}: art.${kind} "${rel}" doesn't exist`)
-    else if (/\.(svg|html)$/i.test(rel) && readFileSync(file, 'utf8').includes('PLACEHOLDER ART')) {
+    else if (mode === 'release' && /\.(svg|html)$/i.test(rel)) {
+      warnings.push(`art.${kind} "${rel}" is drawn by the ${brand.name} build, so the launcher only shows it once the workflow file is added. Without the workflow, use a .png, .jpg or .webp`)
+    } else if (/\.(svg|html)$/i.test(rel) && readFileSync(file, 'utf8').includes('PLACEHOLDER ART')) {
       errors.push(`${display(file)} is still the placeholder. Design real ${kind} art for this game`)
     }
   }
   if (!manifest.controls) warnings.push(`set "controls": "gamepad" once the game works with a controller`)
-  if (!manifest.tags?.length) errors.push(`${where}: add "tags" (1–8 lowercase genre and style words, e.g. ["arcade", "space"]) so players can filter the library`)
-  if (!manifest.inputs?.length) errors.push(`${where}: add "inputs": ["gamepad", "keyboard", "mouse", "touch"] (drop the ones gameplay can't support; menus must work with all four)`)
+  if (!manifest.tags?.length) wanted(`${where}: add "tags" (1–8 lowercase genre and style words, e.g. ["arcade", "space"]) so players can filter the library`)
+  if (!manifest.inputs?.length) wanted(`${where}: add "inputs": ["gamepad", "keyboard", "mouse", "touch"] (drop the ones gameplay can't support; menus must work with all four)`)
   if (manifest.phone && manifest.inputs?.length && !manifest.inputs.includes('touch')) {
     errors.push(`${where}: a phone game ("phone": { "orientation": "${manifest.phone.orientation}" }) is played with touch alone, so "inputs" must include "touch" (the phone pass plays it that way)`)
   }

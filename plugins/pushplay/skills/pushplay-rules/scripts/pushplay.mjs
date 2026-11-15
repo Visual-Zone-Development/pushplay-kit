@@ -72,8 +72,18 @@ if (!existsSync(join(home, '.ready'))) {
     fail("couldn't install the kit's packages (npm ci failed). Check the connection to the npm registry and try again.")
   }
   writeFileSync(join(stage, '.ready'), new Date().toISOString())
-  rmSync(home, { recursive: true, force: true })
-  renameSync(stage, home)
+  // Two commands started at once both unpack; the first to finish wins and the other's copy is
+  // dropped, so a kit that is already in use is never replaced under it.
+  if (existsSync(join(home, '.ready'))) rmSync(stage, { recursive: true, force: true })
+  else {
+    rmSync(home, { recursive: true, force: true })
+    try {
+      renameSync(stage, home)
+    } catch (err) {
+      if (!existsSync(join(home, '.ready'))) throw err
+      rmSync(stage, { recursive: true, force: true })
+    }
+  }
 }
 const version = JSON.parse(readFileSync(join(home, 'kit.json'), 'utf8')).kit
 

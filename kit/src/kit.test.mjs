@@ -673,6 +673,122 @@ describe('any kind of build', () => {
   })
 })
 
+describe('a game that plays from the repo\'s normal releases', () => {
+  const ELF = Buffer.concat([Buffer.from([0x7f, 0x45, 0x4c, 0x46, 2, 1, 1, 0]), Buffer.alloc(56)])
+  const bare = { id: 'star-drift', name: 'Star Drift', release: { 'linux-x64': 'StarDrift-*-linux.zip', web: 'StarDrift-web.zip' } }
+  /** What the shared build's "Files from this repo's release" step leaves behind. */
+  const fetched = (root, platform, files) => {
+    for (const [name, contents] of Object.entries(files)) {
+      const file = join(root, KIT_DIR, '.work/from-release/star-drift', platform, name)
+      mkdirSync(dirname(file), { recursive: true })
+      writeFileSync(file, contents)
+    }
+  }
+
+  it('passes the check on a name and "release" alone, saying the files themselves are not checked', () => {
+    const root = makeRepo((r) => {
+      write(join(r, 'project.godot'), 'config_version=5')
+      write(join(r, MANIFEST_FILE), bare)
+    })
+    const { status, output } = runKit('check.mjs', root)
+    expect(status).toBe(0)
+    expect(output).toMatch(/come from the repo's normal releases, so they aren't checked here/)
+    expect(output).toMatch(new RegExp(`✓ ${MANIFEST_FILE.replace('.', '\\.')} is fine`))
+    // What makes the game look better is suggested, never demanded.
+    expect(output).toMatch(/⚠ .*add "tags"/)
+    expect(output).not.toMatch(/✗/)
+  })
+
+  it('refuses "release" next to "build", and an entry with no release file', () => {
+    const root = makeRepo((r) => write(join(r, MANIFEST_FILE), { ...bare, build: { command: 'make' }, entry: { 'windows-x64': 'Game.exe' } }))
+    const { status, output } = runKit('check.mjs', root)
+    expect(status).toBe(1)
+    expect(output).toMatch(/"release" plays the game from the repo's normal releases, so there is nothing to build/)
+    expect(output).toMatch(/entry\.windows-x64 has no file in "release"/)
+  })
+
+  it('leaves the published build alone on a push, and publishes nothing when there has never been one', () => {
+    const root = makeRepo((r) => write(join(r, MANIFEST_FILE), bare))
+    const { status, output, index } = runCi(root)
+    expect(status).toBe(0)
+    expect(output).toMatch(/Nothing to publish: the games here are packaged when a release is published/)
+    expect(index).toBeNull()
+  })
+
+  it('packages the files of a published release, finding the program when no entry is named', () => {
+    const root = makeRepo((r) => {
+      write(join(r, 'art/cover.svg'), SVG)
+      write(join(r, 'art/hero.svg'), SVG)
+      write(join(r, MANIFEST_FILE), { ...bare, art: { cover: 'art/cover.svg', hero: 'art/hero.svg' } })
+    })
+    // The zip held one folder; the program sits beside its data file.
+    fetched(root, 'linux-x64', { 'StarDrift/StarDrift.x86_64': ELF, 'StarDrift/StarDrift.pck': 'data' })
+    fetched(root, 'web', { 'index.html': DRAW })
+    const { status, output } = runKit('ci.mjs', root, [], { DRY_RUN: '1', EVENT_NAME: 'release', GITHUB_REF_NAME: 'v1.2.0', DEFAULT_BRANCH: 'main' })
+    expect(output).toMatch(/Publishing to/)
+    expect(status).toBe(0)
+    const index = JSON.parse(readFileSync(join(root, KIT_DIR, '.work/release', INDEX_ASSET), 'utf8'))
+    const game = index.games['star-drift']
+    expect(game.platforms).toEqual(['web', 'linux-x64'])
+    expect(game.version).toBe('v1.2.0')
+    const shipped = JSON.parse(execFileSync('unzip', ['-p', join(root, KIT_DIR, '.work/dist/star-drift-linux-x64.zip'), MANIFEST_FILE], { encoding: 'utf8' }))
+    expect(shipped.entry).toEqual({ 'linux-x64': 'StarDrift.x86_64' })
+    expect(shipped.release).toBeUndefined()
+  }, 150_000)
+
+  it('asks for an entry when a release zip holds more than one program', () => {
+    const root = makeRepo((r) => {
+      write(join(r, 'art/cover.svg'), SVG)
+      write(join(r, 'art/hero.svg'), SVG)
+      write(join(r, MANIFEST_FILE), { ...bare, art: { cover: 'art/cover.svg', hero: 'art/hero.svg' } })
+    })
+    fetched(root, 'linux-x64', { game: ELF, editor: ELF })
+    const { status, output } = runKit('ci.mjs', root, [], { DRY_RUN: '1', EVENT_NAME: 'release', GITHUB_REF_NAME: 'v1', DEFAULT_BRANCH: 'main' })
+    expect(status).toBe(1)
+    expect(output).toMatch(/the linux-x64 zip from the release has no single obvious program in it: say which file starts the game with "entry"/)
+  })
+
+  it('matches release files the way the launcher does', async () => {
+    const { releaseFilesFor } = await import('./release-files.mjs')
+    const names = ['StarDrift-1.2.0-linux.zip', 'StarDrift-1.2.0-windows.zip', 'StarDrift-source.zip', 'notes.txt']
+    expect(releaseFilesFor(true, names)).toEqual({ 'linux-x64': 'StarDrift-1.2.0-linux.zip', 'windows-x64': 'StarDrift-1.2.0-windows.zip' })
+    expect(releaseFilesFor({ 'linux-x64': 'stardrift-*-LINUX.zip', web: 'nope.zip' }, names)).toEqual({ 'linux-x64': 'StarDrift-1.2.0-linux.zip' })
+  })
+
+  it('tells a repo with no manifest what to add, for an existing game as well as a new one', () => {
+    const root = makeRepo((r) => write(join(r, 'project.godot'), 'config_version=5'))
+    const { status, output } = runKit('check.mjs', root)
+    expect(status).toBe(1)
+    expect(output).toMatch(new RegExp(`There is no ${MANIFEST_FILE.replace('.', '\\.')} here`))
+    expect(output).toMatch(/A game you already have \(any engine\)/)
+  })
+})
+
+describe('the template repo', () => {
+  it('is what new-game makes in an empty folder plus a README, and passes nothing PushPlay-specific beyond the workflow file', () => {
+    const out = join(mkdtempSync(join(tmpdir(), 'kit-template-')), 'repo')
+    const made = spawnSync('node', [join(SRC, 'template.mjs'), out], { encoding: 'utf8' })
+    expect(made.stdout + made.stderr).toMatch(/Wrote the template repo/)
+    const fresh = makeRepo(() => {})
+    expect(runKit('new-game.mjs', fresh, ['my-game', '--name', 'My Game']).status).toBe(0)
+    const list = (root) => execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' }).trim().split('\n').sort()
+    execFileSync('git', ['init', '-q'], { cwd: out })
+    expect(list(out)).toEqual([...list(fresh), 'README.md'].sort())
+    for (const file of list(fresh)) expect(readFileSync(join(out, file), 'utf8'), file).toBe(readFileSync(join(fresh, file), 'utf8'))
+    const readme = readFileSync(join(out, 'README.md'), 'utf8')
+    expect(readme).toMatch(/Add game → Connect GitHub/)
+    expect(readme).not.toMatch(/AGENTS\.md|plugin install|skill/i)
+  })
+
+  it('refuses to write over a folder that already has files', () => {
+    const out = mkdtempSync(join(tmpdir(), 'kit-template-'))
+    writeFileSync(join(out, 'notes.txt'), 'mine')
+    const made = spawnSync('node', [join(SRC, 'template.mjs'), out], { encoding: 'utf8' })
+    expect(made.status).toBe(1)
+    expect(made.stdout).toMatch(/isn't empty/)
+  })
+})
+
 describe('release channels', () => {
   it('publishes the default branch to the stable release and `beta` to the beta release', () => {
     expect(releaseTagFor('main', 'main')).toBe(RELEASE_TAG)
