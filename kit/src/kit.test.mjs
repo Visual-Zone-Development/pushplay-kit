@@ -718,6 +718,23 @@ describe('a game that plays from the repo\'s normal releases', () => {
     expect(output).toMatch(/entry\.windows-x64 has no file in "release"/)
   })
 
+  it('reports a mistyped field alone, with the one it is closest to', () => {
+    const root = makeRepo((r) => write(join(r, MANIFEST_FILE), { id: 'star-drift', name: 'Star Drift', relase: true }))
+    const { status, output } = runKit('check.mjs', root)
+    expect(status).toBe(1)
+    expect(output).toMatch(/"relase" isn't a field\. Did you mean "release"\?/)
+    expect(output.match(/✗/g)).toHaveLength(1)
+    const platform = makeRepo((r) => write(join(r, MANIFEST_FILE), { ...bare, release: { linux: 'StarDrift-linux.zip' } }))
+    expect(runKit('check.mjs', platform).output).toMatch(/release: "linux" isn't a field\. Did you mean "linux-x64"\?/)
+  })
+
+  it('refuses a path where a release file name belongs', () => {
+    const root = makeRepo((r) => write(join(r, MANIFEST_FILE), { ...bare, release: { 'linux-x64': 'build/StarDrift-linux.zip' } }))
+    const { status, output } = runKit('check.mjs', root)
+    expect(status).toBe(1)
+    expect(output).toMatch(/release\.linux-x64 "build\/StarDrift-linux\.zip" is a path\. Give the file's name as it appears in the release \(for example "StarDrift-linux\.zip"\)/)
+  })
+
   it('leaves the published build alone on a push, and publishes nothing when there has never been one', () => {
     const root = makeRepo((r) => write(join(r, MANIFEST_FILE), bare))
     const { status, output, index } = runCi(root)

@@ -6,7 +6,7 @@
 
 Pick the line that is you. Each one ends the same way: in PushPlay, **Add game → Connect GitHub**, pick your repo, and the game is in your **Library**. You need a GitHub account and the game pushed to a repo on it.
 
-**I have never made a game.** Install a coding agent and the skills ([below](#with-a-coding-agent-optional)), open it in an empty folder and type: *"Make me a game about a frog delivering mail."* It asks a few questions, writes the game, checks it, and helps you put it on GitHub.
+**I have never made a game.** Install a coding agent and the skills ([below](#with-a-coding-agent)), open it in an empty folder and type: *"Make me a game about a frog delivering mail."* It asks a few questions, writes the game, checks it, and helps you put it on GitHub.
 
 **I can code and want to start one.**
 
@@ -25,13 +25,13 @@ Pick the line that is you. Each one ends the same way: in PushPlay, **Add game �
   "name": "Star Drift",
   "description": "Race a little ship through asteroid fields.",
   "tags": ["racing", "space"],
-  "release": { "linux-x64": "StarDrift-*-linux.zip", "windows-x64": "StarDrift-*-windows.zip" }
+  "release": { "linux-x64": "StarDrift-linux.zip", "windows-x64": "StarDrift-windows.zip" }
 }
 ```
 
 No workflow, no second export, nothing in your normal build.
 
-**I want every version checked, and the game on Discover and phones.** Add [one small workflow file](docs/workflow.yml), or press **Set up auto-builds** on the repo or the game's page in PushPlay, which opens a pull request with it. It checks every push (or packages every release you publish) and publishes to its own `pushplay-latest` prerelease. Your releases and your "Latest" badge are not touched.
+**I want every version checked, and the game on Discover and phones.** Add [one small workflow file](docs/workflow.yml), or press **Set up auto-builds** on the game's page in PushPlay (or in Settings, under the repo), which opens a pull request with it. It checks every push (or packages every release you publish) and publishes to its own `pushplay-latest` prerelease. Your releases and your "Latest" badge are not touched.
 
 The [build guide](docs/pushplay-build.md) has the detail and a worked example per engine: Godot, Unity, GameMaker, Rust or C++, Love2D, Ren'Py, plain JavaScript.
 
@@ -41,7 +41,7 @@ Your game, and at most three things for PushPlay:
 
 ```
 pushplay.json                     name, description, tags, inputs, where the build is
-art/cover.png  art/hero.png       the library tile and the banner (optional)
+art/cover.*  art/hero.*           the library tile and the banner (optional; SVG, PNG, JPG or WebP)
 .github/workflows/pushplay.yml    about 20 lines: calls the shared build (optional)
 …                                 your game, built however you build it
 ```
@@ -68,7 +68,7 @@ npx github:Visual-Zone-Development/pushplay-plugin <command>
 
 | Command | What it does |
 |---|---|
-| `check [id]` | Build the games and play them headlessly; must pass before pushing |
+| `check [id]` | Build the games and play them headlessly. A game with the workflow file is only published when this passes |
 | `dev [id]` | Play a game in a browser with live reload |
 | `new-game <id>` | Start a JavaScript game with working title, pause and settings screens for every input |
 | `setup` | Install the headless browser the check plays games in |
@@ -79,7 +79,7 @@ npx github:Visual-Zone-Development/pushplay-plugin <command>
 
 The kit is unpacked once into a cache in your home folder. Nothing it does leaves a file in your repo.
 
-## With a coding agent (optional)
+## With a coding agent
 
 Two plugins of [Agent Skills](https://agentskills.io):
 

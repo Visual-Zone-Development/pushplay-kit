@@ -3,7 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import Ajv from 'ajv/dist/2020.js'
-import { brand, GAMES_DIR, IGNORE_FILE, MANIFEST_FILES, MIN_DESCRIPTION } from './config.mjs'
+import { brand, DOCS_URL, GAMES_DIR, IGNORE_FILE, MANIFEST_FILES, MIN_DESCRIPTION } from './config.mjs'
 
 /** The game repo being built: where commands run from (CI and npm scripts both use the root). */
 export const ROOT = resolve(process.env.KIT_REPO_ROOT ?? process.cwd())
@@ -159,6 +159,32 @@ export function buildMode(game, manifest) {
   return packageJson(game.dir)?.scripts?.build ? 'npm' : 'static'
 }
 
+const TOP_FIELDS = ['id', 'name', 'description', 'version', 'entry', 'release', 'build', 'launch', 'web', 'art', 'controls', 'tags', 'players', 'online', 'party', 'phone', 'inputs', 'movedFrom', 'type']
+const PLATFORM_FIELDS = ['web', 'linux-x64', 'linux-arm64', 'windows-x64', 'darwin-arm64', 'darwin-x64']
+
+/** The real field a mistyped one is closest to, when it is close (one or two letters off, or the start of a platform name). */
+function nearestField(name, instancePath) {
+  const candidates = /\/(entry|release|launch|outputs)$/.test(instancePath) ? PLATFORM_FIELDS : TOP_FIELDS
+  const distance = (a, b) => {
+    const row = Array.from({ length: b.length + 1 }, (_, i) => i)
+    for (let i = 1; i <= a.length; i++) {
+      let prev = i - 1
+      row[0] = i
+      for (let j = 1; j <= b.length; j++) {
+        const next = Math.min(row[j] + 1, row[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1))
+        prev = row[j]
+        row[j] = next
+      }
+    }
+    return row[b.length]
+  }
+  const lower = name.toLowerCase()
+  const prefixed = candidates.filter((c) => c.startsWith(lower + '-'))
+  if (prefixed.length) return prefixed[0]
+  const best = candidates.map((c) => [c, distance(lower, c)]).sort((a, b) => a[1] - b[1])[0]
+  return best && best[1] <= 2 ? best[0] : null
+}
+
 /**
  * Validate a game's manifest. Returns { errors, warnings } as readable sentences
  * aimed at whoever (or whatever AI) is fixing the game.
@@ -169,10 +195,29 @@ export function validateManifest(game, manifest) {
   const where = display(game.manifestPath)
 
   if (!validateSchema(manifest)) {
-    for (const e of validateSchema.errors ?? []) {
+    const found = validateSchema.errors ?? []
+    // A field the manifest doesn't have (usually a typo) explains everything that follows from it,
+    // so it is reported alone: fix the name and check again.
+    const unknown = found.filter((e) => e.params?.additionalProperty)
+    if (unknown.length) {
+      for (const e of unknown) {
+        const at = e.instancePath ? `${e.instancePath.slice(1).replaceAll('/', '.')}: ` : ''
+        const name = e.params.additionalProperty
+        const near = nearestField(name, e.instancePath)
+        errors.push(`${where}: ${at}"${name}" isn't a field${near ? `. Did you mean "${near}"?` : ` (the fields are listed at ${DOCS_URL}#the-manifest)`}`)
+      }
+      return { errors, warnings }
+    }
+    for (const e of found) {
+      // "must match one of" lines only repeat what the specific lines beside them say.
+      if (['anyOf', 'oneOf', 'const'].includes(e.keyword) && found.length > 1) continue
       const path = e.instancePath ? e.instancePath.slice(1).replaceAll('/', '.') : '(root)'
-      const extra = e.params?.additionalProperty ? ` "${e.params.additionalProperty}"` : ''
-      errors.push(`${where}: ${path} ${e.message}${extra}`)
+      errors.push(`${where}: ${path} ${e.message}`)
+    }
+  }
+  if (manifest.release && typeof manifest.release === 'object') {
+    for (const [platform, name] of Object.entries(manifest.release)) {
+      if (typeof name === 'string' && /[\\/]/.test(name)) errors.push(`${where}: release.${platform} "${name}" is a path. Give the file's name as it appears in the release (for example "${name.split(/[\\/]/).pop()}")`)
     }
   }
   if (game.rel && manifest.id !== game.id) errors.push(`${where}: "id" must match the folder name ("${game.id}")`)

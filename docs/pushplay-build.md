@@ -10,11 +10,11 @@ Every way in ends the same way, in the launcher: **Add game → Connect GitHub**
 
 | You have | Do this | You get |
 |---|---|---|
-| **Nothing yet, and you don't code** | Ask a coding agent that has the [PushPlay skills](../README.md#with-a-coding-agent-optional): "Make me a game about a frog delivering mail." It writes the game, checks it and pushes it. | A checked game in your library, updated on every push. |
+| **Nothing yet, and you don't code** | Ask a coding agent that has the [PushPlay skills](../README.md#with-a-coding-agent): "Make me a game about a frog delivering mail." It writes the game, checks it and pushes it. | A checked game in your library, updated on every push. |
 | **Nothing yet, and you code** | Press **Use this template** on the [starter repo](https://github.com/Visual-Zone-Development/pushplay-games), or run `pushplay new-game my-game` in an empty folder. Push. | The same. The starter has working title, pause and settings screens. |
 | **A game, in any engine, that already publishes releases** | Nothing: the launcher plays the zips on your normal releases. Add a [`pushplay.json` with `release`](#play-from-your-normal-releases) to give it a name, tags and art. | Your normal build, in the library. No workflow, no second export. |
 | **A plain HTML game in a repo** | Nothing: the launcher plays it from the latest commit. | The game, with a made-up cover. |
-| **Any game, and you want every version checked and listed** | Add `pushplay.json`, two pictures and [the workflow file](#the-workflow-file). In the launcher, **Set up auto-builds** on the repo or the game's page opens a pull request that adds the workflow file and a starter manifest. | Every push (or every release you publish) is checked and published to a `pushplay-latest` release. The game gets rendered art and "Plays on" labels, and can be listed on Discover and played in the phone app. |
+| **Any game, and you want every version checked and listed** | Add `pushplay.json`, two pictures and [the workflow file](#the-workflow-file). In the launcher, **Set up auto-builds** on the game's page (or in Settings, under the repo) opens a pull request that adds the workflow file and a starter manifest. | Every push (or every release you publish) is checked and published to a `pushplay-latest` release. The game gets rendered art and "Plays on" labels, and can be listed on Discover and played in the phone app. |
 
 What each level adds:
 
@@ -123,8 +123,8 @@ With no files of ours at all, the launcher finds the zips by their names (`Game-
   "tags": ["racing", "space"],
   "players": "1-4",
   "release": {
-    "linux-x64": "StarDrift-*-linux.zip",
-    "windows-x64": "StarDrift-*-windows.zip"
+    "linux-x64": "StarDrift-linux.zip",
+    "windows-x64": "StarDrift-windows.zip"
   },
   "entry": { "linux-x64": "StarDrift.x86_64", "windows-x64": "StarDrift.exe" },
   "launch": { "linux-x64": { "args": ["--fullscreen"] } },
@@ -132,7 +132,8 @@ With no files of ours at all, the launcher finds the zips by their names (`Game-
 }
 ```
 
-- **`release`** names the file for each platform in your newest release that isn't a draft or a prerelease. `*` stands for the part that changes, such as the version. `"release": true` keeps finding them by name.
+- **`release`** names the file for each platform in your newest release that isn't a draft or a prerelease, exactly as it appears there. If the name changes with each version, put `*` where it changes: `StarDrift-*-linux.zip` matches `StarDrift-1.2.0-linux.zip` (and not `StarDrift-linux.zip`). A name that matches nothing leaves that platform out, and the launcher shows which platforms it found. `"release": true` keeps finding them by name.
+- To be on Discover and in the phone app a game needs a web build, so name a web zip too (`"web": "StarDrift-web.zip"`) if you export one.
 - **`entry`** is optional. Without it the launcher looks inside the zip for an `index.html` or the program. Name it when the zip holds more than one program.
 - **`art`**: a 720×500 cover and a 1920×450 banner kept in the repo. Without the workflow file the launcher shows PNG, JPG and WebP pictures; SVG and HTML art is drawn by the build, so it needs the workflow. With no art the launcher makes up a cover.
 - Everything except `id`, `name` and `release` is optional. `pushplay check` reads the file and tells you what would make the game look better; it doesn't check the game's files, because they are in your releases.
@@ -311,7 +312,7 @@ For phones, export without compression (Compression Format: Disabled) or turn on
 }
 ```
 
-If your CI already attaches `cave-diver-linux.zip` and `cave-diver-windows.zip` to releases, that manifest becomes `"release": { "linux-x64": "cave-diver-*-linux.zip", "windows-x64": "cave-diver-*-windows.zip" }` with no `build`, and you are done.
+If your CI already attaches `cave-diver-linux.zip` and `cave-diver-windows.zip` to releases, that manifest becomes `"release": { "linux-x64": "cave-diver-linux.zip", "windows-x64": "cave-diver-windows.zip" }` with no `build`, and you are done.
 
 To build in the PushPlay workflow instead, `build.command` only suits the Linux build (it runs on a Linux runner; `cargo build --release` works there if the toolchain is installed by a step of yours, and the folder must hold only the game, so copy the binary out of `target/release` into `dist/linux`). For Linux and Windows together, build each on its own runner and hand over one artifact:
 
