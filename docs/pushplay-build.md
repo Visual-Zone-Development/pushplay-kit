@@ -291,7 +291,7 @@ Export with `godot --headless --export-release "<preset>" <file>` or from the ed
 }
 ```
 
-Build for WebGL from the editor's build window (or with Unity's batch mode from your own workflow) into `Builds/WebGL`, and commit the folder or hand it over as an artifact. The folder must hold everything the page loads.
+For phones, export without compression (Compression Format: Disabled) or turn on Decompression Fallback: the launcher serves `.br` and `.gz` files as what they hold, but the phone app's game view can't, and the check notes it. Build for WebGL from the editor's build window (or with Unity's batch mode from your own workflow) into `Builds/WebGL`, and commit the folder or hand it over as an artifact. The folder must hold everything the page loads.
 
 ### Rust or C++: native builds only
 
@@ -477,6 +477,8 @@ if (window.pushplay?.quit) pauseMenu.add('Quit to library', () => window.pushpla
 From a PushPlay release the launcher installs the native build for the device when there is one, and the web build otherwise.
 
 ## Phones
+
+The phone app plays checked web builds of games listed on Discover. A game marked `"web": { "isolated": true }` is served isolated there too, as in the launcher. Pre-compressed files (`.br`, `.gz`) are not supported in the phone app.
 
 A game earns the **Phone** label when it is laid out for a phone, plays with touch alone and says so in the manifest:
 

@@ -537,6 +537,17 @@ describe('any kind of build', () => {
     expect(output).not.toMatch(/menu\.js|fit\.js|window\.__game =/)
   }, 150_000)
 
+  it('notes pre-compressed files in a web build, which the phone app cannot serve', () => {
+    const root = makeRepo((r) => {
+      write(join(r, 'export/web/index.html'), DRAW)
+      write(join(r, 'export/web/Build/game.wasm.br'), 'compressed')
+      write(join(r, MANIFEST_FILE), manifest('packed', { build: { outputs: { web: 'export/web' } } }))
+    })
+    const { status, output } = runKit('check.mjs', root)
+    expect(status).toBe(0)
+    expect(output).toMatch(/⚠ this web build has pre-compressed files[\s\S]*not in the phone app/)
+  }, 150_000)
+
   it('runs the build command the manifest names, in place of npm run build, and tells it this is the handheld build', () => {
     const root = makeRepo((r) => {
       write(join(r, 'package.json'), { name: 'own-release', private: true, scripts: { build: 'node -e "process.exit(1)"' } })

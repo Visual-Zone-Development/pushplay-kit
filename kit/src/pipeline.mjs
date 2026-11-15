@@ -169,6 +169,8 @@ export async function buildGame(game, browser, { pack = true, beforePack } = {})
     await relay?.close()
   }
   if (Object.keys(natives).length) warnings.push(`${Object.keys(natives).join(', ')} not played: only web builds are play-tested`)
+  // The launcher serves pre-compressed files as what they hold; the phone app's game view can't.
+  if (webEntry && hasPrecompressed(out)) warnings.push(`this web build has pre-compressed files (.br or .gz). They play in the launcher but not in the phone app: export without compression (Unity: Compression Format "Disabled", or turn on Decompression Fallback) if the game should play on phones`)
 
   // 4. The manifest the launcher sees: built entry and generated art.
   const art = { cover: `${ART_DIR}/cover.png`, hero: `${ART_DIR}/hero.png`, ...(webEntry ? { screenshots: [`${ART_DIR}/screenshot.png`] } : {}) }
@@ -204,6 +206,16 @@ export function usesKitRuntime(game) {
       const file = join(dir, name)
       if (existsSync(file) && RUNTIME_HEADER_RE.test(readFileSync(file, 'utf8').slice(0, 200))) return true
     }
+  }
+  return false
+}
+
+/** Whether a built web game holds files compressed ahead of time (game.wasm.br, data.unityweb.gz …). */
+function hasPrecompressed(dir, depth = 0) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      if (depth < 4 && !entry.name.startsWith('__') && hasPrecompressed(join(dir, entry.name), depth + 1)) return true
+    } else if (/\.[a-z0-9]+\.(br|gz)$/i.test(entry.name)) return true
   }
   return false
 }
