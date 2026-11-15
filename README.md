@@ -90,19 +90,23 @@ docs/pushplay-build.md            the build guide (no agent needed)
 docs/workflow.yml                 the workflow file a game repo keeps
 .github/workflows/build.yml       the shared build
 schema/manifest.schema.json       the manifest's JSON Schema
+kit/                              the build kit: the check, the packaging, the runtime files, the command line's commands
+samples/                          two small games the kit's tests build
 plugins/game-craft/skills/        general game-making skills
-plugins/pushplay/skills/          PushPlay skills; pushplay-rules holds the command line and the kit (kit.zip)
+plugins/pushplay/skills/          PushPlay skills; pushplay-rules holds the command line and the packed kit (kit.zip)
 plugins/pushplay/hooks/           the session-start note for game repos
 scripts/lint-skills.mjs           the rules skills are held to (docs/writing-skills.md)
 ```
 
-`build.yml`, `workflow.yml`, the schema and `kit.zip` are written by the PushPlay release, which also moves the `v1` tag game repos call. Don't edit them here.
+`build.yml`, `workflow.yml`, the schema and `kit.zip` are built from `kit/` by `npm run kit:build`; don't edit them by hand. Game repos call the build at the `v1` tag, which moves to `main` when its tests pass.
 
-## Working on the skills
+## Working on it
 
 ```
-npm run lint     # every skill against docs/writing-skills.md
-npm test         # the lint, the command line in throwaway folders, the session hook
+npm install && npm run kit:install   # once
+npm run lint                         # every skill against docs/writing-skills.md
+npm test                             # the lint, the command line, the session hook and the kit (needs a headless browser)
+npm run kit:build                    # after changing anything in kit/
 ```
 
-Read [docs/writing-skills.md](docs/writing-skills.md) first.
+Read [docs/writing-skills.md](docs/writing-skills.md) before touching a skill and [kit/README.md](kit/README.md) before touching the kit.

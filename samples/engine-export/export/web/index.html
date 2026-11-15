@@ -1,0 +1,28 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Engine Export</title>
+<style>html,body{margin:0;height:100%;background:#101623}canvas{display:block;width:100vw;height:100vh}</style>
+<canvas id="screen"></canvas>
+<script>
+  // Stands in for an engine's loader: nothing is drawn while "the engine starts".
+  const canvas = document.getElementById('screen')
+  const ctx = canvas.getContext('2d')
+  const started = performance.now() + 4000
+  function frame(now) {
+    canvas.width = innerWidth
+    canvas.height = innerHeight
+    if (now >= started) {
+      const t = (now - started) / 1000
+      ctx.fillStyle = '#101623'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.translate(canvas.width / 2, canvas.height / 2)
+      ctx.rotate(t)
+      ctx.fillStyle = '#ffb547'
+      ctx.fillRect(-90, -90, 180, 180)
+    }
+    requestAnimationFrame(frame)
+  }
+  requestAnimationFrame(frame)
+  // Only outside the launcher: what a game keeps for its own release.
+  if (!window.pushplay) console.log('own release: analytics would start here')
+</script>

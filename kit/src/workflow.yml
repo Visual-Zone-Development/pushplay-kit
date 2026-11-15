@@ -1,0 +1,21 @@
+# Builds this repo's games on every push and checks them; on the default branch it publishes
+# them to the "{{RELEASE_TAG}}" release, where the {{NAME}} launcher picks them up (a branch named
+# "beta" publishes to "{{BETA_RELEASE_TAG}}"). The build itself is {{NAME}}'s, shared by every
+# game repo, so there is nothing else to keep up to date here.
+#
+# Your own release workflow is not affected: this one has its own file and its own releases.
+# To hand it files your own build makes, see {{DOCS_URL}}
+name: {{NAME}}
+
+on:
+  push:
+    branches: ['**']
+    paths-ignore: ['**/*.md']
+  workflow_dispatch:
+
+jobs:
+  {{SLUG}}:
+    uses: {{BUILD_WORKFLOW}}
+    permissions:
+      contents: write # publish the builds to this repo's releases
+      id-token: write # online games: prove which repo built them

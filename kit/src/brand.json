@@ -1,0 +1,26 @@
+{
+  "name": "PushPlay",
+  "slug": "pushplay",
+  "manifestFiles": [
+    "pushplay.json"
+  ],
+  "releaseTag": "pushplay-latest",
+  "betaReleaseTag": "pushplay-beta",
+  "indexAsset": "pushplay-index.json",
+  "art": {
+    "cover": {
+      "width": 720,
+      "height": 500
+    },
+    "hero": {
+      "width": 1920,
+      "height": 450
+    }
+  },
+  "topic": "pushplay-game",
+  "domain": "pushplay.gg",
+  "launcherRepo": "Visual-Zone-Development/pushplay",
+  "pluginRepo": "Visual-Zone-Development/pushplay-plugin",
+  "buildRef": "v1",
+  "relayUrl": "wss://relay.pushplay.gg"
+}

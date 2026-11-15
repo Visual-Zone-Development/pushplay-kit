@@ -1,0 +1,22 @@
+{
+  "id": "gamepad-tester",
+  "name": "Gamepad Tester",
+  "description": "Fly a little ship with the left stick or d-pad and collect stars. Shows every button the launcher's controller reports, and keeps your best score between sessions.",
+  "version": "1.0.0",
+  "type": "web",
+  "entry": {
+    "web": "index.html"
+  },
+  "controls": "gamepad",
+  "players": "1",
+  "tags": [
+    "test",
+    "arcade"
+  ],
+  "inputs": [
+    "gamepad",
+    "keyboard",
+    "mouse",
+    "touch"
+  ]
+}

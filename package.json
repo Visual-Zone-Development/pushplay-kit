@@ -4,8 +4,12 @@
   "description": "Run the PushPlay build kit against a game repo (check, dev, new-game, migrate), and the agent skills for making games.",
   "scripts": {
     "lint": "node scripts/lint-skills.mjs",
-    "test": "node --test \"scripts/*.test.mjs\" \"plugins/pushplay/skills/pushplay-rules/scripts/*.test.mjs\" \"plugins/pushplay/hooks/*.test.mjs\"",
-    "test:browser": "node --test \"plugins/pushplay/skills/input-walkthrough/scripts/*.test.mjs\""
+    "test": "node --test \"scripts/*.test.mjs\" \"plugins/pushplay/skills/pushplay-rules/scripts/*.test.mjs\" \"plugins/pushplay/hooks/*.test.mjs\" && vitest run",
+    "test:kit": "vitest run",
+    "test:browser": "node --test \"plugins/pushplay/skills/input-walkthrough/scripts/*.test.mjs\"",
+    "kit:build": "node kit/src/zip.mjs",
+    "kit:lock": "UPDATE_KIT_LOCK=${UPDATE_KIT_LOCK:-1} vitest run kit/src/kit-lock.test.mjs -t 'KIT_VERSION was bumped'",
+    "kit:install": "npm ci --prefix kit --no-audit --no-fund"
   },
   "engines": {
     "node": ">=20.19"
@@ -17,5 +21,10 @@
   "files": [
     "plugins/pushplay/skills/pushplay-rules/scripts/pushplay.mjs",
     "plugins/pushplay/skills/pushplay-rules/kit.zip"
-  ]
+  ],
+  "devDependencies": {
+    "jsdom": "^26.1.0",
+    "qrcode": "^1.5.4",
+    "vitest": "^5.0.4"
+  }
 }

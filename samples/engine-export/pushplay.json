@@ -1,0 +1,24 @@
+{
+  "id": "engine-export",
+  "name": "Engine Export",
+  "description": "A stand-in for a game exported from an engine: a web build and a Linux build, packaged side by side from the folders the engine wrote.",
+  "version": "1.0.0",
+  "entry": {
+    "web": "index.html",
+    "linux-x64": "game.sh"
+  },
+  "build": {
+    "outputs": {
+      "web": "export/web",
+      "linux-x64": "export/linux"
+    }
+  },
+  "launch": {
+    "linux-x64": { "args": ["--fullscreen"] }
+  },
+  "art": { "cover": "art/cover.svg", "hero": "art/hero.svg" },
+  "controls": "gamepad",
+  "players": "1",
+  "tags": ["test", "sample"],
+  "inputs": ["gamepad", "keyboard"]
+}

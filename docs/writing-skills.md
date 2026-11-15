@@ -54,6 +54,6 @@ When a general skill has a recipe that only makes sense with PushPlay's runtime 
 - **Any kind of game.** PushPlay takes engine exports and native builds as well as JavaScript. A skill that only applies to JavaScript games built on the runtime files says so at the top, and says what to do otherwise.
 - **PushPlay must not change a game's normal release.** Where a skill adds something for the launcher (an exit item, no analytics, a key that is reserved), it shows how to keep it out of the normal release: `if (window.pushplay)` in a web game, `PUSHPLAY=1` in a native one, `PUSHPLAY_BUILD=1` at build time.
 
-## Files the release writes
+## Files built from the kit
 
-`plugins/pushplay/skills/pushplay-rules/kit.zip` (the build kit the command line unpacks), `.github/workflows/build.yml`, `schema/manifest.schema.json` and `docs/workflow.yml` come from the PushPlay release. Never edit or rebuild them by hand.
+`plugins/pushplay/skills/pushplay-rules/kit.zip` (the build kit the command line unpacks), `.github/workflows/build.yml`, `schema/manifest.schema.json` and `docs/workflow.yml` are written by `npm run kit:build` from `kit/`. Never edit them by hand.

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Gamepad Tester</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #10131a; color: #eef0f5; font-family: system-ui, sans-serif; overflow: hidden; }
+      canvas { display: block; width: 100vw; height: 100vh; }
+      #hud { position: fixed; left: 24px; top: 20px; font-size: 18px; line-height: 1.6; text-shadow: 0 1px 2px #000; }
+      #pads { position: fixed; left: 24px; bottom: 20px; font: 14px ui-monospace, monospace; color: #9aa3b5; white-space: pre; }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <div id="hud"></div>
+    <div id="pads"></div>
+    <script type="module" src="./game.js"></script>
+  </body>
+</html>
