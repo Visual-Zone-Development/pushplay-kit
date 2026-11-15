@@ -14,7 +14,7 @@ Pick the line that is you. Each one ends the same way: in PushPlay, **Add game �
 2. Play it: `npx github:Visual-Zone-Development/pushplay-kit dev`
 3. Write your game in `game.js`. Fill in the description and tags in `pushplay.json` and replace the two pictures in `art/`.
 4. Check it: `npx github:Visual-Zone-Development/pushplay-kit check`
-5. Push to GitHub.
+5. Push to GitHub. The repo's **Actions** tab shows a green tick after about two minutes, or says what is wrong.
 6. In PushPlay: Add game → Connect GitHub → pick the repo.
 
 **I have a game already, in any engine, and it publishes releases.** Do step 6 and it plays: the launcher takes the zips from your normal releases. To give it a name, tags and art, add one file, `pushplay.json`:

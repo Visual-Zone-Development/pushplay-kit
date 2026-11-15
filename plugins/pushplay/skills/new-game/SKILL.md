@@ -106,7 +106,7 @@ Run `pushplay check` after each milestone and fix every ✗.
 ## 7. Ship
 Update DESIGN.md if the design drifted (set Status to shipped, add a Changelog entry). Use the `release-notes` skill for the player-facing notes. Commit (`Add <Name>`).
 
-The game reaches PushPlay through GitHub, so it has to be in a repo there. If the folder has no GitHub remote, say so in plain words and ask the user (with a question tool if you have one) whether to create a repo for it on their account (private is fine) or whether they will; never assume one exists. Then push.
+The game reaches PushPlay through GitHub, so it has to be in a repo there. Don't assume the user knows GitHub or has an account: if `git` has no GitHub sign-in on this computer (a push is refused, or `gh auth status` fails), explain in one sentence that GitHub is a free website that stores the game's files and that PushPlay gets the game from it, send them to https://github.com/signup to make an account (no card), and walk them through signing in on this computer one step at a time before going on. If the folder has no GitHub remote, say so in plain words and ask the user (with a question tool if you have one) whether to create a repo for it on their account (private is fine) or whether they will; never assume one exists. Then push.
 
 Tell the user:
 - the name, the pitch and the controls
