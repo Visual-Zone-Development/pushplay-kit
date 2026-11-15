@@ -1,5 +1,7 @@
 # touch-controls in a PushPlay game
 
+Sizes: the `touch-controls` skill gives touch sizes in millimetres (7 mm targets, 9 mm gameplay buttons). PushPlay's phone pass enforces a floor of 56 px for tap targets and 64 px for on-screen buttons in the 720-wide phone space; treat those as the minimum and use the skill's larger sizes wherever the layout has room.
+
 The general `touch-controls` skill covers picking a scheme per verb, the tuning numbers (dead zone, tap vs hold, swipe), feedback and the test procedure. This page gives the PushPlay side: how to do it with `input.js` and `touch.js`. The rules are in the `pushplay-rules` skill: [controls.md](../../../pushplay-rules/references/controls.md) (*Controls*, *Input hints*). Never edit `touch.js` or `input.js`: the scheme lives in `game.js`.
 
 ## Input

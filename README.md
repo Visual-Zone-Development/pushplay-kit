@@ -85,7 +85,28 @@ Two plugins of [Agent Skills](https://agentskills.io):
 | Plugin | What it is |
 |---|---|
 | **game-craft** | 28 skills of game-making craft: design briefs, game feel, physics, camera, enemy AI, levels, bosses, progression, story and dialogue, art direction, pixel art, 2D and 3D assets, environments, audio, UI, touch controls, multiplayer, playtesting, performance, accessibility, localization. It never mentions PushPlay. |
-| **pushplay** | The PushPlay side: the rules every PushPlay game follows, starting a game from one request, setting up an existing game in any engine, the manifest, library art, checking every input, phone and party play. It uses game-craft for the craft. |
+| **pushplay** | 11 skills for the PushPlay side: the rules every PushPlay game follows, starting a game from one request, setting up an existing game in any engine, the manifest, library art, checking every input, phone and party play. It uses game-craft for the craft. |
+
+The game-craft skills work for a game built with anything (Godot, Unity, Rust, Love2D, plain JavaScript): each leads with what holds in any engine, and keeps browser-only code and tools under an "In a web game" heading. Three are about one technology and say so: `canvas2d-assets`, `threejs-models`, `character-models`.
+
+| | game-craft |
+|---|---|
+| Design | `game-design`, `prototype-sprint`, `playtest` |
+| How it plays | `game-feel`, `physics-feel`, `camera`, `enemy-ai` |
+| Content | `level-design`, `boss-design`, `progression`, `dialogue` |
+| Art and assets | `art-direction`, `model-asset`, `animate-asset`, `pixel-art`, `environments`, `canvas2d-assets`, `threejs-models`, `character-models` |
+| Sound and interface | `game-audio`, `game-ui`, `touch-controls`, `accessibility-audit`, `localization` |
+| Multiplayer | `local-multiplayer`, `online-netcode` |
+| Shipping | `performance-pass`, `release-notes` |
+
+| | pushplay |
+|---|---|
+| Start here | `pushplay-rules` (the rules, the command line, the manifest) |
+| Make or bring a game | `new-game`, `port-game`, `improve-game`, `promote-game` |
+| The runtime files | `pushplay-runtime` |
+| Library art | `cover-art` |
+| Inputs and phones | `input-walkthrough`, `mobile-port` |
+| Party games | `party-phone-screen`, `motion-controls` |
 
 **Claude Code.** Start it (`claude` in a terminal, or the desktop app), then type these three lines into its message box, one at a time. Each answers with a line saying what was added.
 
