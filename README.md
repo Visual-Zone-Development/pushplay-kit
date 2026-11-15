@@ -2,36 +2,61 @@
 
 [PushPlay](https://pushplay.gg) is a launcher that plays your games on a Steam Deck, a Legion Go, a PC and a phone. This repo holds everything a game needs from the outside to get there, so that your game's repo holds only your game.
 
-| What is here | For |
-|---|---|
-| [The build guide](docs/pushplay-build.md) | What PushPlay needs from a game, whatever it is built with. Start here. |
-| The shared build (`.github/workflows/build.yml`) | The one job every game repo calls to be built, checked and published |
-| The command line (`npx github:Visual-Zone-Development/pushplay-plugin <command>`) | The same check on your own machine, a dev server, a starter game |
-| The manifest schema (`schema/manifest.schema.json`) | Editors and agents, for `pushplay.json` |
-| Two sets of agent skills (`plugins/`) | Optional: a coding agent that does all of it for you |
+## Start here
 
-## What your game's repo holds
+Pick the line that is you. Each one ends the same way: in PushPlay, **Add game → Connect GitHub**, pick your repo, and the game is in your **Library**. You need a GitHub account and the game pushed to a repo on it.
 
-Your game, and three things for PushPlay: a manifest, two pictures and one small workflow file.
+**I have never made a game.** Install a coding agent and the skills ([below](#with-a-coding-agent-optional)), open it in an empty folder and type: *"Make me a game about a frog delivering mail."* It asks a few questions, writes the game, checks it, and helps you put it on GitHub.
+
+**I can code and want to start one.**
+
+1. Press **Use this template** on the [starter repo](https://github.com/Visual-Zone-Development/pushplay-games), or in an empty folder run `npx github:Visual-Zone-Development/pushplay-plugin new-game my-game`.
+2. Play it: `npx github:Visual-Zone-Development/pushplay-plugin dev`
+3. Write your game in `game.js`. Fill in the description and tags in `pushplay.json` and replace the two pictures in `art/`.
+4. Check it: `npx github:Visual-Zone-Development/pushplay-plugin check`
+5. Push to GitHub.
+6. In PushPlay: Add game → Connect GitHub → pick the repo.
+
+**I have a game already, in any engine, and it publishes releases.** Do step 6 and it plays: the launcher takes the zips from your normal releases. To give it a name, tags and art, add one file, `pushplay.json`:
+
+```json
+{
+  "id": "star-drift",
+  "name": "Star Drift",
+  "description": "Race a little ship through asteroid fields.",
+  "tags": ["racing", "space"],
+  "release": { "linux-x64": "StarDrift-*-linux.zip", "windows-x64": "StarDrift-*-windows.zip" }
+}
+```
+
+No workflow, no second export, nothing in your normal build.
+
+**I want every version checked, and the game on Discover and phones.** Add [one small workflow file](docs/workflow.yml), or press **Set up auto-builds** on the repo or the game's page in PushPlay, which opens a pull request with it. It checks every push (or packages every release you publish) and publishes to its own `pushplay-latest` prerelease. Your releases and your "Latest" badge are not touched.
+
+The [build guide](docs/pushplay-build.md) has the detail and a worked example per engine: Godot, Unity, GameMaker, Rust or C++, Love2D, Ren'Py, plain JavaScript.
+
+## What a game repo holds
+
+Your game, and at most three things for PushPlay:
 
 ```
 pushplay.json                     name, description, tags, inputs, where the build is
-art/cover.svg  art/hero.svg       the library tile and the banner
-.github/workflows/pushplay.yml    about 20 lines: calls the shared build
+art/cover.png  art/hero.png       the library tile and the banner (optional)
+.github/workflows/pushplay.yml    about 20 lines: calls the shared build (optional)
 …                                 your game, built however you build it
 ```
 
-Nothing else: no build tools, no agent files, no scripts. Your own release workflow keeps working as it does. PushPlay's builds go to their own release (`pushplay-latest`, a prerelease), so your releases and your "Latest" badge are not touched.
+No build tools, no agent files, no scripts.
 
-## Three ways in, none of them needing an agent
+## What is in this repo
 
-| | You do | You get |
-|---|---|---|
-| **Follow the repo as it is** | Nothing. In PushPlay: Add game → Follow a GitHub account. | A plain HTML game plays from its latest commit; any game plays from the zips on its normal releases. No check, a generated cover. |
-| **Add the three files** | Write `pushplay.json`, add art, copy [the workflow file](docs/workflow.yml). The launcher's **Set up auto-builds** opens a pull request that does the last two for you. | Every push is built, played headlessly and published, with a build per platform you supply. |
-| **Check before you push** | `npx github:Visual-Zone-Development/pushplay-plugin check` | The same check on your machine, with the problems in plain words. |
-
-Any engine works: Godot, Unity, GameMaker, a Rust or C++ binary, Love2D, Ren'Py, or plain JavaScript. Your own build makes the files and the manifest says where they are. The [build guide](docs/pushplay-build.md) has a worked example for each.
+| What is here | For |
+|---|---|
+| [The build guide](docs/pushplay-build.md) | What PushPlay needs from a game, whatever it is built with |
+| The shared build (`.github/workflows/build.yml`) | The one job a game repo's workflow file calls to be checked and published |
+| The command line (`npx github:Visual-Zone-Development/pushplay-plugin <command>`) | The same check on your own machine, a dev server, a starter game |
+| The manifest schema (`schema/manifest.schema.json`) | Editors and agents, for `pushplay.json` |
+| Two sets of agent skills (`plugins/`) | Optional: a coding agent that does all of it for you |
 
 ## The command line
 
@@ -61,7 +86,7 @@ Two plugins of [Agent Skills](https://agentskills.io):
 | **game-craft** | 30 skills of game-making craft for any web game: design briefs, game feel, physics, camera, enemy AI, levels, bosses, progression, story and dialogue, art direction, pixel art, 2D and 3D assets, environments, audio, UI, touch controls, multiplayer, playtesting, performance, accessibility, localization. It never mentions PushPlay. |
 | **pushplay** | The PushPlay side: the rules every PushPlay game follows, starting a game from one request, setting up an existing game in any engine, the manifest, library art, checking every input, phone and party play. It uses game-craft for the craft. |
 
-**Claude Code**
+**Claude Code.** Start it (`claude` in a terminal, or the desktop app), then type these three lines into its message box, one at a time. Each answers with a line saying what was added.
 
 ```
 /plugin marketplace add Visual-Zone-Development/pushplay-plugin
@@ -75,7 +100,7 @@ Two plugins of [Agent Skills](https://agentskills.io):
 npx skills add Visual-Zone-Development/pushplay-plugin -g
 ```
 
-Install them for yourself (`-g`), not into the game's repo. Then, in an empty folder or in your game's repo, ask:
+Install them for yourself (`-g`), not into the game's repo. Then start the agent in an empty folder (for a new game) or in your game's folder, and ask:
 
 > Make me a game about a frog delivering mail.
 
@@ -107,6 +132,7 @@ npm install && npm run kit:install   # once
 npm run lint                         # every skill against docs/writing-skills.md
 npm test                             # the lint, the command line, the session hook and the kit (needs a headless browser)
 npm run kit:build                    # after changing anything in kit/
+npm run template -- ../pushplay-games  # rewrite the starter repo behind "Use this template" (an empty checkout)
 ```
 
 Read [docs/writing-skills.md](docs/writing-skills.md) before touching a skill and [kit/README.md](kit/README.md) before touching the kit.

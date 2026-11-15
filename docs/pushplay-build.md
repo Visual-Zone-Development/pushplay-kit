@@ -2,17 +2,33 @@
 
 PushPlay is a launcher for a Steam Deck, a Legion Go, a PC and a phone. It follows a game's GitHub repo and plays its builds. This page is everything PushPlay needs from a game, whatever the game is made with: Godot, Unity, GameMaker, Rust, Love2D, Ren'Py, plain JavaScript or anything else that produces a web page or a program.
 
-## What PushPlay needs
+## Start here: what do you have?
 
-A build it can use. Nothing else: no particular engine, no library, no files of ours in your repo beyond a manifest, two images and one small workflow file. Your normal release stays exactly as it is.
+PushPlay needs a build it can use. Nothing else: no particular engine, no library, and no files of ours in your repo beyond a manifest, two pictures and (only if you want checked builds) one small workflow file. Your normal release stays exactly as it is.
 
-There are three ways in:
+Every way in ends the same way, in the launcher: **Add game → Connect GitHub**, pick the repo, and the game is in your **Library**. You need a GitHub account and the game pushed to a repo on it. Nothing else has to be installed to play.
 
-| Way | What you do | What you get |
+| You have | Do this | You get |
 |---|---|---|
-| **Follow the repo as it is** | Nothing. Add the repo in the launcher. | The launcher plays a plain HTML repo from its latest commit, or the zips attached to the repo's ordinary GitHub releases (names like `Game-Windows.zip`, `game_linux64.zip`, `Game-HTML5.zip` are recognised). No library art, no description, no check. |
-| **Add the manifest, art and one workflow file** | Add `pushplay.json`, a cover and a banner, and `.github/workflows/pushplay.yml` (below). The launcher's "Set up auto-builds" opens a pull request with the workflow file and a starter manifest. | Every push is built and checked; the default branch is published to a `pushplay-latest` release that the launcher picks up. The game has its name, art, tags and "Plays on" labels in the library. |
-| **Check locally first** | Run `npx github:Visual-Zone-Development/pushplay-plugin check` in the repo (needs Node.js). | The same build and check that runs on GitHub, on your machine, before you push. |
+| **Nothing yet, and you don't code** | Ask a coding agent that has the [PushPlay skills](../README.md#with-a-coding-agent-optional): "Make me a game about a frog delivering mail." It writes the game, checks it and pushes it. | A checked game in your library, updated on every push. |
+| **Nothing yet, and you code** | Press **Use this template** on the [starter repo](https://github.com/Visual-Zone-Development/pushplay-games), or run `pushplay new-game my-game` in an empty folder. Push. | The same. The starter has working title, pause and settings screens. |
+| **A game, in any engine, that already publishes releases** | Nothing: the launcher plays the zips on your normal releases. Add a [`pushplay.json` with `release`](#play-from-your-normal-releases) to give it a name, tags and art. | Your normal build, in the library. No workflow, no second export. |
+| **A plain HTML game in a repo** | Nothing: the launcher plays it from the latest commit. | The game, with a made-up cover. |
+| **Any game, and you want every version checked and listed** | Add `pushplay.json`, two pictures and [the workflow file](#the-workflow-file). In the launcher, **Set up auto-builds** on the repo or the game's page opens a pull request that adds the workflow file and a starter manifest. | Every push (or every release you publish) is checked and published to a `pushplay-latest` release. The game gets rendered art and "Plays on" labels, and can be listed on Discover and played in the phone app. |
+
+What each level adds:
+
+| | As it is | `pushplay.json` in the repo | Plus the workflow file |
+|---|---|---|---|
+| Plays in the launcher on a Steam Deck, a Legion Go and a PC | ✓ | ✓ | ✓ |
+| Its own name, description, tags, launch options | | ✓ | ✓ |
+| Cover and banner | made up | PNG, JPG or WebP from the repo | any format, rendered and checked |
+| Played headlessly on every version to catch problems | | | ✓ |
+| Discover and the phone app | | | ✓ |
+
+When a repo has both a normal release and a `pushplay-latest` release, the launcher uses the PushPlay one.
+
+To check on your own machine before pushing, run `pushplay check` in the repo (needs Node.js). It is the same check that runs on GitHub.
 
 Below, `pushplay` stands for `npx github:Visual-Zone-Development/pushplay-plugin`: `pushplay check` means `npx github:Visual-Zone-Development/pushplay-plugin check`. It unpacks its tools into a cache in your home folder, never into your repo.
 
@@ -49,7 +65,7 @@ Below, `pushplay` stands for `npx github:Visual-Zone-Development/pushplay-plugin
 }
 ```
 
-`id`, `name` and `entry` are required by the schema. The check also requires `description`, `tags` and `inputs`.
+`id`, `name` and `entry` are required by the schema. The check also requires `description`, `tags` and `inputs`. A game that [plays from its normal releases](#play-from-your-normal-releases) needs only `id`, `name` and `release`; the rest is then advice.
 
 | Field | Meaning |
 |---|---|
@@ -59,7 +75,8 @@ Below, `pushplay` stands for `npx github:Visual-Zone-Development/pushplay-plugin
 | `description` | **Required by the check**, at least 20 characters. 1–3 plain sentences: what you do and what makes it fun. Shown in the library. |
 | `tags` | **Required by the check.** 2–5 lowercase words players filter the library by (8 at most): genre first (`"racing"`, `"puzzle"`), then setting or style (`"space"`, `"pixel art"`), and `"local multiplayer"`, `"online multiplayer"` or `"party"` when they apply. Letters, digits, spaces, `-`, `&` and `'`, up to 24 characters each. |
 | `inputs` | **Required by the check.** What the whole game, gameplay included, can be played with: any of `"gamepad"`, `"keyboard"`, `"mouse"`, `"touch"`. List only what works. |
-| `version` | Bump it when you make a notable change. |
+| `version` | A label players see next to the build, such as `1.2.0`. It is not what makes the launcher update: every new build does that. Change it when you want players to see a new number. |
+| `release` | Play the game from the repo's normal GitHub releases, with nothing built for PushPlay. `true` finds each platform's zip by its name; an object names them: `{ "linux-x64": "Game-*-linux.zip" }`. See [Play from your normal releases](#play-from-your-normal-releases). |
 | `art` | `cover` and `hero`: paths to `.svg`, `.html`, `.png`, `.jpg` or `.webp` files (see [The art](#the-art)). The build adds `screenshots` itself. |
 | `controls` | `"gamepad"` once the game works with a controller; `"keyboard-mapped"` for a game that has no controller support yet. |
 | `players` | `"1"`, or a range like `"1-4"`. |
@@ -92,6 +109,37 @@ Two images, the first thing anyone sees in the library. Write them as SVG, as an
 
 A game with a web build and no `art` field gets a basic cover made from a screenshot. A game with no web build needs both images. `pushplay art-shots` renders them so you can look.
 
+## Play from your normal releases
+
+If your game already publishes GitHub releases with a zip per platform, PushPlay can use those. There is no workflow to add and nothing is exported a second time.
+
+With no files of ours at all, the launcher finds the zips by their names (`Game-Windows.zip`, `game_linux64.zip`, `Game-HTML5.zip`, `Game-macOS.zip`), skips source and symbol zips, and uses the repo's description. To say more, put a `pushplay.json` at the top of the repo:
+
+```json
+{
+  "id": "star-drift",
+  "name": "Star Drift",
+  "description": "Race a little ship through asteroid fields. One to four players.",
+  "tags": ["racing", "space"],
+  "players": "1-4",
+  "release": {
+    "linux-x64": "StarDrift-*-linux.zip",
+    "windows-x64": "StarDrift-*-windows.zip"
+  },
+  "entry": { "linux-x64": "StarDrift.x86_64", "windows-x64": "StarDrift.exe" },
+  "launch": { "linux-x64": { "args": ["--fullscreen"] } },
+  "art": { "cover": "art/cover.png", "hero": "art/hero.png" }
+}
+```
+
+- **`release`** names the file for each platform in your newest release that isn't a draft or a prerelease. `*` stands for the part that changes, such as the version. `"release": true` keeps finding them by name.
+- **`entry`** is optional. Without it the launcher looks inside the zip for an `index.html` or the program. Name it when the zip holds more than one program.
+- **`art`**: a 720×500 cover and a 1920×450 banner kept in the repo. Without the workflow file the launcher shows PNG, JPG and WebP pictures; SVG and HTML art is drawn by the build, so it needs the workflow. With no art the launcher makes up a cover.
+- Everything except `id`, `name` and `release` is optional. `pushplay check` reads the file and tells you what would make the game look better; it doesn't check the game's files, because they are in your releases.
+- The launcher reads the file from the default branch each time it looks at the repo, so a change shows up without a new release.
+
+This plays in the launcher on the systems your zips are for. A Linux build plays on a Steam Deck; a Windows-only game doesn't. Discover and the phone app take checked builds only: for those, add the workflow file below. It then packages each release you publish from its own files, so there is still only one export.
+
 ## The workflow file
 
 Save this as `.github/workflows/pushplay.yml` (it is [workflow.yml](workflow.yml) in this folder):
@@ -103,6 +151,8 @@ on:
   push:
     branches: ['**']
     paths-ignore: ['**/*.md']
+  release:
+    types: [published] # a game with "release" in its manifest is packaged from your release's own files
   workflow_dispatch:
 
 jobs:
@@ -118,13 +168,16 @@ What it does:
 - On every push, on any branch, it builds the games that changed and checks them. Running it by hand (`workflow_dispatch`) rebuilds every game.
 - On the default branch it publishes them to a release named `pushplay-latest`, where the launcher picks them up. A branch named `beta` publishes to `pushplay-beta`. Other branches only check.
 - `pushplay-latest` is a prerelease, so your repo's own "Latest" release is untouched.
+- For a game with `release` in its manifest, publishing one of your own releases is what triggers it: it takes that release's zips, checks them, renders the art and publishes them to `pushplay-latest`. Pushes only check the manifest.
 - The build itself is shared by every game repo, so there is nothing to keep up to date in yours.
+- Keep both permissions, whatever the game. The shared build asks for `id-token` for every game (it is how an online game proves which repo built it), and GitHub refuses to start a called workflow that asks for more than its caller grants.
+- Keep it in its own file. Called from a workflow that only runs on tags, it would check and publish nothing: it publishes from the default branch, from `beta`, and from a published release.
 
 It lives beside your own release workflow and doesn't affect it: a separate file, separate releases. A game can have a normal release and a PushPlay release side by side.
 
 ### Handing over files from your own build
 
-If a job of yours already exports the game, let PushPlay use those folders instead of building again. Put both jobs in `pushplay.yml`: yours uploads the folders as an artifact, and the PushPlay job takes it with `needs:` and `with:`.
+If your game already attaches its builds to releases, [play from those](#play-from-your-normal-releases) and skip this. Otherwise, if a job of yours exports the game, let PushPlay use those folders instead of building again. This exports on every push, so limit `branches:` to your default branch if the export is slow. Put both jobs in `pushplay.yml`: yours uploads the folders as an artifact, and the PushPlay job takes it with `needs:` and `with:`.
 
 - `artifact`: the name of the artifact your job uploaded.
 - `artifact-path`: the folder in the repo it is unpacked into (default: the repo root), so that the folders named in `build.outputs` exist when the build runs.
@@ -174,6 +227,10 @@ with this in `pushplay.json`:
 "build": { "outputs": { "web": "export/web", "linux-x64": "export/linux" } }
 ```
 
+Artifacts drop the mark that makes a file runnable. That is fine: the build puts it back on each native entry when it packages the game.
+
+Builds made on different runners (Linux and Windows, say) go into one artifact: give each job's upload the same folder layout and a different artifact name, and add a small job that downloads them all and uploads the combined folder under the name you pass as `artifact`. The [Rust example](#rust-or-c-native-builds-only) does this.
+
 `"Web"` and `"Linux"` are the names of the export presets in the project's `export_presets.cfg`; use yours. The export command is the commonly used form: check Godot's documentation for the exact command for your version.
 
 ## Any engine
@@ -211,6 +268,8 @@ For the engine's own export commands, the forms below are the commonly known one
   "tags": ["platformer", "speedrun"]
 }
 ```
+
+If the project already attaches these exports to its releases, drop `build` and use `"release": { "web": "…-web.zip", "linux-x64": "…-linux.zip" }` instead ([Play from your normal releases](#play-from-your-normal-releases)). To export in the PushPlay workflow, use the two-job file under [Handing over files from your own build](#handing-over-files-from-your-own-build).
 
 Export with `godot --headless --export-release "<preset>" <file>` or from the editor. Keep `web.isolated` only if the web export uses threads. The Linux build plays on a Steam Deck; the web build plays everywhere else.
 
@@ -251,6 +310,56 @@ Build for WebGL from the editor's build window (or with Unity's batch mode from 
   "tags": ["exploration", "roguelike"]
 }
 ```
+
+If your CI already attaches `cave-diver-linux.zip` and `cave-diver-windows.zip` to releases, that manifest becomes `"release": { "linux-x64": "cave-diver-*-linux.zip", "windows-x64": "cave-diver-*-windows.zip" }` with no `build`, and you are done.
+
+To build in the PushPlay workflow instead, `build.command` only suits the Linux build (it runs on a Linux runner; `cargo build --release` works there if the toolchain is installed by a step of yours, and the folder must hold only the game, so copy the binary out of `target/release` into `dist/linux`). For Linux and Windows together, build each on its own runner and hand over one artifact:
+
+```yaml
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - { os: ubuntu-latest, folder: linux, file: cave-diver }
+          - { os: windows-latest, folder: windows, file: cave-diver.exe }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo build --release
+      - run: mkdir -p dist/${{ matrix.folder }} && cp target/release/${{ matrix.file }} dist/${{ matrix.folder }}/
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.folder }}
+          path: dist
+
+  combine:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: build-*
+          merge-multiple: true
+          path: dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pushplay-export
+          path: dist
+
+  pushplay:
+    needs: combine
+    uses: Visual-Zone-Development/pushplay-plugin/.github/workflows/build.yml@v1
+    permissions:
+      contents: write
+      id-token: write
+    with:
+      artifact: pushplay-export
+      artifact-path: dist
+```
+
+These are the commonly used forms of those actions; check their documentation for your versions.
 
 Each folder holds the program and every file it needs beside it. With no web build, both art images are required, the game is not play-tested by the check, and it plays only on the systems you built for (not in the phone app or Discover). The game needs its own way to quit (see [Inside the launcher](#inside-the-launcher)).
 

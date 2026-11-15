@@ -104,11 +104,14 @@ The `pushplay-manifest` skill has the field-by-field rules for `pushplay.json`, 
   Refine and re-run until all three look good.
 
 ## 7. Ship
-Update DESIGN.md if the design drifted (set Status to shipped, add a Changelog entry). Use the `release-notes` skill for the player-facing notes. Commit (`Add <Name>`) and push.
+Update DESIGN.md if the design drifted (set Status to shipped, add a Changelog entry). Use the `release-notes` skill for the player-facing notes. Commit (`Add <Name>`).
+
+The game reaches PushPlay through GitHub, so it has to be in a repo there. If the folder has no GitHub remote, say so in plain words and ask the user (with a question tool if you have one) whether to create a repo for it on their account (private is fine) or whether they will; never assume one exists. Then push.
 
 Tell the user:
 - the name, the pitch and the controls
 - what feel the game aims for, and any known gaps
-- that it will appear in PushPlay on their Deck or Legion Go once the GitHub Action finishes (a couple of minutes), and which Plays on labels it earns (a phone game: Phone as well)
+- how to see it, step by step, the first time: open PushPlay (on a Steam Deck, a Legion Go or a PC), choose **Add game → Connect GitHub**, sign in with the code it shows, and pick the game's repo in **My repositories**. It is in the **Library** from then on, once GitHub has finished building it (a couple of minutes), and every later push updates it by itself
+- which Plays on labels it earns (a phone game: Phone as well)
 
 Then suggest they play it and come back with feedback, or with "improve <name>". Give 2–3 specific things to notice while playing, e.g. "does minute two get boring?" or "is the dash satisfying?".

@@ -765,7 +765,7 @@ describe('a game that plays from the repo\'s normal releases', () => {
 })
 
 describe('the template repo', () => {
-  it('is what new-game makes in an empty folder plus a README, and passes nothing PushPlay-specific beyond the workflow file', () => {
+  it('is what new-game makes in an empty folder plus a README, filled in enough to pass the check as it is', () => {
     const out = join(mkdtempSync(join(tmpdir(), 'kit-template-')), 'repo')
     const made = spawnSync('node', [join(SRC, 'template.mjs'), out], { encoding: 'utf8' })
     expect(made.stdout + made.stderr).toMatch(/Wrote the template repo/)
@@ -774,11 +774,17 @@ describe('the template repo', () => {
     const list = (root) => execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' }).trim().split('\n').sort()
     execFileSync('git', ['init', '-q'], { cwd: out })
     expect(list(out)).toEqual([...list(fresh), 'README.md'].sort())
-    for (const file of list(fresh)) expect(readFileSync(join(out, file), 'utf8'), file).toBe(readFileSync(join(fresh, file), 'utf8'))
+    // Only what a maker fills in first differs: the description and tags, and the art's placeholder mark.
+    const filledIn = [MANIFEST_FILE, 'art/cover.svg', 'art/hero.svg']
+    for (const file of list(fresh).filter((f) => !filledIn.includes(f))) expect(readFileSync(join(out, file), 'utf8'), file).toBe(readFileSync(join(fresh, file), 'utf8'))
+    expect(runKit('check.mjs', fresh).output).toMatch(/still the placeholder/)
+    const checked = runKit('check.mjs', out)
+    expect(checked.output).toMatch(/All 1 game\(s\) passed/)
+    expect(checked.status).toBe(0)
     const readme = readFileSync(join(out, 'README.md'), 'utf8')
     expect(readme).toMatch(/Add game → Connect GitHub/)
     expect(readme).not.toMatch(/AGENTS\.md|plugin install|skill/i)
-  })
+  }, 150_000)
 
   it('refuses to write over a folder that already has files', () => {
     const out = mkdtempSync(join(tmpdir(), 'kit-template-'))

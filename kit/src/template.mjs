@@ -4,12 +4,17 @@
 // file), plus a README that says what to do next. Nothing else: no kit, no agent files.
 // Made from new-game so the two can never drift apart; a test compares them.
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { brand, DOCS_URL, MANIFEST_FILE, WORKFLOW_FILE } from './config.mjs'
 import { log } from './repo.mjs'
 
-export const TEMPLATE_GAME = { id: 'my-game', name: 'My Game' }
+export const TEMPLATE_GAME = {
+  id: 'my-game',
+  name: 'My Game',
+  description: 'A starter game: a title screen, a pause menu and settings that work with every input. Make it yours.',
+  tags: ['starter']
+}
 
 /** The command line as people without the kit installed run it. */
 const NPX = `npx github:${brand.pluginRepo}`
@@ -62,6 +67,15 @@ if (process.argv[1] && import.meta.filename === resolve(process.argv[1])) {
   if (made.status !== 0) {
     log(made.stdout + made.stderr)
     process.exit(1)
+  }
+  // A repo made from the template should build and play on its first push, before anything is
+  // changed: so the starter has a description, a tag and art that count as its own.
+  const manifestPath = join(out, MANIFEST_FILE)
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  writeFileSync(manifestPath, JSON.stringify({ ...manifest, description: TEMPLATE_GAME.description, tags: TEMPLATE_GAME.tags }, null, 2) + '\n')
+  for (const kind of ['cover', 'hero']) {
+    const file = join(out, 'art', `${kind}.svg`)
+    writeFileSync(file, readFileSync(file, 'utf8').replace(/<!-- PLACEHOLDER ART:[^>]*-->/, `<!-- The starter's ${kind}: replace it with art for your game (sizes and rules: "The art" in the build guide). -->`))
   }
   writeFileSync(join(out, 'README.md'), templateReadme())
   log(`Wrote the template repo to ${out}`)

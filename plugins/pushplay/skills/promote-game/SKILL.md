@@ -13,7 +13,7 @@ What promoting does:
 3. Creates the repo (public by default), pushes it, and adds the `pushplay-game` topic. The first push builds and publishes the game.
 4. Removes `games/<id>` from the workshop and commits that.
 
-Players don't lose anything: the launcher sees `movedFrom` and moves its tile to the new repo, keeping saves, play time and favorites. If the player follows the account (Add game → Follow a GitHub account), the new repo is picked up on its own.
+Players don't lose anything: the launcher sees `movedFrom` and moves its tile to the new repo, keeping saves, play time and favorites. The player adds the new repo the same way as any other (Add game → Connect GitHub, then pick it in My repositories).
 
 ## 1. Confirm
 - The user has played it and calls it ready. Read `games/<id>/DESIGN.md` and mention unticked Definition of done items in one line; they don't block promoting.
@@ -41,6 +41,6 @@ Create the empty repo with the connector (for example `create_repository`, publi
 ## 4. Hand back
 Tell the user:
 - the new repo URL, and that **future work on the game happens there**: open a new agent session on that repo
-- in PushPlay, following the account picks it up (or Add game → Add one repo); their saves carry over
+- in PushPlay: Add game → Connect GitHub, pick the new repo in My repositories (or Paste repo URL); their saves carry over
 - to list it on Discover, connect the repo in Studio
 - new ideas still start here, in the workshop: "make a game where…"
