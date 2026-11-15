@@ -6,7 +6,7 @@ before any change and update it after. Change a rule here first, then bring asse
 one asset quietly drift. Keep only the sections that apply to this game.
 
 ## Look
-- **Rendering:** <2D canvas shapes / pixel-art sprites / SVG / 3D (three.js) / user-supplied files>
+- **Rendering:** <shapes drawn in code / pixel-art sprites / vector art / 3D models / engine scenes / user-supplied files, and the engine>
 - **Reference style:** <e.g. "Celeste-like pixel art", "Warcraft III: chunky, saturated, hand-painted",
   "flat vector, thick outlines">. Reference images are provided by the user in conversation and never
   committed; describe what they showed here, in words.

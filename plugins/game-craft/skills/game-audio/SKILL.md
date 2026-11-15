@@ -19,19 +19,19 @@ Go through the game's actions and screens and write a table in DESIGN.md under *
 | combo, level up, new best | rising, rewarding | must |
 | ambience, music | the kickoff's mood | must |
 
-Every action and every menu move has a sound ([definition-of-done.md](../game-design/references/definition-of-done.md)). A small set done well beats a large one: 10–20 sounds cover most games.
+Every action and every menu move has a sound ([definition-of-done.md](../game-design/references/definition-of-done.md)).
 
 ## 2. The audio layer: three buses, voices and pause
-What the game needs, whatever provides it (the engine's mixer, an audio library, or a few lines of your own):
+What the game needs, whether the engine's mixer or a few lines of your own provide it:
 
 - **Buses:** a **master** bus with a **music** and an **SFX** bus under it, each with its own volume following a Settings slider (0–1, changed over ~20 ms so it doesn't click).
 - **Sources:** either a synth with two generators, a **tone** (a waveform whose pitch can slide) and a **noise** burst, or sound files; both play into a bus with their own level and pitch.
-- **Voice limits:** the same sound starts at most once per 50 ms; cap the voices playing at once (about 16–24) and drop the oldest or quietest when full. Never drop hurt, low health or UI sounds.
+- **Voice limits:** the same sound starts at most once per 50 ms; cap the voices playing at once (about 16–24) and drop the oldest or quietest when full. Never drop hurt or low-health sounds.
 - **Ducking:** while an important sound plays (hurt, a big explosion, a voice line) pull the music down to about half for 0.3–0.5 s, then let it rise back.
 - **Pause:** fade the master to silence on pause and when the game loses focus or is hidden; restore on resume. Music stops advancing too.
 
 ## 3. SFX recipes
-Each sound is data: waveform, start → end frequency, duration, peak level (0–1). The envelope for all of them is an instant attack and a smooth decay to silence over the duration (a hard cut clicks). Feed the rows to any synth, or use them as the brief when picking sound files ("short, bright, rising").
+Each sound is data: waveform, start → end frequency, duration, peak level (0–1). The envelope for all of them is an instant attack and a smooth decay to silence over the duration (a hard cut clicks). Feed the rows to any synth, or use them as the brief when picking sound files.
 
 | Sound | Waveform | Frequency (Hz) | Duration | Level |
 |---|---|---|---|---|
@@ -49,7 +49,7 @@ Keep each sound behind one name (`sfx.jump`) so game code never holds the number
 
 Variation: randomise pitch ±5–10% on repeated sounds, and keep levels low (0.05–0.3): many sounds stack, and the sum must not clip.
 
-**Bundled files** (the user's or CC0): keep them in the project (an `sfx` and a `music` folder; a compressed format the engine plays, music ≤ ~3 MB), never streamed from another site, and credit them in the project's credits file ([assets.md](../game-design/references/assets.md)). Load them once at startup, not at first use, and play each with its own pitch and level into the right bus. Trim silence from the start so the sound lands on the frame of the action.
+**Bundled files** (the user's or CC0): keep them in the project (an `sfx` and a `music` folder; a compressed format the engine plays, music ≤ ~3 MB), never streamed from another site, and credit them in the project's credits file ([assets.md](../game-design/references/assets.md)). Load them once at startup, not at first use, and play each with its own pitch and level into the right bus.
 
 ## 4. Music
 - **Generated loop:** a tiny step sequencer: a tempo, a 16-step pattern per voice (bass, lead, drums from noise), played on the music bus and stopped while paused. Pick a scale that fits the mood (minor pentatonic for tense, major pentatonic for cozy).
@@ -58,10 +58,10 @@ Variation: randomise pitch ±5–10% on repeated sounds, and keep levels low (0.
 
 ## 5. Mix and verify
 1. Music sits under SFX (music level about half of SFX). Important sounds (hurt, low health) are the loudest and most distinct.
-2. The loudest moment (many hits, an explosion, music at full) doesn't distort; if it does, lower levels or tighten the voice limit rather than turning the master down.
+2. The loudest moment (many hits, an explosion, music at full) doesn't distort; if it does, lower levels or tighten the voice limit.
 3. Pause silences everything, and the music stops advancing (notes queued ahead would otherwise play on). Restart and Quit to title stop the run's loops.
 4. Move each Settings slider (Master, Music, SFX) to 0 and back; each must work.
-5. Play 2 minutes, on the speakers of each target if you can (a phone's speaker loses everything below ~200 Hz, so no sound may live only in the bass; a TV or headphones reveal harshness): is anything grating or too repetitive? Fix it. If you can't hear the game, ask the user to listen and say which sounds annoy.
+5. Play 2 minutes: is anything grating or too repetitive? Fix it. Judge per target: a phone's speaker loses everything below ~200 Hz, so no sound may live only in the bass; a TV or headphones reveal harshness. If you can't hear the game, ask the user to listen.
 6. Update DESIGN.md (*Audio*, Changelog).
 7. Run the project's checks and finish the change the way its rules say.
 
@@ -95,14 +95,10 @@ function noise({ dur = 0.1, gain = 0.2, delay = 0, to = 'sfx' }) {
   g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur)
   s.connect(g).connect(bus[to]); s.start(t)
 }
-const sfx = {
-  jump: () => tone({ freq: 300, end: 700, dur: 0.12 }),
-  hit: () => { noise({ dur: 0.06, gain: 0.25 }); tone({ freq: 120, dur: 0.08, type: 'triangle' }) },
-}
+const sfx = { jump: () => tone({ freq: 300, end: 700, dur: 0.12 }) } // one entry per recipe row
 ```
 
-- **Gesture unlock:** nothing plays before the first key press, click or touch, and a pad's first press isn't a gesture in every browser. Never assume sound is running, and don't count on music on the title screen before the first input.
+- **Gesture unlock:** nothing plays before the first key press, click or touch, and a pad's first press isn't a gesture in every browser. So never assume sound is running, and don't count on title-screen music before the first input.
 - **Pause:** ramp the master gain to 0 (or `ac.suspend()`) on pause and when the page is hidden.
-- **Files:** `.ogg` or `.mp3`; load with `fetch` → `arrayBuffer()` → `ac.decodeAudioData`, play through a buffer source with its own playback rate and gain. A bundled track is a looping buffer source on the music bus; keep the source and `stop()` it.
+- **Files:** `.ogg` or `.mp3`, loaded with `fetch` → `arrayBuffer()` → `ac.decodeAudioData` and played through a buffer source with its own playback rate and gain. A bundled track is a looping buffer source on the music bus; keep it and `stop()` it.
 - **Sequencer:** schedule a bar ahead with delayed tones, on a timer that stops while paused.
-- **Ducking:** `bus.music.gain.setTargetAtTime` down to half the slider's value, then back.
