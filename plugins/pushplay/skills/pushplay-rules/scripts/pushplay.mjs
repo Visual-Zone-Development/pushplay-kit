@@ -14,7 +14,7 @@
 //   pushplay version
 //
 // "pushplay" here is this file: `node <this file> check`, or with no install at all
-// `npx github:Visual-Zone-Development/pushplay-plugin check`.
+// `npx github:Visual-Zone-Development/pushplay-kit check`.
 //
 // The kit is the kit.zip next to this folder. It is unpacked once per version into a cache in your
 // home folder (never into the game's repo), where its packages are installed.
@@ -50,7 +50,7 @@ if (!command || command === 'help' || command === '--help' || command === '-h') 
   process.exit(0)
 }
 if (!['setup', 'version', 'where'].includes(command) && !SCRIPTS[command]) fail(`unknown command "${command}".\n${usage()}`, 2)
-if (!existsSync(ZIP)) fail(`the build kit is missing (${ZIP}). Reinstall the PushPlay skills, or run: npx github:Visual-Zone-Development/pushplay-plugin ${command}`)
+if (!existsSync(ZIP)) fail(`the build kit is missing (${ZIP}). Reinstall the PushPlay skills, or run: npx github:Visual-Zone-Development/pushplay-kit ${command}`)
 
 // One unpacked kit per kit.zip, keyed by its contents, so a new version never runs over an old one.
 const cacheRoot = process.env.PUSHPLAY_CACHE ?? join(process.env.XDG_CACHE_HOME ?? join(homedir(), '.cache'), 'pushplay')
@@ -113,7 +113,7 @@ if (command === 'check' && !process.env.KIT_BROWSER && !existsSync(join(home, '.
   browser({ quiet: true })
 }
 
-const invoked = process.env.npm_command === 'exec' ? 'npx github:Visual-Zone-Development/pushplay-plugin' : 'pushplay'
+const invoked = process.env.npm_command === 'exec' ? 'npx github:Visual-Zone-Development/pushplay-kit' : 'pushplay'
 const run = spawnSync(process.execPath, [join(kit, SCRIPTS[command]), ...args], {
   stdio: 'inherit',
   env: { ...process.env, KIT_REPO_ROOT: process.env.KIT_REPO_ROOT || process.cwd(), KIT_COMMAND: process.env.KIT_COMMAND || invoked }

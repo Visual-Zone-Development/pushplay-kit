@@ -1,6 +1,6 @@
 # Issue tracker: GitHub
 
-Issues and specs for this repo live as GitHub issues in `Visual-Zone-Development/pushplay-plugin`. Use the `gh` CLI for all operations.
+Issues and specs for this repo live as GitHub issues in `Visual-Zone-Development/pushplay-kit`. Use the `gh` CLI for all operations.
 
 ## Conventions
 

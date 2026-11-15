@@ -75,7 +75,7 @@ jobs:
         with: { name: pushplay-export, path: export/ }
   pushplay:
     needs: export
-    uses: Visual-Zone-Development/pushplay-plugin/.github/workflows/build.yml@v1
+    uses: Visual-Zone-Development/pushplay-kit/.github/workflows/build.yml@v1
     with:
       artifact: pushplay-export   # the artifact's name
       artifact-path: export       # the folder in the repo it is unpacked into

@@ -34,7 +34,7 @@ test('new-game in an empty folder leaves the game and one workflow file, and not
   for (const file of ['pushplay.json', 'index.html', 'game.js', 'input.js', 'menu.js', 'art/cover.svg']) assert.ok(files.includes(file), file)
   for (const stray of ['AGENTS.md', 'CLAUDE.md', 'package.json', 'README.md']) assert.ok(!files.includes(stray), stray)
   assert.ok(!existsSync(join(root, 'node_modules')))
-  assert.match(readFileSync(join(root, '.github/workflows/pushplay.yml'), 'utf8'), /uses: Visual-Zone-Development\/pushplay-plugin\/\.github\/workflows\/build\.yml@v1/)
+  assert.match(readFileSync(join(root, '.github/workflows/pushplay.yml'), 'utf8'), /uses: Visual-Zone-Development\/pushplay-kit\/\.github\/workflows\/build\.yml@v1/)
   assert.match(made.output, /pushplay check → must pass/)
 })
 

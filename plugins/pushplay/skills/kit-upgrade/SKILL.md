@@ -32,7 +32,7 @@ The launcher shows a repo that still has the old copy as **"Builds with an old c
 5. `pushplay check` (it checks every game), and fix what it reports (section 3).
 6. Commit on its own (`Remove the old copy of the build kit`) and push.
 
-From then on **there is nothing in the repo to update**: every push is built by the shared build, and the rules and commands come from the PushPlay skills (or `npx github:Visual-Zone-Development/pushplay-plugin <command>` with no skills installed).
+From then on **there is nothing in the repo to update**: every push is built by the shared build, and the rules and commands come from the PushPlay skills (or `npx github:Visual-Zone-Development/pushplay-kit <command>` with no skills installed).
 
 ## 2. Update a JavaScript game's runtime files
 The runtime files are shared code copied into each JavaScript game when it was scaffolded. `pushplay update-runtime` brings them up to the current kit's:

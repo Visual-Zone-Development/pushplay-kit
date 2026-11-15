@@ -30,7 +30,7 @@ What each level adds:
 
 To check on your own machine before pushing, run `pushplay check` in the repo (needs Node.js). It is the same check that runs on GitHub.
 
-Below, `pushplay` stands for `npx github:Visual-Zone-Development/pushplay-plugin`: `pushplay check` means `npx github:Visual-Zone-Development/pushplay-plugin check`. It unpacks its tools into a cache in your home folder, never into your repo.
+Below, `pushplay` stands for `npx github:Visual-Zone-Development/pushplay-kit`: `pushplay check` means `npx github:Visual-Zone-Development/pushplay-kit check`. It unpacks its tools into a cache in your home folder, never into your repo.
 
 | Command | What it does |
 |---|---|
@@ -51,7 +51,7 @@ Below, `pushplay` stands for `npx github:Visual-Zone-Development/pushplay-plugin
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/Visual-Zone-Development/pushplay-plugin/v1/schema/manifest.schema.json",
+  "$schema": "https://raw.githubusercontent.com/Visual-Zone-Development/pushplay-kit/v1/schema/manifest.schema.json",
   "id": "star-courier",
   "name": "Star Courier",
   "description": "Pilot a tiny courier ship through an asteroid field, grabbing parcels before the clock runs out.",
@@ -158,7 +158,7 @@ on:
 
 jobs:
   pushplay:
-    uses: Visual-Zone-Development/pushplay-plugin/.github/workflows/build.yml@v1
+    uses: Visual-Zone-Development/pushplay-kit/.github/workflows/build.yml@v1
     permissions:
       contents: write # publish the builds to this repo's releases
       id-token: write # online games: prove which repo built them
@@ -212,7 +212,7 @@ jobs:
 
   pushplay:
     needs: export
-    uses: Visual-Zone-Development/pushplay-plugin/.github/workflows/build.yml@v1
+    uses: Visual-Zone-Development/pushplay-kit/.github/workflows/build.yml@v1
     permissions:
       contents: write
       id-token: write
@@ -351,7 +351,7 @@ jobs:
 
   pushplay:
     needs: combine
-    uses: Visual-Zone-Development/pushplay-plugin/.github/workflows/build.yml@v1
+    uses: Visual-Zone-Development/pushplay-kit/.github/workflows/build.yml@v1
     permissions:
       contents: write
       id-token: write

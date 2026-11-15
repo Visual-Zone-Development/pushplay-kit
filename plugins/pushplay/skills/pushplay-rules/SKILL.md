@@ -39,7 +39,7 @@ Everywhere in these skills `pushplay <command>` means:
 
 ```sh
 node <skill-dir>/scripts/pushplay.mjs <command>     # this skill's folder
-npx github:Visual-Zone-Development/pushplay-plugin <command>   # with no skills installed
+npx github:Visual-Zone-Development/pushplay-kit <command>   # with no skills installed
 ```
 
 Run it from the game's repo. It never leaves a file in the repo except what the command is for.

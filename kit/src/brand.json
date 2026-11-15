@@ -20,7 +20,7 @@
   "topic": "pushplay-game",
   "domain": "pushplay.gg",
   "launcherRepo": "Visual-Zone-Development/pushplay",
-  "pluginRepo": "Visual-Zone-Development/pushplay-plugin",
+  "pluginRepo": "Visual-Zone-Development/pushplay-kit",
   "buildRef": "v1",
   "relayUrl": "wss://relay.pushplay.gg"
 }

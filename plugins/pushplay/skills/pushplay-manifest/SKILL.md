@@ -9,7 +9,7 @@ Follow the `pushplay-rules` skill (*Manifest*). `pushplay` is the command the `p
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/Visual-Zone-Development/pushplay-plugin/v1/schema/manifest.schema.json",
+  "$schema": "https://raw.githubusercontent.com/Visual-Zone-Development/pushplay-kit/v1/schema/manifest.schema.json",
   "id": "star-courier",
   "name": "Star Courier",
   "description": "Pilot a tiny courier ship through an asteroid field, grabbing parcels before the clock runs out.",

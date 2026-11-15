@@ -10,10 +10,10 @@ Pick the line that is you. Each one ends the same way: in PushPlay, **Add game �
 
 **I can code and want to start one.**
 
-1. Press **Use this template** on the [starter repo](https://github.com/Visual-Zone-Development/pushplay-games), or in an empty folder run `npx github:Visual-Zone-Development/pushplay-plugin new-game my-game`.
-2. Play it: `npx github:Visual-Zone-Development/pushplay-plugin dev`
+1. Press **Use this template** on the [starter repo](https://github.com/Visual-Zone-Development/pushplay-games), or in an empty folder run `npx github:Visual-Zone-Development/pushplay-kit new-game my-game`.
+2. Play it: `npx github:Visual-Zone-Development/pushplay-kit dev`
 3. Write your game in `game.js`. Fill in the description and tags in `pushplay.json` and replace the two pictures in `art/`.
-4. Check it: `npx github:Visual-Zone-Development/pushplay-plugin check`
+4. Check it: `npx github:Visual-Zone-Development/pushplay-kit check`
 5. Push to GitHub.
 6. In PushPlay: Add game → Connect GitHub → pick the repo.
 
@@ -56,14 +56,14 @@ PushPlay reads `pushplay.json` first, for every kind of game. Change the name, t
 |---|---|
 | [The build guide](docs/pushplay-build.md) | What PushPlay needs from a game, whatever it is built with |
 | The shared build (`.github/workflows/build.yml`) | The one job a game repo's workflow file calls to be checked and published |
-| The command line (`npx github:Visual-Zone-Development/pushplay-plugin <command>`) | The same check on your own machine, a dev server, a starter game |
+| The command line (`npx github:Visual-Zone-Development/pushplay-kit <command>`) | The same check on your own machine, a dev server, a starter game |
 | The manifest schema (`schema/manifest.schema.json`) | Editors and agents, for `pushplay.json` |
 | Two sets of agent skills (`plugins/`) | Optional: a coding agent that does all of it for you |
 
 ## The command line
 
 ```
-npx github:Visual-Zone-Development/pushplay-plugin <command>
+npx github:Visual-Zone-Development/pushplay-kit <command>
 ```
 
 | Command | What it does |
@@ -91,7 +91,7 @@ Two plugins of [Agent Skills](https://agentskills.io):
 **Claude Code.** Start it (`claude` in a terminal, or the desktop app), then type these three lines into its message box, one at a time. Each answers with a line saying what was added.
 
 ```
-/plugin marketplace add Visual-Zone-Development/pushplay-plugin
+/plugin marketplace add Visual-Zone-Development/pushplay-kit
 /plugin install game-craft@pushplay
 /plugin install pushplay@pushplay
 ```
@@ -99,7 +99,7 @@ Two plugins of [Agent Skills](https://agentskills.io):
 **Codex, Copilot, Cursor, Gemini CLI and other agents**
 
 ```
-npx skills add Visual-Zone-Development/pushplay-plugin -g
+npx skills add Visual-Zone-Development/pushplay-kit -g
 ```
 
 Install them for yourself (`-g`), not into the game's repo. Then start the agent in an empty folder (for a new game) or in your game's folder, and ask:

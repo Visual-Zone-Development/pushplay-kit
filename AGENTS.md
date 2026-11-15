@@ -15,7 +15,7 @@ This repo is everything on the making side of PushPlay. It holds the build kit t
 
 ### Issue tracker
 
-Issues are tracked in GitHub Issues (`Visual-Zone-Development/pushplay-plugin`) via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues are tracked in GitHub Issues (`Visual-Zone-Development/pushplay-kit`) via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

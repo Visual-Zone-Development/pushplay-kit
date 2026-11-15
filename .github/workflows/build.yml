@@ -2,7 +2,7 @@
 #
 #   jobs:
 #     pushplay:
-#       uses: Visual-Zone-Development/pushplay-plugin/.github/workflows/build.yml@v1
+#       uses: Visual-Zone-Development/pushplay-kit/.github/workflows/build.yml@v1
 #       permissions: { contents: write, id-token: write }
 #
 # It builds every game that changed (on any branch), checks it, and on the default branch
@@ -64,7 +64,7 @@ jobs:
       # The build kit comes from here, never from the game repo.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: Visual-Zone-Development/pushplay-plugin
+          repository: Visual-Zone-Development/pushplay-kit
           ref: v1
           path: kit-source
           persist-credentials: false
@@ -152,7 +152,7 @@ jobs:
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: Visual-Zone-Development/pushplay-plugin
+          repository: Visual-Zone-Development/pushplay-kit
           ref: v1
           path: kit-source
           persist-credentials: false
