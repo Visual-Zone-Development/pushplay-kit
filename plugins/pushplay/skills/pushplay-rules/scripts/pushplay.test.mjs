@@ -43,9 +43,10 @@ test('check runs from the kit’s cache and writes nothing into the repo', opts,
   pushplay(root, 'new-game', 'tidy')
   const before = untracked(root)
   const checked = pushplay(root, 'check')
-  assert.equal(checked.status, 1, checked.output) // the starter still has its placeholder art and no description
+  assert.equal(checked.status, 0, checked.output) // a new game plays before it has its own art or a description
   assert.match(checked.output, /▶ tidy/)
   assert.match(checked.output, /art\/cover\.svg is still the placeholder/)
+  assert.match(checked.output, /Before you share it/)
   assert.deepEqual(untracked(root), before)
 })
 

@@ -116,7 +116,9 @@ describe('build kit', () => {
     expect(index.layout).toBe('collection')
     expect(index.games.good.error).toBeNull()
     expect(index.games.broken.error.message).toMatch(/crashed: nope is not defined/)
-    expect(index.games.untagged.error.message).toMatch(/add "tags"/)
+    // Tags are asked for, not demanded: the game is built, with a note.
+    expect(index.games.untagged.error).toBeNull()
+    expect(output).toMatch(/untagged[\s\S]*⚠ .*add "tags"/)
     expect(output).toMatch(/Building: broken, good, untagged/)
     // Default skips and the ignore file keep tooling and notes out of the build.
     const out = join(root, KIT_DIR, '.work/out/good')
@@ -792,6 +794,33 @@ describe('a game that plays from the repo\'s normal releases', () => {
   })
 })
 
+describe('a brand-new game', () => {
+  it('passes the check untouched and is published, with what is left to do before sharing it', () => {
+    const root = makeRepo(() => {})
+    expect(runKit('new-game.mjs', root, ['fresh-game']).status).toBe(0)
+    const checked = runKit('check.mjs', root)
+    expect(checked.output).not.toMatch(/✗/)
+    expect(checked.output).toMatch(/⚠ .*add a "description"/)
+    expect(checked.output).toMatch(/⚠ .*is still the placeholder/)
+    expect(checked.output).toMatch(/Before you share it, give it a description, your own cover, your own banner and tags\./)
+    expect(checked.status).toBe(0)
+    const { status, index } = runCi(root)
+    expect(status).toBe(0)
+    expect(index.games['fresh-game'].error).toBeNull()
+    expect(Object.keys(index.games['fresh-game'].assets)).toContain('web')
+  }, 150_000)
+
+  it('still fails without "inputs", which the check plays it by', () => {
+    const root = makeRepo((r) => {
+      write(join(r, 'index.html'), DRAW)
+      write(join(r, MANIFEST_FILE), manifest('no-inputs', { inputs: undefined }))
+    })
+    const { status, output } = runKit('check.mjs', root)
+    expect(status).toBe(1)
+    expect(output).toMatch(/✗ .*add "inputs"/)
+  })
+})
+
 describe('the template repo', () => {
   it('is what new-game makes in an empty folder plus a README, filled in enough to pass the check as it is', () => {
     const out = join(mkdtempSync(join(tmpdir(), 'kit-template-')), 'repo')
@@ -802,12 +831,11 @@ describe('the template repo', () => {
     const list = (root) => execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' }).trim().split('\n').sort()
     execFileSync('git', ['init', '-q'], { cwd: out })
     expect(list(out)).toEqual([...list(fresh), 'README.md'].sort())
-    // Only what a maker fills in first differs: the description and tags, and the art's placeholder mark.
-    const filledIn = [MANIFEST_FILE, 'art/cover.svg', 'art/hero.svg']
-    for (const file of list(fresh).filter((f) => !filledIn.includes(f))) expect(readFileSync(join(out, file), 'utf8'), file).toBe(readFileSync(join(fresh, file), 'utf8'))
-    expect(runKit('check.mjs', fresh).output).toMatch(/still the placeholder/)
+    // Only the manifest differs: the template's starter has a description and a tag.
+    for (const file of list(fresh).filter((f) => f !== MANIFEST_FILE)) expect(readFileSync(join(out, file), 'utf8'), file).toBe(readFileSync(join(fresh, file), 'utf8'))
     const checked = runKit('check.mjs', out)
     expect(checked.output).toMatch(/All 1 game\(s\) passed/)
+    expect(checked.output).toMatch(/Before you share it, give it your own cover and your own banner\./)
     expect(checked.status).toBe(0)
     const readme = readFileSync(join(out, 'README.md'), 'utf8')
     expect(readme).toMatch(/Add game → Connect GitHub/)

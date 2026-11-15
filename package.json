@@ -18,7 +18,7 @@
   "bin": {
     "pushplay": "plugins/pushplay/skills/pushplay-rules/scripts/pushplay.mjs"
   },
-  "version": "15.0.0",
+  "version": "16.0.0",
   "files": [
     "plugins/pushplay/skills/pushplay-rules/scripts/pushplay.mjs",
     "plugins/pushplay/skills/pushplay-rules/kit.zip"

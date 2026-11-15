@@ -65,15 +65,15 @@ Below, `pushplay` stands for `npx github:Visual-Zone-Development/pushplay-kit`: 
 }
 ```
 
-`id`, `name` and `entry` are required by the schema. The check also requires `description`, `tags` and `inputs`. A game that [plays from its normal releases](#play-from-your-normal-releases) needs only `id`, `name` and `release`; the rest is then advice.
+`id`, `name` and `entry` are required by the schema, and the check requires `inputs` (it plays the game by them). It asks for a `description`, `tags` and your own art with a ⚠, and tells you what is left before you share the game: a brand-new game plays, and is published, without them. A game that [plays from its normal releases](#play-from-your-normal-releases) needs only `id`, `name` and `release`; the rest is then advice.
 
 | Field | Meaning |
 |---|---|
 | `id` | **Required.** Lowercase letters, digits and dashes, up to 64 characters. Permanent: players' saves and the game's listing follow it, so never change it. |
 | `name` | **Required.** The title players see, up to 80 characters. |
 | `entry` | **Required.** What starts the game, per platform: `web` (an HTML page), `linux-x64`, `linux-arm64`, `windows-x64`, `darwin-arm64`, `darwin-x64` (a program). With `build.outputs`, each is a path inside that platform's folder. |
-| `description` | **Required by the check**, at least 20 characters. 1–3 plain sentences: what you do and what makes it fun. Shown in the library. |
-| `tags` | **Required by the check.** 2–5 lowercase words players filter the library by (8 at most): genre first (`"racing"`, `"puzzle"`), then setting or style (`"space"`, `"pixel art"`), and `"local multiplayer"`, `"online multiplayer"` or `"party"` when they apply. Letters, digits, spaces, `-`, `&` and `'`, up to 24 characters each. |
+| `description` | **Asked for by the check**, at least 20 characters. 1–3 plain sentences: what you do and what makes it fun. Shown in the library. |
+| `tags` | **Asked for by the check.** 2–5 lowercase words players filter the library by (8 at most): genre first (`"racing"`, `"puzzle"`), then setting or style (`"space"`, `"pixel art"`), and `"local multiplayer"`, `"online multiplayer"` or `"party"` when they apply. Letters, digits, spaces, `-`, `&` and `'`, up to 24 characters each. |
 | `inputs` | **Required by the check.** What the whole game, gameplay included, can be played with: any of `"gamepad"`, `"keyboard"`, `"mouse"`, `"touch"`. List only what works. |
 | `version` | A label players see next to the build, such as `1.2.0`. It is not what makes the launcher update: every new build does that. Change it when you want players to see a new number. |
 | `release` | Play the game from the repo's normal GitHub releases, with nothing built for PushPlay. `true` finds each platform's zip by its name; an object names them: `{ "linux-x64": "Game-*-linux.zip" }`. See [Play from your normal releases](#play-from-your-normal-releases). |
@@ -390,7 +390,7 @@ Each folder holds the program and every file it needs beside it. With no web bui
 
 | Kind of game | What is checked |
 |---|---|
-| **Every game** | The manifest is valid; `description`, `tags` and `inputs` are there; art files exist and aren't placeholders; every `entry` exists. |
+| **Every game** | The manifest is valid; `inputs` is there; art files that are named exist; every `entry` exists. A missing `description` or `tags`, and art that is still the starter's placeholder, are ⚠ notes: the game still passes. |
 | **A web build** (your own engine, or an engine's export) | Must not crash, must not request the internet, must not open `alert` / `confirm` dialogs, must have no missing files, and must show a picture within 30 seconds (a loading screen counts). Pausing and menus are only reported (⚠), never failed. Nothing inside an exported folder is scanned. An `F10` binding in your own JavaScript is only pointed out. |
 | **A JavaScript game on the runtime files** | All of the above within 3 seconds, plus every play pass: a controller, keyboard only (Enter starts, Esc pauses), mouse only, touch, a 16:9 window at 2× pixels, and for a `phone` game a touch-only pass at phone size. See [The runtime files](#the-runtime-files-optional-javascript-only). |
 | **A native build** | The entry exists in its folder and is a real program for that platform. It is not played. |
@@ -405,10 +405,10 @@ The messages you are most likely to see:
 | `the game opened a alert() dialog, which blocks controller input; draw UI in the game instead` | Replace `alert`, `confirm` and `prompt` with something drawn in the game, or keep them behind `if (!window.pushplay)`. |
 | `after 30s the screen is still one flat color. The game should show something (a loading screen counts) while it starts` | Draw a loading screen straight away. If the game never starts, look for `the game crashed: …` or `missing file: … (404)` above it. A threaded engine export needs `"web": { "isolated": true }`. |
 | `missing file: <path> (404)` | The page asks for a file that isn't in the build folder. Check the path and its upper and lower case. |
-| `add a "description" of 1–3 sentences (at least 20 characters)` | Write it in `pushplay.json`. |
-| `add "tags" (1–8 lowercase genre and style words, e.g. ["arcade", "space"]) so players can filter the library` | Add them. |
+| ⚠ `add a "description" of 1–3 sentences (at least 20 characters)` | Write it in `pushplay.json` before you share the game. |
+| `add "tags" (1–8 lowercase genre and style words, e.g. ["arcade", "space"]) so players can filter the library` (⚠) | Add them before you share the game. |
 | `add "inputs": ["gamepad", "keyboard", "mouse", "touch"] (drop the ones gameplay can't support; menus must work with all four)` | Add the ones the game really plays with. |
-| `<file> is still the placeholder. Design real cover art for this game` | Replace the starter image with your own (see [The art](#the-art)). |
+| ⚠ `<file> is still the placeholder, so the library shows the starter's picture` | Replace the starter image with your own before you share the game (see [The art](#the-art)). |
 | `a game with no web build needs art.cover and art.hero (there is no screenshot to make them from)` | Add both images and the `art` field. |
 | `entry.linux-x64 "<file>" isn't a Linux program (an ELF binary, an AppImage or a script starting with #!)` | Point `entry` at the program itself, not at a folder, an archive or a data file. The Windows and Mac messages read `isn't a Windows program (.exe)` and `isn't a Mac program (the file inside Game.app/Contents/MacOS/)`. |
 | `entry.<platform> "<file>" isn't in <folder>` | `entry` is a path **inside** the `build.outputs` folder, not from the repo root. |
@@ -578,7 +578,7 @@ If you are starting a JavaScript game from nothing, PushPlay has a small set of 
 pushplay new-game <id> [--workshop] [--vite] [--online --players 2-4 | --party [--controller pad|custom|motion]] [--phone portrait|landscape] [--name "Title"]
 ```
 
-It writes a working starter with title, pause and settings screens, the runtime files, `pushplay.json`, placeholder art (which the check won't accept: replace it), and the workflow file if the repo has none. `--workshop` puts the game in `games/<id>/` so one repo can hold many; `--vite` adds a bundler for npm packages such as three.js.
+It writes a working starter with title, pause and settings screens, the runtime files, `pushplay.json`, placeholder art (the check notes it until you replace it), and the workflow file if the repo has none. `--workshop` puts the game in `games/<id>/` so one repo can hold many; `--vite` adds a bundler for npm packages such as three.js.
 
 | File | What it does |
 |---|---|

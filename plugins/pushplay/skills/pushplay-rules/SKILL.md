@@ -12,7 +12,7 @@ PushPlay is a launcher: it follows a game's GitHub repo and plays its builds on 
 ## 1. What every game must do, whatever it is built with
 
 1. **A manifest.** `pushplay.json` next to the game (the repo root, or `games/<id>/` in a workshop repo of many games). Required: `id` (permanent: saves and the listing follow it), `name`, `entry`; the check also requires `description`, `tags` and `inputs`. Fields and fixes: the `pushplay-manifest` skill.
-2. **Art.** `art/cover` at 720×500 **with** the title, `art/hero` at 1920×450 **without** it (`.svg`, `.html` or `.png`). The check fails on placeholder art. The `cover-art` skill makes both.
+2. **Art.** `art/cover` at 720×500 **with** the title, `art/hero` at 1920×450 **without** it (`.svg`, `.html` or `.png`). The check passes a new game with placeholder art but notes it: a game isn't finished until it has its own. The `cover-art` skill makes both.
 3. **A build PushPlay can use**, one of:
    - the folder as it is (`entry.web`, usually `index.html`), or the repo's npm `build` script (output `dist`);
    - the game's own build: `"build": { "outputs": { "web": "export/web", "linux-x64": "export/linux" } }` names the finished folder per platform and each `entry.<platform>` is a path inside it. The folders are committed, made by `"build": { "command": "…" }`, or handed over by the repo's own workflow as an Actions artifact;

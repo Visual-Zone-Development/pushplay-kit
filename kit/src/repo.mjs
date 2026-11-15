@@ -206,7 +206,7 @@ export function validateManifest(game, manifest) {
         const near = nearestField(name, e.instancePath)
         errors.push(`${where}: ${at}"${name}" isn't a field${near ? `. Did you mean "${near}"?` : ` (the fields are listed at ${DOCS_URL}#the-manifest)`}`)
       }
-      return { errors, warnings }
+      return { errors, warnings, share: [] }
     }
     for (const e of found) {
       // "must match one of" lines only repeat what the specific lines beside them say.
@@ -222,12 +222,19 @@ export function validateManifest(game, manifest) {
   }
   if (game.rel && manifest.id !== game.id) errors.push(`${where}: "id" must match the folder name ("${game.id}")`)
   const mode = buildMode(game, manifest)
-  // A game that plays from its normal releases needs nothing beyond its name: the rest only
-  // makes it look and filter better in the library.
-  const wanted = (message) => (mode === 'release' ? warnings : errors).push(message)
+  // What makes a game look and filter better in the library is asked for, never demanded: a
+  // brand-new game plays (and is published) before it has any of it. `share` names what is
+  // still to do before showing the game to anyone.
+  const share = []
+  const wanted = (message, what) => {
+    warnings.push(message)
+    if (what) share.push(what)
+  }
+  /** What the check plays the game by, so it has to be there (except for a game that plays from its releases, which isn't played). */
+  const needed = (message) => (mode === 'release' ? warnings : errors).push(message)
   if (manifest.release && manifest.build) errors.push(`${where}: "release" plays the game from the repo's normal releases, so there is nothing to build: remove "build" (or remove "release" to have it built here)`)
   if (!manifest.description || manifest.description.trim().length < MIN_DESCRIPTION) {
-    wanted(`${where}: add a "description" of 1–3 sentences (at least ${MIN_DESCRIPTION} characters)`)
+    wanted(`${where}: add a "description" of 1–3 sentences (at least ${MIN_DESCRIPTION} characters). Players read it in the library`, 'a description')
   }
 
   const command = manifest.build?.command
@@ -274,17 +281,17 @@ export function validateManifest(game, manifest) {
     else if (mode === 'release' && /\.(svg|html)$/i.test(rel)) {
       warnings.push(`art.${kind} "${rel}" is drawn by the ${brand.name} build, so the launcher only shows it once the workflow file is added. Without the workflow, use a .png, .jpg or .webp`)
     } else if (/\.(svg|html)$/i.test(rel) && readFileSync(file, 'utf8').includes('PLACEHOLDER ART')) {
-      errors.push(`${display(file)} is still the placeholder. Design real ${kind} art for this game`)
+      wanted(`${display(file)} is still the placeholder, so the library shows the starter's picture. Design real ${kind} art for this game`, kind === 'cover' ? 'your own cover' : 'your own banner')
     }
   }
   if (!manifest.controls) warnings.push(`set "controls": "gamepad" once the game works with a controller`)
-  if (!manifest.tags?.length) wanted(`${where}: add "tags" (1–8 lowercase genre and style words, e.g. ["arcade", "space"]) so players can filter the library`)
-  if (!manifest.inputs?.length) wanted(`${where}: add "inputs": ["gamepad", "keyboard", "mouse", "touch"] (drop the ones gameplay can't support; menus must work with all four)`)
+  if (!manifest.tags?.length) wanted(`${where}: add "tags" (1–8 lowercase genre and style words, e.g. ["arcade", "space"]) so players can filter the library`, 'tags')
+  if (!manifest.inputs?.length) needed(`${where}: add "inputs": ["gamepad", "keyboard", "mouse", "touch"] (drop the ones gameplay can't support; menus must work with all four)`)
   if (manifest.phone && manifest.inputs?.length && !manifest.inputs.includes('touch')) {
     errors.push(`${where}: a phone game ("phone": { "orientation": "${manifest.phone.orientation}" }) is played with touch alone, so "inputs" must include "touch" (the phone pass plays it that way)`)
   }
 
-  return { errors, warnings }
+  return { errors, warnings, share }
 }
 
 /**

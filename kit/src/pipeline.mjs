@@ -48,7 +48,7 @@ export function launchBrowser() {
 export async function buildGame(game, browser, { pack = true, beforePack } = {}) {
   const { id } = game
   const manifest = readManifest(game)
-  const { errors, warnings } = validateManifest(game, manifest)
+  const { errors, warnings, share } = validateManifest(game, manifest)
   if (errors.length) throw new GameError(id, errors.join('\n'))
 
   const out = outDir(id)
@@ -84,7 +84,7 @@ export async function buildGame(game, browser, { pack = true, beforePack } = {})
     if (problems.length) throw new GameError(id, problems.join('\n'))
     if (!webEntry && !Object.keys(natives).length) {
       warnings.push(`the game's files come from the repo's normal releases, so they aren't checked here: only ${display(game.manifestPath)} and the art are. The launcher plays the newest release as it is`)
-      return { id, manifest, out, files: {}, warnings, platforms: [], fromRelease: true }
+      return { id, manifest, out, files: {}, warnings, share, platforms: [], fromRelease: true }
     }
     if (!webEntry && !(manifest.art?.cover && manifest.art?.hero)) {
       throw new GameError(id, `to publish a ${brand.name} build of a game with no web build, add art.cover and art.hero (there is no screenshot to make them from)`)
@@ -141,7 +141,7 @@ export async function buildGame(game, browser, { pack = true, beforePack } = {})
   if (!browser) {
     // No headless browser here (its download was blocked): the static checks above still ran.
     warnings.push('no headless browser, so the play passes (controller, keyboard, mouse, touch, phone), the art and the screenshot were skipped. Run `' + CMD + ' setup` (or set KIT_BROWSER to a Chrome/Chromium executable) to run them; GitHub Actions runs them on push')
-    return { id, manifest: shippedFor(webEntry ? { web: webEntry } : Object.fromEntries(Object.entries(natives).map(([p, n]) => [p, n.entry]))), out, files: {}, warnings, platforms, skipped: true }
+    return { id, manifest: shippedFor(webEntry ? { web: webEntry } : Object.fromEntries(Object.entries(natives).map(([p, n]) => [p, n.entry]))), out, files: {}, warnings, share, platforms, skipped: true }
   }
   const net = webEntry && manifest.online ? netLibrary(game.dir) : null
   if (net) warnings.push(...net.warnings)
@@ -180,7 +180,7 @@ export async function buildGame(game, browser, { pack = true, beforePack } = {})
     if (beforePack) warnings.push(...((await beforePack(out, shipped)) ?? []))
   }
 
-  return { id, manifest: shipped, out, platforms, files: pack ? packageGame(id, out, { web: Boolean(webEntry), natives, shippedFor, art }) : {}, warnings }
+  return { id, manifest: shipped, out, platforms, files: pack ? packageGame(id, out, { web: Boolean(webEntry), natives, shippedFor, art }) : {}, warnings, share }
 }
 
 /**

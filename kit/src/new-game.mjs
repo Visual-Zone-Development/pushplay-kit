@@ -208,9 +208,9 @@ if (party) {
   if (controller === 'motion') log(`     Motion: const motion = createMotion(party) from motion.js; motion.update(dt) each frame, then motion.of(id).tilt / .wheel / .swings. See ${DOCS_URL}#party-games`)
 }
 const target = single ? '' : ` ${id}`
-log(`  2. Fill in "description" and "tags" in ${at}${MANIFEST_FILE} (drop inputs gameplay can't support).`)
-log(`  3. Replace ${at}art/cover.svg and hero.svg with real art.`)
-log(`  4. ${CMD} dev${target}   → play it in a browser (add ?debug to the URL for the state overlay)`)
-log(`  5. ${CMD} check${target} → must pass before pushing`)
-log(`  6. Push the repo to GitHub. In ${brand.name}: Add game → Connect GitHub → pick this repo. It is in your library from then on, and every push updates it.`)
+log(`  2. Before you share it: fill in "description" and "tags" in ${at}${MANIFEST_FILE} (drop inputs gameplay can't support),`)
+log(`     and replace ${at}art/cover.svg and hero.svg with real art. It plays without them.`)
+log(`  3. ${CMD} dev${target}   → play it in a browser (add ?debug to the URL for the state overlay)`)
+log(`  4. ${CMD} check${target} → must pass for the game to be published (it plays the game with every input and says what is wrong)`)
+log(`  5. Push the repo to GitHub. In ${brand.name}: Add game → Connect GitHub → pick this repo. It is in your library from then on, and every push updates it.`)
 if (vite) log(`  npm packages: npm install <pkg>${single ? '' : ` (in games/${id}/)`}`)

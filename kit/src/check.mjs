@@ -10,6 +10,9 @@ import { ART, brand, CHECK_RUN_MS, CMD, DOCS_URL, MANIFEST_FILE, OLD_KIT_DIR, VI
 import { display, listGames, log, layout, ROOT } from './repo.mjs'
 import { ART_DIR, buildGame, launchBrowser } from './pipeline.mjs'
 
+/** "a, b and c". */
+const list = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items.at(-1)}` : items[0])
+
 const wanted = process.argv.slice(2).filter((a) => !a.startsWith('--'))
 const games = listGames()
 if (!games.length) {
@@ -44,6 +47,7 @@ for (const game of selected) {
     }
     if (result.skipped) {
       log('  ✓ builds (not played: no browser)')
+      if (result.share?.length) log(`  Before you share it, give it ${list(result.share)}.`)
       continue
     }
     // Outside the repo (nothing the check does leaves files in it), so the full path.
@@ -52,6 +56,7 @@ for (const game of selected) {
     log(`    ${art('cover')}  (library tile, ${ART.cover.width}×${ART.cover.height})`)
     log(`    ${art('hero')}  (detail banner, ${ART.hero.width}×${ART.hero.height})`)
     if (result.platforms.includes('web')) log(`    ${art('screenshot')}  (the game after ${CHECK_RUN_MS / 1000}s at ${VIEWPORT.width}×${VIEWPORT.height})`)
+    if (result.share?.length) log(`  Before you share it, give it ${list(result.share)}.`)
     const phone = result.manifest.phone?.orientation
     for (const o of phone === 'any' ? ['portrait', 'landscape'] : phone ? [phone] : []) {
       const v = VIEWPORT_PHONE[o]

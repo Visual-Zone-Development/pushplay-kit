@@ -68,15 +68,11 @@ if (process.argv[1] && import.meta.filename === resolve(process.argv[1])) {
     log(made.stdout + made.stderr)
     process.exit(1)
   }
-  // A repo made from the template should build and play on its first push, before anything is
-  // changed: so the starter has a description, a tag and art that count as its own.
+  // The starter says what it is, so a repo made from the template reads well in the library
+  // before anything is changed. Its art stays the placeholder new-game writes.
   const manifestPath = join(out, MANIFEST_FILE)
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
   writeFileSync(manifestPath, JSON.stringify({ ...manifest, description: TEMPLATE_GAME.description, tags: TEMPLATE_GAME.tags }, null, 2) + '\n')
-  for (const kind of ['cover', 'hero']) {
-    const file = join(out, 'art', `${kind}.svg`)
-    writeFileSync(file, readFileSync(file, 'utf8').replace(/<!-- PLACEHOLDER ART:[^>]*-->/, `<!-- The starter's ${kind}: replace it with art for your game (sizes and rules: "The art" in the build guide). -->`))
-  }
   writeFileSync(join(out, 'README.md'), templateReadme())
   log(`Wrote the template repo to ${out}`)
 }
