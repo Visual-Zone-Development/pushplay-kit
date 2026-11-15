@@ -1,6 +1,6 @@
 # playtest in a PushPlay game
 
-The general `playtest` skill covers driving the game headlessly with bots, measuring runs, and turning that into a balance report. This page gives the PushPlay side: what the script starts from, what it reads, and where findings go. AGENTS.md *Flow* is the rule (`state.screen` and `window.__game`).
+The general `playtest` skill covers driving the game headlessly with bots, measuring runs, and turning that into a balance report. This page gives the PushPlay side: what the script starts from, what it reads, and where findings go. The rules are in the `pushplay-rules` skill: [menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md) (*Flow*) (`state.screen` and `window.__game`).
 
 ## Touch
 
@@ -10,7 +10,7 @@ The general `playtest` skill covers driving the game headlessly with bots, measu
 
 ## Debug hooks and the check
 
-- Start from the repro script in [debugging.md](../debugging.md): the build kit's Playwright, `npm run dev`, and a virtual gamepad on a timeline.
+- Start from the repro script in [debugging.md](../debugging.md): the build kit's Playwright, `pushplay dev`, and a virtual gamepad on a timeline.
 - Write bots of 2–3 skill levels. Each tick they read `window.__game.state` and choose inputs.
 - Every second, log the time, `state.screen`, score, health, level or wave, entity counts, and fps (from `requestAnimationFrame` timing).
 - Route the findings:

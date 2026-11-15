@@ -45,10 +45,15 @@ These stay, because they are this plugin's own conventions and any project can u
 
 When a general skill has a recipe that only makes sense with PushPlay's runtime files, the recipe goes on that skill's page in the PushPlay plugin: `plugins/pushplay/skills/pushplay-runtime/references/craft/<skill>.md`. Every game-craft skill has a page there, even if it only says "nothing beyond AGENTS.md".
 
-## What a game repo gets
+## Extra rules for `pushplay`
 
-`node scripts/build-template.mjs <out>` writes what a PushPlay game repo is made of, minus the build kit: everything in `repo-files/` (the game repo's `AGENTS.md`, `CLAUDE.md`, `package.json`, `tools/`, …) plus every skill of both plugins, flat, in `.claude/skills/`. The PushPlay release turns that folder and the build kit into `kit.zip`, which `npm run update-kit` installs in game repos.
+- **The plugin is optional.** What PushPlay requires of a game is written in `docs/pushplay-build.md`, for people with no agent. A skill can explain more and do the work, but a requirement that exists only in a skill is a bug.
+- **A game repo holds only the game:** its files, `pushplay.json`, its art and one workflow file. No skill tells an agent to add anything else for PushPlay's sake: no `AGENTS.md`, no kit folder, no npm scripts, no skills.
+- **One command.** Everything runs through `pushplay <command>` (`check`, `dev`, `new-game`, `setup`, `art`, `art-shots`, `update-runtime`, `promote`, `migrate`, `where`), which the `pushplay-rules` skill defines as `node <skill-dir>/scripts/pushplay.mjs`. Other skills say once, near the top, "`pushplay` is the command the `pushplay-rules` skill gives you", and then just write the command. Never `npm run check` and the like: game repos have no such scripts.
+- **Rules live in `pushplay-rules`.** Other skills start with "Follow the `pushplay-rules` skill" and link to its reference files for detail.
+- **Any kind of game.** PushPlay takes engine exports and native builds as well as JavaScript. A skill that only applies to JavaScript games built on the runtime files says so at the top, and says what to do otherwise.
+- **PushPlay must not change a game's normal release.** Where a skill adds something for the launcher (an exit item, no analytics, a key that is reserved), it shows how to keep it out of the normal release: `if (window.pushplay)` in a web game, `PUSHPLAY=1` in a native one, `PUSHPLAY_BUILD=1` at build time.
 
-- Skill names are unique across both plugins, because they share one folder there.
-- `repo-files/AGENTS.md` is the game repo's rule book and names every skill in its *Skills* section; a test fails when a skill is added without a line there.
-- `plugins/pushplay/skills/new-game/kit.zip` is that same `kit.zip`, committed by the PushPlay release so `new-game` can set up a whole project with no download. Never edit or rebuild it by hand; it is left out of the copy that goes into game repos.
+## Files the release writes
+
+`plugins/pushplay/skills/pushplay-rules/kit.zip` (the build kit the command line unpacks), `.github/workflows/build.yml`, `schema/manifest.schema.json` and `docs/workflow.yml` come from the PushPlay release. Never edit or rebuild them by hand.

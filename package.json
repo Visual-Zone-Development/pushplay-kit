@@ -1,15 +1,21 @@
 {
-  "name": "pushplay-plugin",
-  "private": true,
+  "name": "pushplay",
   "type": "module",
-  "description": "Agent skills for making web games: general game-making craft (game-craft) and everything specific to PushPlay (pushplay).",
+  "description": "Run the PushPlay build kit against a game repo (check, dev, new-game, migrate), and the agent skills for making games.",
   "scripts": {
     "lint": "node scripts/lint-skills.mjs",
-    "test": "node --test \"scripts/*.test.mjs\" \"plugins/pushplay/skills/new-game/scripts/*.test.mjs\"",
-    "test:browser": "node --test \"plugins/pushplay/skills/input-walkthrough/scripts/*.test.mjs\"",
-    "build-template": "node scripts/build-template.mjs"
+    "test": "node --test \"scripts/*.test.mjs\" \"plugins/pushplay/skills/pushplay-rules/scripts/*.test.mjs\" \"plugins/pushplay/hooks/*.test.mjs\"",
+    "test:browser": "node --test \"plugins/pushplay/skills/input-walkthrough/scripts/*.test.mjs\""
   },
   "engines": {
     "node": ">=20.19"
-  }
+  },
+  "bin": {
+    "pushplay": "plugins/pushplay/skills/pushplay-rules/scripts/pushplay.mjs"
+  },
+  "version": "14.0.0",
+  "files": [
+    "plugins/pushplay/skills/pushplay-rules/scripts/pushplay.mjs",
+    "plugins/pushplay/skills/pushplay-rules/kit.zip"
+  ]
 }

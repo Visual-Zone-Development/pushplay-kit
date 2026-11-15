@@ -1,6 +1,6 @@
 # game-audio in a PushPlay game
 
-The general `game-audio` skill covers the sound list, the recipes as tone and noise parameters, variation, music structure and the mix. This page gives the PushPlay side: how to do it with `audio.js`. AGENTS.md *Audio* and *Settings* are the rules.
+The general `game-audio` skill covers the sound list, the recipes as tone and noise parameters, variation, music structure and the mix. This page gives the PushPlay side: how to do it with `audio.js`. The rules are in the `pushplay-rules` skill: [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Audio*) and [screens.md](../../../pushplay-rules/references/screens.md) (*Settings*).
 
 ## Settings
 

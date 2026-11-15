@@ -1,6 +1,6 @@
 # camera in a PushPlay game
 
-The general `camera` skill covers follow, dead zones, look-ahead, room locks, framing, zoom, shake and 3D cameras. This page gives the PushPlay side. AGENTS.md *Controls*, *Settings* and *Screens and scaling* are the rules.
+The general `camera` skill covers follow, dead zones, look-ahead, room locks, framing, zoom, shake and 3D cameras. This page gives the PushPlay side. The rules are in the `pushplay-rules` skill: [controls.md](../../../pushplay-rules/references/controls.md) (*Controls*) and [screens.md](../../../pushplay-rules/references/screens.md) (*Settings*, *Screens and scaling*).
 
 ## Input
 

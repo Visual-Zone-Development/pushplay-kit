@@ -1,6 +1,6 @@
 # threejs-models in a PushPlay game
 
-The general `threejs-models` skill covers 3D models built in three.js code, with a toolkit and a 3D guide. This page gives the PushPlay side of that guide: setup, the render surface, the HUD canvas and the budget rows that name the kit. AGENTS.md *Screens and scaling*, *Controls*, *Menus*, *Performance* and *Tech* are the rules, and [3d.md](../3d.md) is the full PushPlay 3D guide.
+The general `threejs-models` skill covers 3D models built in three.js code, with a toolkit and a 3D guide. This page gives the PushPlay side of that guide: setup, the render surface, the HUD canvas and the budget rows that name the kit. The rules are in the `pushplay-rules` skill: [screens.md](../../../pushplay-rules/references/screens.md) (*Screens and scaling*, *Performance*, *Tech*), [controls.md](../../../pushplay-rules/references/controls.md) (*Controls*) and [menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md) (*Menus*), and [3d.md](../3d.md) is the full PushPlay 3D guide.
 
 ## Input
 
@@ -46,7 +46,7 @@ The general `threejs-models` skill covers 3D models built in three.js code, with
 - **Setup:**
 
   ```sh
-  npm run new-game <id> --vite
+  pushplay new-game <id> --vite
   npm install three
   ```
 

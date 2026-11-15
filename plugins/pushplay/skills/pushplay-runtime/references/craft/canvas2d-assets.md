@@ -1,6 +1,6 @@
 # canvas2d-assets in a PushPlay game
 
-The general `canvas2d-assets` skill is a toolkit for drawing and animating 2D assets on canvas, with an asset gallery page for renders. This page gives the PushPlay side: where the toolkit goes, how the gallery stays out of the build, and crispness under `fitCanvas`. AGENTS.md *Screens and scaling*, *Input hints*, *Performance* and *Tech* are the rules.
+The general `canvas2d-assets` skill is a toolkit for drawing and animating 2D assets on canvas, with an asset gallery page for renders. This page gives the PushPlay side: where the toolkit goes, how the gallery stays out of the build, and crispness under `fitCanvas`. The rules are in the `pushplay-rules` skill: [screens.md](../../../pushplay-rules/references/screens.md) (*Screens and scaling*, *Performance*, *Tech*) and [controls.md](../../../pushplay-rules/references/controls.md) (*Input hints*).
 
 ## Input
 

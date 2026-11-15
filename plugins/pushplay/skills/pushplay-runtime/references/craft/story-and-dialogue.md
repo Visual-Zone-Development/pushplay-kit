@@ -1,6 +1,6 @@
 # story-and-dialogue in a PushPlay game
 
-The general `story-and-dialogue` skill covers the story bible, the premise and the beats between levels. This page gives the PushPlay side: the box that shows a beat. AGENTS.md *Controls*, *Input hints*, *Saves* and *Settings* are the rules. For conversations with choices, see [dialogue.md](dialogue.md).
+The general `story-and-dialogue` skill covers the story bible, the premise and the beats between levels. This page gives the PushPlay side: the box that shows a beat. The rules are in the `pushplay-rules` skill: [controls.md](../../../pushplay-rules/references/controls.md) (*Controls*, *Input hints*), [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Saves*) and [screens.md](../../../pushplay-rules/references/screens.md) (*Settings*). For conversations with choices, see [dialogue.md](dialogue.md).
 
 ## Input
 

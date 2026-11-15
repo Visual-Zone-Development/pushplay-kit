@@ -76,10 +76,21 @@ test('a general skill may not mention PushPlay, its commands or its runtime file
   const root = fixture({
     'plugins/game-craft/skills/game-ui/SKILL.md': skill('game-ui', body),
     'plugins/game-craft/skills/game-ui/toolkit/hud.js': '// uses createMenu from menu.js\n',
-    'plugins/pushplay/skills/cover-art/SKILL.md': skill('cover-art', body)
+    'plugins/pushplay/skills/cover-art/SKILL.md': skill('cover-art', body.replace('npm run check', 'pushplay check'))
   })
   const problems = lint(root)
   assert.ok(problems.length >= 6)
   assert.ok(problems.every((p) => p.startsWith('game-craft/game-ui/')), problems.join('\n'))
   assert.ok(problems.some((p) => p.includes('toolkit/hud.js')))
+})
+
+test('a PushPlay skill may not send an agent to npm scripts or a kit folder that game repos no longer have', () => {
+  const body = 'Run `npm run check`, then read `.github/pushplay/config.mjs`.'
+  const root = fixture({
+    'plugins/pushplay/skills/debug-game/SKILL.md': skill('debug-game', body),
+    'plugins/pushplay/skills/kit-upgrade/SKILL.md': skill('kit-upgrade', `migrate removes \`.github/pushplay/\` and the \`npm run check\` script.`)
+  })
+  const problems = lint(root)
+  assert.equal(problems.length, 2, problems.join('\n'))
+  assert.ok(problems.every((p) => p.startsWith('pushplay/debug-game/')))
 })

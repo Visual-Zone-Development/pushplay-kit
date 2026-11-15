@@ -5,7 +5,7 @@ wheel, swing it like a bat, flick it, shake it, or grip it like a bowling ball. 
 what we learned building [Motion Lab](https://github.com/Visual-Zone-Development/motion-lab) and Toybox Bowling and playtesting them on real phones. The
 `motion-controls` skill is the step-by-step version.
 
-Scaffold with `npm run new-game <id> --party --controller motion`. That gives you:
+Scaffold with `pushplay new-game <id> --party --controller motion`. That gives you:
 
 | File | Side | What it does |
 |---|---|---|
@@ -40,7 +40,7 @@ the room, or where the TV is. Design around that.
 - **Permission and https.** iOS asks for motion permission only after a tap, and only on an
   https page. The join page shows "Allow motion controls" and answers the phone screen with a
   state: `on`, `ask` (waiting for that tap), `denied`, `unsupported`, or `insecure` (plain http).
-  The published build is https. `npm run dev` over Wi-Fi is plain http, so phones fall back to
+  The published build is https. `pushplay dev` over Wi-Fi is plain http, so phones fall back to
   their touch pad there: test motion on the published build.
 - **Two sources.** iOS sends sensor events to the join page, which forwards every one to the phone
   screen (`{ type: 'motion', s: [...] }`, each with its age). Android sends them only to the focused

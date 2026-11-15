@@ -5,7 +5,7 @@ description: Design and build the phone side of a party game — controller.html
 
 # Party phone screen
 
-Follow AGENTS.md (*Party games*) and **read [party.md](../pushplay-runtime/references/party.md) first**: it has the full `party` (TV) and `controller` (phone) APIs and recipes. Never edit `party.js`, `party-lobby.js`, `qr.js`, `controller.js` or `net.js`; `controller.html` and `game.js` are yours.
+Follow the `pushplay-rules` skill (*Party games*, in [online-and-party.md](../pushplay-rules/references/online-and-party.md)). `pushplay` is the command the `pushplay-rules` skill gives you. **Read [party.md](../pushplay-runtime/references/party.md) first**: it has the full `party` (TV) and `controller` (phone) APIs and recipes. Never edit `party.js`, `party-lobby.js`, `qr.js`, `controller.js` or `net.js`; `controller.html` and `game.js` are yours.
 
 ## 1. Map every phase to one phone screen
 For each phase of the game (lobby, prompt, answering, waiting, voting, reveal, results), write one row:
@@ -37,8 +37,8 @@ Drive the phone with a single `party.public.phase` value and switch the whole sc
 - Keep it light: a small DOM, CSS for layout, no frameworks.
 
 ## 4. Verify
-1. `npm run dev`: open the join address in 3–4 browser windows sized like phones (DevTools device mode) and play a full round; scan the QR code with a real phone if possible.
+1. `pushplay dev`: open the join address in 3–4 browser windows sized like phones (DevTools device mode) and play a full round; scan the QR code with a real phone if possible.
 2. Reload one phone mid-round: it gets its seat and screen back.
 3. Every phase has a phone screen; no phone ever shows another player's secret.
-4. `npm run check` (headless phones join, play and reconnect), fix every ✗.
+4. `pushplay check` (headless phones join, play and reconnect), fix every ✗.
 5. Bump `version`, update DESIGN.md (phase table, Changelog), commit (`<Name>: phone screen`) and push.

@@ -1,6 +1,6 @@
 # Debugging
 
-Reproduce first, then fix the root cause. `npm run check` is the first tool. It reports crashes, console errors, 404s, network requests (WebSockets too), dialogs and blank screens, and saves a screenshot. It plays several short passes: a **gamepad** pass (A around 1.2s, stick right around 1.5–2.2s, then Start, expecting `window.__game.state.screen === 'paused'`), a **keyboard-only** pass (Enter, then Esc must change the screen), a **mouse-only** pass (menus by click, the pause button), a **touch** pass (tap on the title menu) and a render at **1920×1080 with DPR 2**. A game with `phone` in its manifest also gets a **phone** pass: touch only at 390×844 or 844×390 with DPR 3, menus by tap, the pause button, `visibilitychange` must pause, and text under 32 px in the phone space fails ([phone.md](phone.md)). It also checks the code statically: `menu.js` imported and `input.attach` called (warnings), no F10 binding, `tags` and `inputs` present (failures), `localStorage` keys prefixed with the game id (warning). For anything deeper, write a repro script (below).
+Reproduce first, then fix the root cause. `pushplay check` is the first tool. It reports crashes, console errors, 404s, network requests (WebSockets too), dialogs and blank screens, and saves a screenshot. It plays several short passes: a **gamepad** pass (A around 1.2s, stick right around 1.5–2.2s, then Start, expecting `window.__game.state.screen === 'paused'`), a **keyboard-only** pass (Enter, then Esc must change the screen), a **mouse-only** pass (menus by click, the pause button), a **touch** pass (tap on the title menu) and a render at **1920×1080 with DPR 2**. A game with `phone` in its manifest also gets a **phone** pass: touch only at 390×844 or 844×390 with DPR 3, menus by tap, the pause button, `visibilitychange` must pause, and text under 32 px in the phone space fails ([phone.md](phone.md)). It also checks the code statically: `menu.js` imported and `input.attach` called (warnings), no F10 binding, `tags` and `inputs` present (failures), `localStorage` keys prefixed with the game id (warning). For anything deeper, write a repro script (below).
 
 ## Common failures
 
@@ -25,7 +25,7 @@ Reproduce first, then fix the root cause. `npm run check` is the first tool. It 
 | Check: "missing file … (404)" | Wrong relative path or filename case | Paths are case-sensitive on Linux; use paths relative to `index.html` |
 | Check: dialog error | `alert()` / `confirm()` / `prompt()` | Draw the message in-game |
 | Check: F10 bound / Start+Select used | The game built its own quit | Remove it; the launcher owns quitting |
-| `update-kit` reports a hand-edited runtime file | A fix was patched into `input.js` etc. | Move it into `game.js` (`input.extendKeys` for keys); `npm run update-kit` restores the files |
+| `update-runtime` reports a hand-edited runtime file | A fix was patched into `input.js` etc. | Move it into `game.js` (`input.extendKeys` for keys); `pushplay update-runtime` restores the files |
 | Text unreadable on the handheld | Under 24px, low contrast, at the screen edge | ≥ 24px, strong contrast, ≥ 32px from the edges |
 | Check (phone pass): text under 32 px | A 1280×800 HUD size kept in a phone space | ≥ 32px in the phone space, × `textScale`; headings ≥ 44px |
 | Check (phone pass): hidden page didn't pause | `input.onPause` handler only pauses from `playing`, or sets its own flag without `state.screen = 'paused'` | Pause from every playable screen and save; `visibilitychange` is one of the events `onPause` wraps |
@@ -67,14 +67,15 @@ With a seeded RNG (e.g. mulberry32) instead of `Math.random()`, `?seed=123` repl
 When the bug happens after the first 3 seconds, or needs specific inputs, write a scratch script outside the game folder (e.g. in your scratch or temp directory). It uses the build kit's Playwright and a virtual gamepad driven by a timeline:
 
 ```js
-// repro.mjs: node repro.mjs <repo-root> <game-id>
+// repro.mjs: PW_MODULE="$(pushplay where)/node_modules/playwright" PUSHPLAY="<how you run pushplay>" node repro.mjs <repo-root> [game-id]
+//   PUSHPLAY is the command line the `pushplay-rules` skill gives you, e.g. "node <its folder>/scripts/pushplay.mjs"
 import { spawn } from 'node:child_process'
 import { join } from 'node:path'
 const [root, id] = process.argv.slice(2)
-const { chromium } = await import(join(root, '.github/pushplay/node_modules/playwright/index.mjs'))
+const { chromium } = await import(join(process.env.PW_MODULE, 'index.mjs')) // the kit's Playwright
 
 // 1. Serve the game (vite dev server, works for plain and --vite games)
-const dev = spawn('npm', ['run', 'dev', id], { cwd: root, stdio: 'ignore', detached: true })
+const dev = spawn(`${process.env.PUSHPLAY} dev ${id ?? ''}`, { cwd: root, shell: true, stdio: 'ignore', detached: true })
 await new Promise((r) => setTimeout(r, 2500))
 
 // 2. Input timeline: [startMs, endMs, { buttons: [indices], axes: [lx, ly, rx, ry] }]
@@ -115,12 +116,12 @@ for (const ms of [1000, 3000, 5000, 8000]) {
   console.log(ms, JSON.stringify(await page.evaluate(() => window.__game?.state?.screen)))
 }
 await browser.close()
-process.kill(-dev.pid) // stop npm and the vite server it started
+process.kill(-dev.pid) // stop the dev server and everything it started
 ```
 
 Run it, read the console output, and **look at the screenshots**. Use `page.evaluate(() => window.__game...)` to read or set state directly (e.g. jump to wave 10).
 
-If the Chromium download isn't available in your environment, fall back to reading code carefully, adding `console.error` traces, and running `npm run check`.
+If the Chromium download isn't available in your environment, fall back to reading code carefully, adding `console.error` traces, and running `pushplay check`.
 
 ## Performance
 

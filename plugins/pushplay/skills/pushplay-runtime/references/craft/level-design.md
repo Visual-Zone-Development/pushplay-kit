@@ -1,6 +1,6 @@
 # level-design in a PushPlay game
 
-The general `level-design` skill covers levels, waves, procedural generation, difficulty curves and pacing. This page gives the PushPlay side. AGENTS.md *Settings*, *Saves*, *Screens and scaling* and *Tech* are the rules.
+The general `level-design` skill covers levels, waves, procedural generation, difficulty curves and pacing. This page gives the PushPlay side. The rules are in the `pushplay-rules` skill: [screens.md](../../../pushplay-rules/references/screens.md) (*Settings*, *Screens and scaling*, *Tech*) and [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Saves*).
 
 ## Settings
 

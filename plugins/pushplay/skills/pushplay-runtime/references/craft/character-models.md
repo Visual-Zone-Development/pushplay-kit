@@ -1,6 +1,6 @@
 # character-models in a PushPlay game
 
-The general `character-models` skill covers bringing a 3D character in from a file (VRoid, Blender, GLB/VRM), the toon look and a character creator. This page gives the PushPlay side. AGENTS.md *Menus*, *Saves*, *Exit and pause*, *Screens and scaling* and *Performance* are the rules, and [3d.md](../3d.md) covers the render size, the HUD canvas, models in `public/assets/models/` and the loading screen.
+The general `character-models` skill covers bringing a 3D character in from a file (VRoid, Blender, GLB/VRM), the toon look and a character creator. This page gives the PushPlay side. The rules are in the `pushplay-rules` skill: [menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md) (*Menus*, *Exit and pause*), [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Saves*) and [screens.md](../../../pushplay-rules/references/screens.md) (*Screens and scaling*, *Performance*), and [3d.md](../3d.md) covers the render size, the HUD canvas, models in `public/assets/models/` and the loading screen.
 
 ## Input
 

@@ -1,6 +1,6 @@
 # progression in a PushPlay game
 
-The general `progression` skill covers unlocks, upgrades, achievements and daily challenges. This page gives the PushPlay side: the save shape, when to save, and the unlock screens. AGENTS.md *Saves* and *Menus* are the rules.
+The general `progression` skill covers unlocks, upgrades, achievements and daily challenges. This page gives the PushPlay side: the save shape, when to save, and the unlock screens. The rules are in the `pushplay-rules` skill: [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Saves*) and [menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md) (*Menus*).
 
 ## Input
 

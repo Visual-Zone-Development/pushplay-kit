@@ -1,6 +1,6 @@
 # dialogue in a PushPlay game
 
-The general `dialogue` skill has the writing craft, the script format and a neutral toolkit (`toolkit/dialogue-script.js`, `toolkit/dialogue.js`, `lint.mjs`) that takes an input adapter, an optional `prompts` callback and a tone function. PushPlay's runtime objects fit that contract as they are, so wiring is passing them in. AGENTS.md *Controls*, *Input hints*, *Screens and scaling* and *Saves* are the rules.
+The general `dialogue` skill has the writing craft, the script format and a neutral toolkit (`toolkit/dialogue-script.js`, `toolkit/dialogue.js`, `lint.mjs`) that takes an input adapter, an optional `prompts` callback and a tone function. PushPlay's runtime objects fit that contract as they are, so wiring is passing them in. The rules are in the `pushplay-rules` skill: [controls.md](../../../pushplay-rules/references/controls.md) (*Controls*, *Input hints*), [screens.md](../../../pushplay-rules/references/screens.md) (*Screens and scaling*) and [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Saves*).
 
 ```js
 import { createRunner } from './dialogue-script.js'

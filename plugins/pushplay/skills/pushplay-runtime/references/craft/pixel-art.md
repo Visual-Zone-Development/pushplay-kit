@@ -1,6 +1,6 @@
 # pixel-art in a PushPlay game
 
-The general `pixel-art` skill covers pixel characters, tiles, props and UI, with a toolkit that renders and bakes them. This page gives the PushPlay side: the resolution maths for the kit's screen, the `fit.js` settings, and where the bake page goes. AGENTS.md *Screens and scaling*, *Input hints*, *Menus* and *Settings* are the rules.
+The general `pixel-art` skill covers pixel characters, tiles, props and UI, with a toolkit that renders and bakes them. This page gives the PushPlay side: the resolution maths for the kit's screen, the `fit.js` settings, and where the bake page goes. The rules are in the `pushplay-rules` skill: [screens.md](../../../pushplay-rules/references/screens.md) (*Screens and scaling*, *Settings*), [controls.md](../../../pushplay-rules/references/controls.md) (*Input hints*) and [menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md) (*Menus*).
 
 ## Input
 
@@ -32,10 +32,10 @@ The general `pixel-art` skill covers pixel characters, tiles, props and UI, with
 ## Art and tools
 
 - **Pixel font:** the skill bundles **Pixelify Sans** (400, 700; OFL) in its `toolkit/fonts/`. Load it like any `FontFace` and credit it in `assets/CREDITS.md`.
-- **Bake ahead, ship PNGs.** A 160-px frame takes ~0.3 s, so a full sheet takes minutes. Put a bake page in the game's `tools/` folder (the build skips it) that sets `window.__bake = [{ name, canvas, meta }]` and `window.__bakeDone = true`, then run the skill's `bake.mjs` from the game folder:
+- **Bake ahead, ship PNGs.** A 160-px frame takes ~0.3 s, so a full sheet takes minutes. Put a bake page in a `tools/` folder inside the game's own folder (the build skips it) that sets `window.__bake = [{ name, canvas, meta }]` and `window.__bakeDone = true`, then run the skill's `bake.mjs` from the game folder:
 
   ```sh
-  node <pixel-art skill folder>/bake.mjs . tools/bake.html assets/sprites
+  PW_MODULE="$(pushplay where)/node_modules/playwright" node <pixel-art skill folder>/bake.mjs . tools/bake.html assets/sprites
   ```
 
   The game then loads the baked PNGs from `assets/sprites`.

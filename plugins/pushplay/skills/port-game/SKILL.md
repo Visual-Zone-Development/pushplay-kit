@@ -1,33 +1,124 @@
 ---
 name: port-game
-description: Bring an existing web game into this repo — the user's own HTML/JS game, a game-jam entry, a tutorial project or an open-source game with a licence that allows it — and convert it to the PushPlay rules, meaning runtime input with controller, keyboard, mouse and touch, menu.js menus, pause, settings, fitCanvas scaling to 1280×800, saves, offline assets, a manifest and art. Use for "add my old game", "port this game", "import this repo / folder / zip", "make this HTML game work on the Deck".
+description: Set up an existing game for PushPlay whatever it is built with — plain HTML/JavaScript, a bundler project, Godot, Unity, GameMaker, a Rust or C++ native build, Love2D, Ren'Py or a prebuilt export — by adding a manifest, library art and one workflow file, and leaving the game's own code and release workflow alone. Use for "add my game to PushPlay", "port this game", "set up my Godot / Unity game", "I already have a release workflow", "make my existing game work on the Deck", "import this repo / folder / zip".
 ---
 
-# Port a game
+# Set up an existing game for PushPlay
 
-Follow AGENTS.md. The aim is the same game, now playing well on a handheld with every input, without rewriting what already works.
+Follow the `pushplay-rules` skill. `pushplay` is the command the `pushplay-rules` skill gives you. The aim: the game as it is, playable from the PushPlay launcher, with **its normal release exactly as before** and a PushPlay release beside it. PushPlay needs a build it can use; it does not need the game rewritten.
 
-## 1. Check you may, and what it is
-1. **Licence:** the user's own work, or a licence that allows copying and modifying (MIT, Apache-2.0, BSD, GPL — then the port is GPL too —, CC0, CC-BY with credit). No licence or "all rights reserved" means don't port it; tell the user. Record the source and licence in `assets/CREDITS.md`.
-2. **Tech:** plain canvas / DOM / ES modules → a plain game; npm packages, a bundler, Phaser, three.js → `--vite`. Godot, Unity or other engine exports don't need porting: PushPlay can run them from their own repo's releases (see the README).
-3. **Inventory:** how it reads input, how it sizes the canvas, its screens, its saves (`localStorage` keys), its assets and any network use (CDNs, fonts, analytics).
+Check first that the user may publish it: their own work, or a licence that allows copying and modifying (record the source and licence in the repo's credits). No licence means don't; say so.
 
-## 2. Set up the repo
-1. `npm run new-game <id> --name "<Name>"` (with `--vite` if needed) for the runtime files, `pushplay.json`, the starter skeleton and art placeholders, at the repo root (one game per repo; if a game is already here, port into a new repo from the template).
-2. Copy the game's code and assets in next to them (`assets/` for media). Download any CDN libraries and remote fonts into the repo (or `npm install` them in a `--vite` game); the check fails on network requests.
-3. Write `DESIGN.md` by reverse-engineering the game ([DESIGN.template.md](../new-game/references/DESIGN.template.md)), with *Ported from <source>* in the Changelog.
+## 1. Find out what the game is
 
-## 3. Convert, step by step (run the game after each)
-1. **Loop and screens:** fold its loop into the starter's frame: `input.update()` first, `state.screen` with `title | playing | paused | settings | gameover`, `window.__game = { state, TUNING }`. Use the starter's title, pause (Resume, Restart, Settings, Quit to title) and settings screens; replace its own menus with `menu.js` (which also gives the pause menu Quit to library inside the launcher; if a menu has to stay custom, add that item as *Leaving your game* in AGENTS.md shows).
-2. **Input:** replace `keydown` / `mousedown` / `touchstart` handlers with the `input` API (`input.x`, `input.pressed('a')`, `input.pointer`); map its actions to buttons from the AGENTS.md table; key aliases through `input.extendKeys`. Remove any Esc-as-back, F10 or quit binding. Pointer-only mechanics also need a stick cursor or snapping.
-3. **Scaling:** remove its resize code; `fitCanvas(canvas, { w: 1280, h: 800, maxDpr: 2, letterbox })`. If it was built for another resolution, scale its drawing (one `ctx.scale` at the top) or relayout the HUD to the 1280×800 rules (text ≥ 24 px, 32 px margins).
-4. **Timing:** movement per second with clamped `dt` if it was per frame.
-5. **Saves and audio:** move its `localStorage` use to `save.js` (`<id>-save-v1`, with a one-time import of its old key if the user has existing saves in the same browser) and its sound to `audio.js` buses.
-6. **Prompts:** replace literal key names with `input.label()` / `drawPrompts`.
-7. **Pause:** `input.onPause` → `paused` and save; everything frozen while paused.
+Read the repo before asking anything. Ask the user only what it doesn't answer.
 
-## 4. Finish
-1. Manifest (`description`, `players`, `tags`, `inputs`), cover and hero art (`cover-art`).
-2. `npm run check`, fix every ✗, open the screenshot and art.
-3. Do the AGENTS.md verification matrix.
-4. Commit (`Add <Name> (ported)`) and push. Tell the user what changed in the controls and anything that couldn't be kept.
+| You find | It is | Page |
+|---|---|---|
+| `project.godot` | Godot | [godot.md](references/godot.md) |
+| `ProjectSettings/` and `Assets/` | Unity | [unity.md](references/unity.md) |
+| a `*.yyp` file | GameMaker | [gamemaker.md](references/gamemaker.md) |
+| `Cargo.toml`, `CMakeLists.txt`, a `Makefile`, `build.zig`, `go.mod` | a native build (Rust, C++, Zig, Go) | [native.md](references/native.md) |
+| `main.lua` and `conf.lua` | Love2D | [love2d-renpy.md](references/love2d-renpy.md) |
+| `game/script.rpy` | Ren'Py | [love2d-renpy.md](references/love2d-renpy.md) |
+| `package.json` with a `build` script | a JavaScript project with its own build | [javascript.md](references/javascript.md) |
+| `index.html` and no build step | plain HTML / JavaScript | [javascript.md](references/javascript.md) |
+| a folder or zip of finished files (an `index.html`, an `.exe`, an `.x86_64`) | a prebuilt export | step 3, *committed folder* |
+
+Also read every file in `.github/workflows/` that builds or releases. They show how the game is really built, with which engine version, and where the output lands: reuse that, don't guess. Note what the game does that PushPlay will care about: controller support, how it quits, anything it loads from the internet.
+
+## 2. Agree the depth with the user
+
+Ask once (with a question tool if you have one), recommended option first.
+
+| Depth | What changes in the repo | What the user gets |
+|---|---|---|
+| **B. Manifest, art and one workflow file** (recommended) | `pushplay.json`, `art/`, `.github/workflows/pushplay.yml`. The game's code and its own workflows stay as they are. | A checked PushPlay release for every platform the build supplies, with the game's name, description, tags and real art in the library. |
+| **A. Follow the repo as it is** | Nothing. | The launcher plays a plain HTML repo from its latest commit, or the zips attached to the repo's ordinary GitHub releases (names like `Game-Windows.zip`, `game_linux64.zip`, `Game-HTML5.zip` are recognised). No check, no art of its own, a generated cover. |
+| **C. Adopt the runtime files** (JavaScript games only) | The game's code: its input, menus, scaling, saves and audio move to PushPlay's runtime files. | Controller menus, pause, saves, settings and a phone layout done for it, and every pass of the check. It rewrites game code, so it is the user's choice, never a default. |
+
+For A there is nothing to build: tell the user to add the repo in the launcher (step 7) and stop. For C do B's manifest and art, then follow [runtime-files.md](references/runtime-files.md). The rest of this skill is depth B.
+
+## 3. Wire up the build
+
+**Web first.** A web build plays everywhere: handheld, Windows, Mac, Linux, the phone app and Discover (those two take web builds only). A native build plays only on the system it was built for, and a Windows-only game does not run on a Steam Deck in PushPlay. So: a web export when the engine has one, a Linux build (`linux-x64`) for the Deck when it doesn't, and Windows or Mac builds on top if the user wants them. When a release has both, the launcher installs the native build for the device and falls back to the web build.
+
+The manifest names one finished folder per platform and the file inside it that starts the game:
+
+```json
+"entry": { "web": "index.html", "linux-x64": "game.x86_64" },
+"build": { "outputs": { "web": "export/web", "linux-x64": "export/linux" } }
+```
+
+Every platform in `entry` needs a folder in `build.outputs` and the other way round. Those folders can reach the PushPlay build three ways:
+
+| Way | Use it when | How |
+|---|---|---|
+| **An artifact from the repo's own build** (prefer it) | a workflow already exports the game, or the engine has to be installed to build | A job exports the folders and uploads them as one artifact; the shared build unpacks it into the repo. See the workflow below. |
+| **`build.command`** | the build is one command that runs on a plain Linux runner with Node (a bundler, a script) | `"build": { "command": "…", "outputs": { … } }`. It runs in the game's folder before packaging, with `PUSHPLAY_BUILD=1` set. |
+| **A committed folder** | the game is exported by hand from an editor, or it is a prebuilt export | Commit the export folder and name it in `build.outputs`. Simple, but someone must re-export and commit for every update. |
+
+Prefer reusing the build the repo already does, so there is one build to maintain. A JavaScript project often needs none of this: with a `build` script in `package.json` it is built with `npm run build` (output `dist`, or `build.output`), and a repo with no build ships its folder as it is (`entry.web`). See [javascript.md](references/javascript.md).
+
+**The workflow file.** Don't use `pushplay new-game` here: it scaffolds a new JavaScript game. Write `.github/workflows/pushplay.yml` from [references/workflow.yml](references/workflow.yml), copied as it is (`pushplay migrate` also writes it, in a repo that has an old kit). That is enough for `build.command` and committed folders. For the artifact way, add an export job in front of it:
+
+```yaml
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # the engine's export steps, the same as the repo's own workflow uses,
+      # writing export/web and export/linux
+      - uses: actions/upload-artifact@v4
+        with: { name: pushplay-export, path: export/ }
+  pushplay:
+    needs: export
+    uses: Visual-Zone-Development/pushplay-plugin/.github/workflows/build.yml@v1
+    with:
+      artifact: pushplay-export   # the artifact's name
+      artifact-path: export       # the folder in the repo it is unpacked into
+    permissions:
+      contents: write
+      id-token: write
+```
+
+`needs:` only reaches jobs in the same workflow file, so the export job lives in `pushplay.yml`. If the repo's own workflow already has the export steps, either copy them into this job, or (with the user's yes, since it touches their file) add `workflow_call:` to their build workflow's `on:` and call it from `pushplay.yml` as the `export` job. Never add the PushPlay job to their release workflow. The engine page has the export steps.
+
+## 4. The manifest and the art
+
+Write `pushplay.json` at the repo root with the `pushplay-manifest` skill (its table says which fields each kind of game needs) and make `art/cover` and `art/hero` with the `cover-art` skill. A game with a web build gets a cover generated from a screenshot if it has none; **a game with no web build needs both art files**, because there is no screenshot to make them from. Fill `inputs` and `controls` from what the game really supports (step 6).
+
+## 5. Keep the normal release unchanged
+
+- **Separate file, separate release.** `pushplay.yml` is its own workflow, and it publishes to the `pushplay-latest` release, a prerelease, so the repo's own "Latest" release is untouched (a branch named `beta` publishes to `pushplay-beta`).
+- **At run time, in a web build:** `window.pushplay` exists only inside the launcher. Keep what belongs to the normal release behind `if (!window.pushplay) { … }` (analytics, an ad, a dialog, an online leaderboard). The check runs the game with that object present, so it judges only what the game does inside the launcher.
+- **At run time, in a native build:** the environment variable `PUSHPLAY=1` is set.
+- **At build time:** `PUSHPLAY_BUILD=1` is set when the PushPlay build runs `build.command` or `npm run build`, so one build script can make both versions. In an export job of your own, set a variable yourself.
+
+What NOT to do to the game for PushPlay's sake:
+
+- Don't remove analytics, ads, leaderboards or online services from the normal build. Guard them.
+- Don't rename, move or stop publishing the game's own release assets, tags or workflows.
+- Don't add PushPlay files beyond the manifest, the art and the workflow file (no runtime files at depth B, no kit, no agent instructions).
+- Don't change key bindings globally because the launcher keeps F10, Start+Select and a held Esc. Guard the change (`window.pushplay`, `PUSHPLAY=1`) or leave it: those inputs simply don't reach the game inside the launcher.
+- Don't change the game's resolution, save format or menus unless the user chose depth C.
+
+## 6. Launcher hooks worth adding (optional, small)
+
+Each is a few lines, guarded so the normal release never sees it. The engine pages show them in each engine's terms.
+
+- **Quit to library.** Web: add the item only when `window.pushplay?.quit` exists, and call `window.pushplay.quit()`. Native: show it when `PUSHPLAY=1` is set, and just exit the game. It matters most on Windows and Mac, where quitting a native game from the controller (hold Start+Select 3 s) does not work and the game needs a quit of its own; on Linux that hold works.
+- **Pause when the launcher asks.** Web: listen for the window events `pushplay:pause` and `pushplay:resume` (or `window.pushplay.onPause(cb)`), and pause the game's own way.
+- **Controllers.** The game is played on a handheld, so a controller should reach every screen. If the game has no controller support and the user doesn't want it added now, say so honestly in the manifest: `"controls": "keyboard-mapped"` and an `inputs` list without `"gamepad"`.
+
+## 7. Check and finish
+
+1. `pushplay check`. What it requires depends on the kind of game:
+   - **A web build not on the runtime files** (its own engine, or an engine's export): it must not crash, must not request the internet, must not open `alert` / `confirm` dialogs, must have no missing files, and must show a picture within 30 s (a loading screen counts). The pause and menu passes only report (⚠), never fail. Nothing inside an exported folder is scanned.
+   - **A native build:** the entry must exist in its folder and be a real program for that platform (an ELF binary, an AppImage or a `#!` script on Linux; an `.exe` on Windows; the binary inside `.app/Contents/MacOS/` on Mac).
+   - Folders that come from the repo's own workflow don't exist on your machine unless you export them: either export locally first, or let the push run the same check on GitHub Actions and read the run's summary.
+2. Open the cover, hero and screenshot PNGs whose absolute paths the check prints. The screenshot should show the game, not an error or an endless loader.
+3. **Say plainly what was not verified.** A native build is not play-tested: the check never starts it, so whether it runs on a Deck, finds its libraries, reads a controller or quits cleanly is unknown until someone tries it on the device. For an engine web export, pausing and controller menus are only reported, not required.
+4. Commit the manifest, art and workflow file (`Set up <Name> for PushPlay`) and push. Pushing the default branch publishes; other branches only check.
+5. Tell the user: in the launcher, **Add game → Follow a GitHub account**, and the game appears once the first build has published. List which platforms it plays on and anything from step 3 or 6 left for later.

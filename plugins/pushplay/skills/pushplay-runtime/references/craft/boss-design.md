@@ -1,6 +1,6 @@
 # boss-design in a PushPlay game
 
-The general `boss-design` skill covers attack patterns, telegraphs, phases, the arena, the health bar and an entrance and death that feel like an event. This page gives the PushPlay side. AGENTS.md *Controls*, *Settings*, *Saves* and *Screens and scaling* are the rules.
+The general `boss-design` skill covers attack patterns, telegraphs, phases, the arena, the health bar and an entrance and death that feel like an event. This page gives the PushPlay side. The rules are in the `pushplay-rules` skill: [controls.md](../../../pushplay-rules/references/controls.md) (*Controls*), [screens.md](../../../pushplay-rules/references/screens.md) (*Settings*, *Screens and scaling*) and [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Saves*).
 
 ## Input
 

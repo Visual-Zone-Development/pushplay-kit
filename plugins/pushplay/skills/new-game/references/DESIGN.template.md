@@ -47,7 +47,7 @@ See framework.md (in the `game-design` skill's `references/`). Each target must 
 | Outcome | |
 
 ## Controls
-Keyboard, mouse and touch equivalents come from `input.js` (see the table in AGENTS.md); list the game's actions by `input` button.
+Keyboard, mouse and touch equivalents come from `input.js` (see the controls table in the `pushplay-rules` skill); list the game's actions by `input` button.
 
 | Input | Action |
 |---|---|
@@ -121,7 +121,7 @@ Tailored from [complete-game.md](complete-game.md). Keep the fixed items; add th
 - [ ] Phone games only: manifest `phone.orientation`; HUD and tap targets inside `fit.safe` and out of the thumb zones; text ≥ 32px; on-screen controls hidden with a controller; `visibilitychange` pauses; phone pass green
 
 **Under the hood**
-- [ ] `TUNING`, clamped `dt`, `?debug` overlay, runtime files unedited, 60fps, no `tools/` / `mockups/` / `*.py` shipped, `npm run check` green
+- [ ] `TUNING`, clamped `dt`, `?debug` overlay, runtime files unedited, 60fps, no `tools/` / `mockups/` / `*.py` shipped, `pushplay check` green
 
 ## Open questions / assumptions
 - …

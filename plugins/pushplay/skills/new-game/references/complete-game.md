@@ -29,7 +29,7 @@ What separates a complete game from a toy. Copy the items that apply into the ga
 - [ ] **Title screen** with the name, a menu that starts the game, and the best score. No strip of button prompts along the bottom of this or any other screen, and room under the menu for the launcher's "Quit to library" row. If gameplay needs a controller or keyboard, the title says so.
 - [ ] **Pause** on `menu` (Start, Esc, P, and the on-screen pause button for mouse and touch), with exactly **Resume, Restart, Settings, Quit to title** (inside the launcher, `menu.js` adds **Quit to library** last). The game is fully frozen while paused.
 - [ ] **Auto-pause** via `input.onPause` (launcher overlay, lost focus, hidden tab, all controllers gone) lands on the pause screen and saves.
-- [ ] **No exit of its own**: nothing bound to F10, Start+Select or a held Esc, and no "exit to launcher" item: the pause menu's Quit to library comes from `menu.js` (see *Leaving your game* in AGENTS.md). A pause menu not built with `menu.js` adds it itself, only when `window.pushplay?.quit` exists.
+- [ ] **No exit of its own**: nothing bound to F10, Start+Select or a held Esc, and no "exit to launcher" item: the pause menu's Quit to library comes from `menu.js` (see *Leaving your game* in the `pushplay-rules` skill's [menus-and-exit.md](../../pushplay-rules/references/menus-and-exit.md)). A pause menu not built with `menu.js` adds it itself, only when `window.pushplay?.quit` exists.
 - [ ] **Every menu works with every input**: controller, keyboard, mouse and touch, via `menu.js` (move, choose, back, hover, click, tap; left/right for values). `b` is back, `menu` pauses; they are never swapped.
 - [ ] **Game over / results** screen that's satisfying to look at (tally animation, stats), with retry in one press.
 - [ ] **Settings** from `settings.js`, reachable from title and pause: master / music / SFX volume, reduced shake / flash, text size, plus difficulty or other game items as `extra`. Saved under `<id>-settings-v1`.
@@ -49,7 +49,7 @@ What separates a complete game from a toy. Copy the items that apply into the ga
 
 - [ ] **`fitCanvas`** handles the window: letterbox in the game's colour, DPR capped at 2, `integer: true` for pixel art. Looks right at 1280×800 (Deck), 1920×1200 / 2560×1600 at DPR 2 (Legion Go), 1920×1080 and small resizable windows.
 - [ ] **Manifest** has `tags` and `inputs`; `inputs` lists only what gameplay really supports (menus support all four regardless).
-- [ ] **Verification matrix** done by hand: controller, keyboard only, mouse only, touch (DevTools device mode), 1920×1080 at DPR 2 (see AGENTS.md).
+- [ ] **Verification matrix** done by hand: controller, keyboard only, mouse only, touch (DevTools device mode), 1920×1080 at DPR 2 (see the `pushplay-rules` skill's [verification.md](../../pushplay-rules/references/verification.md)).
 - [ ] **Local multiplayer** (if any) joins by press per controller through `input.pads[i]`; several controllers on one tablet work the same.
 - [ ] **Phone games** (manifest `phone`, see [phone.md](../../pushplay-runtime/references/phone.md)): laid out in the portrait 720×1280 or landscape 1280×720 space, text ≥ 32px, HUD and tap targets placed from `fit.safe` and out of the thumb zones, on-screen controls through `touch.js` hidden when `input.mode !== 'touch'`, a hidden page pauses and saves, and the game still plays with a controller and a keyboard. Online games show "Reconnecting…" from `net.status` and "Connection lost" from `net.connection`.
 
@@ -61,4 +61,4 @@ What separates a complete game from a toy. Copy the items that apply into the ga
 - [ ] **Runtime files unedited** (`input.js`, `menu.js`, `fit.js`, `audio.js`, `save.js`, `settings.js`, `prompts.js` keep their header); game keys added with `input.extendKeys`.
 - [ ] **Steady 60fps** on the Deck and Legion Go, DPR 2 included: no per-frame allocations in hot loops, capped particles.
 - [ ] **Nothing shipped but the game**: no `tools/`, `mockups/`, `*.py`, `__pycache__/` in the folder.
-- [ ] `npm run check` passes (gamepad, keyboard-only, mouse-only, touch, Start → `paused`, 1920×1080 at DPR 2, and the phone pass for phone games) and the screenshot shows real gameplay or a real title screen.
+- [ ] `pushplay check` passes (gamepad, keyboard-only, mouse-only, touch, Start → `paused`, 1920×1080 at DPR 2, and the phone pass for phone games) and the screenshot shows real gameplay or a real title screen.

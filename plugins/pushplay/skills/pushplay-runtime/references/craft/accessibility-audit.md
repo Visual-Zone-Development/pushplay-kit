@@ -1,6 +1,6 @@
 # accessibility-audit in a PushPlay game
 
-The general `accessibility-audit` skill has the audit checklist and the list of options (colourblind palette, remapping, hold to toggle, one-handed and touch options, assists, visual cues for sound). This page gives the PushPlay side: how to build them with the runtime files. AGENTS.md *Settings*, *Input hints* and *Screens and scaling* are the rules. Never edit the runtime files: everything here lives in `game.js` and as `extra` items in `createSettingsScreen`.
+The general `accessibility-audit` skill has the audit checklist and the list of options (colourblind palette, remapping, hold to toggle, one-handed and touch options, assists, visual cues for sound). This page gives the PushPlay side: how to build them with the runtime files. The rules are in the `pushplay-rules` skill: [screens.md](../../../pushplay-rules/references/screens.md) (*Settings*, *Screens and scaling*) and [controls.md](../../../pushplay-rules/references/controls.md) (*Input hints*). Never edit the runtime files: everything here lives in `game.js` and as `extra` items in `createSettingsScreen`.
 
 ## Input
 
@@ -38,6 +38,6 @@ For phone games:
 
 ## Debug hooks and the check
 
-- Capture the screenshots for the audit with `npm run check` and a repro script (see [debugging.md](../debugging.md)).
+- Capture the screenshots for the audit with `pushplay check` and a repro script (see [debugging.md](../debugging.md)).
 - For the colour row, also view them in greyscale, e.g. render the canvas with `ctx.filter = 'grayscale(1)'` in a debug mode.
 - Re-run the checklist after the fixes: every row passes or is n/a with a reason. Then tick the *Accessibility* items in DESIGN.md's Definition of done.

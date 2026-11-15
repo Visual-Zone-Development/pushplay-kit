@@ -1,0 +1,168 @@
+# The PushPlay build, shared by every game repo. A game repo calls it from one small workflow:
+#
+#   jobs:
+#     pushplay:
+#       uses: Visual-Zone-Development/pushplay-plugin/.github/workflows/build.yml@v1
+#       permissions: { contents: write, id-token: write }
+#
+# It builds every game that changed (on any branch), checks it, and on the default branch
+# publishes it to the "pushplay-latest" release, where the launcher picks it up. Pushes to a
+# branch named "beta" publish to "pushplay-beta". Other branches only check.
+#
+# Written by the PushPlay release; don't edit it here.
+name: Build games
+
+on:
+  workflow_call:
+    inputs:
+      all:
+        description: Rebuild every game, not only the ones this push changed
+        type: boolean
+        default: false
+      artifact:
+        description: >-
+          Name of an artifact an earlier job of the calling workflow uploaded (your own engine
+          export, say). It is unpacked into the repo before the build, so the folders named in
+          the manifest's build.outputs can come from it.
+        type: string
+        default: ''
+      artifact-path:
+        description: Folder in the repo the artifact is unpacked into
+        type: string
+        default: '.'
+
+permissions:
+  contents: read
+
+# Builds publishing to the same release share its index, so they run one at a time (stable and
+# beta each have their own queue).
+concurrency:
+  group: pushplay-publish-${{ github.ref_name == 'beta' && 'beta' || 'latest' }}
+  cancel-in-progress: false
+
+env:
+  KIT_REPO_ROOT: ${{ github.workspace }}/game
+  KIT_WORK_DIR: ${{ github.workspace }}/work
+
+jobs:
+  # Runs game code (headless browser) with no token in reach.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write # online games: prove which repo built them, to get a pass for the online relay
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: game
+          fetch-depth: 0 # needed to see which games changed
+          persist-credentials: false
+
+      # The build kit comes from here, never from the game repo.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: Visual-Zone-Development/pushplay-plugin
+          ref: v1
+          path: kit-source
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+
+      - name: Unpack the build kit
+        run: |
+          mkdir -p "$RUNNER_TEMP/kit"
+          unzip -q kit-source/plugins/pushplay/skills/pushplay-rules/kit.zip -d "$RUNNER_TEMP/kit"
+          npm ci --prefix "$RUNNER_TEMP/kit/kit" --no-audit --no-fund
+
+      - name: Files from this repo's own build
+        if: inputs.artifact != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: ${{ inputs.artifact }}
+          path: game/${{ inputs.artifact-path }}
+
+      # The game's own dependencies, if it has any. Commit package-lock.json: `npm ci` needs it.
+      - name: Install game dependencies
+        working-directory: game
+        run: |
+          if [ -f package.json ]; then
+            if [ ! -f package-lock.json ]; then
+              echo "::error::package-lock.json is missing. Run npm install locally and commit the lockfile."
+              exit 1
+            fi
+            npm ci --no-audit --no-fund
+          fi
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-1.64.1
+
+      - name: Install headless browser
+        run: node "$RUNNER_TEMP/kit/kit/node_modules/playwright/cli.js" install --with-deps chromium
+
+      - name: Build and check
+        working-directory: game
+        run: node "$RUNNER_TEMP/kit/kit/ci.mjs"
+        env:
+          STAGE: build
+          BEFORE_SHA: ${{ github.event.before }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          BUILD_ALL: ${{ inputs.all || github.event_name == 'workflow_dispatch' }}
+
+      # Uploaded even when a game failed, so publish can keep the good ones and record the error.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: pushplay-builds
+          path: work/dist
+          if-no-files-found: ignore
+          retention-days: 3
+
+  # Uploads what build produced. Only this job can write, and only from the default branch (to
+  # pushplay-latest) or the beta branch (to pushplay-beta).
+  publish:
+    needs: build
+    if: always() && needs.build.result != 'cancelled' && needs.build.result != 'skipped' && (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || github.ref == 'refs/heads/beta')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: game
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: Visual-Zone-Development/pushplay-plugin
+          ref: v1
+          path: kit-source
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+
+      - name: Unpack the build kit
+        run: |
+          mkdir -p "$RUNNER_TEMP/kit"
+          unzip -q kit-source/plugins/pushplay/skills/pushplay-rules/kit.zip -d "$RUNNER_TEMP/kit"
+          npm ci --prefix "$RUNNER_TEMP/kit/kit" --no-audit --no-fund
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: pushplay-builds
+          path: work/dist
+
+      - name: Publish to the release
+        working-directory: game
+        run: node "$RUNNER_TEMP/kit/kit/ci.mjs"
+        env:
+          STAGE: publish
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}

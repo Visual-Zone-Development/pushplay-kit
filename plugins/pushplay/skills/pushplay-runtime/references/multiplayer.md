@@ -5,7 +5,7 @@ nothing: no server, no keys, no accounts. The kit gives every online game the sa
 and the AI writes only the game.
 
 ```sh
-npm run new-game <id> --online --players 2-4
+pushplay new-game <id> --online --players 2-4
 ```
 
 | File | What it is | Edit it? |
@@ -14,7 +14,7 @@ npm run new-game <id> --online --players 2-4
 | `lobby.js` | The lobby: Quick match / Host / Join, open-games list, waiting room; works with A / `b` and up / down on every input | No. Style it with `createLobby` options |
 | `game.js` | Starter: title → lobby → playing, with the host running the rules | Yes: this is the game |
 
-The scaffold also sets `"online": true` and `"players"` in `pushplay.json`; add the `online multiplayer` tag. Everything else in AGENTS.md still applies: `fit.js` for scaling, `menu.js` for every menu, `settings.js`, `input.attach`, `window.__game = { state, TUNING }`, and the runtime files stay unedited.
+The scaffold also sets `"online": true` and `"players"` in `pushplay.json`; add the `online multiplayer` tag. Everything else in the `pushplay-rules` skill still applies: `fit.js` for scaling, `menu.js` for every menu, `settings.js`, `input.attach`, `window.__game = { state, TUNING }`, and the runtime files stay unedited.
 
 ## How it works: the host runs the game
 
@@ -111,9 +111,9 @@ mechanics that tolerate that:
 
 ## Testing
 
-- `npm run dev` starts a local relay as well: open the game in **two browser windows** to
+- `pushplay dev` starts a local relay as well: open the game in **two browser windows** to
   play against yourself.
-- `npm run check` runs the usual check (including `menu` → `state.screen === 'paused'`),
+- `pushplay check` runs the usual check (including `menu` → `state.screen === 'paused'`),
   then plays **two copies** together through a local relay. It fails if they can't get into a
   match, or if the second copy never receives state. Keep the template's flow
   (title → lobby → playing) so the check can drive it. The relay is the one network connection

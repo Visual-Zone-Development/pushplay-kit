@@ -1,6 +1,6 @@
 # local-multiplayer in a PushPlay game
 
-The general `local-multiplayer` skill covers the shape (co-op or versus, one shared screen, rounds, drop in and out), the join screen, colours, fairness and catch-up. This page gives the PushPlay side: how to do it with the runtime files. AGENTS.md *Controls* (the *Local multiplayer* item), *Flow* and *Manifest* are the rules.
+The general `local-multiplayer` skill covers the shape (co-op or versus, one shared screen, rounds, drop in and out), the join screen, colours, fairness and catch-up. This page gives the PushPlay side: how to do it with the runtime files. The rules are in the `pushplay-rules` skill: [controls.md](../../../pushplay-rules/references/controls.md) (*Controls*, the *Local multiplayer* item), [menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md) (*Flow*) and the `pushplay-manifest` skill for the manifest.
 
 ## Input
 
@@ -9,7 +9,7 @@ The general `local-multiplayer` skill covers the shape (co-op or versus, one sha
 - `menu` from any pad pauses for everyone: the shared pause menu is driven by the merged `input`.
 - Never rely on chords or on a button the launcher owns (F10, Start+Select, held Esc).
 - **Join screen:** one slot per player, with `` `${input.label('a')} to join` `` in each empty slot, built every frame. A slot fills when that pad presses `a` and shows the player's colour and name ("P2"); `b` on that pad leaves. Start when at least the minimum have joined: any joined player presses `a` again, or a countdown.
-- The `lobby` screen name isn't used for local play. The join screen is part of `title`, or its own sub-step before `playing`; keep the `state.screen` names AGENTS.md lists.
+- The `lobby` screen name isn't used for local play. The join screen is part of `title`, or its own sub-step before `playing`; keep the `state.screen` names the `pushplay-rules` skill lists ([menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md), *Flow*).
 - **Unplugged pad mid-game:** `input.onPause` fires only when **all** pads are gone. Handle a single disconnect yourself: pause, or leave the slot empty.
 - Keep per-player state in an array indexed by slot. Restart resets all players but keeps who joined.
 

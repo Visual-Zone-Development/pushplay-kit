@@ -5,11 +5,11 @@ description: Move a finished game out of this workshop (games/<id>) into its own
 
 # Promote a game
 
-Promoting is for a **workshop**: a repo with many games in `games/<id>/`, so one agent session can make and prototype any number of them. (A repo with one game at its root already has its own repo; there's nothing to promote.) A finished game moves into **its own repo** (one game per repo), which is what PushPlay's Discover tab and Studio expect. `npm run promote <id>` (`tools/promote/promote.mjs`) does the work; this skill covers the decisions and the three ways to run it.
+Promoting is for a **workshop**: a repo with many games in `games/<id>/`, so one agent session can make and prototype any number of them. (A repo with one game at its root already has its own repo; there's nothing to promote.) A finished game moves into **its own repo** (one game per repo), which is what PushPlay's Discover tab and Studio expect. `pushplay promote <id>` does the work; this skill covers the decisions and the two ways to run it. `pushplay` is the command the `pushplay-rules` skill gives you.
 
 What promoting does:
-1. Checks the game (`npm run check <id>`).
-2. Builds the new repo from the **one-game template** (its build kit, `AGENTS.md`, skills and docs), with the game's files at the root and `"movedFrom": "<this repo>"` in `pushplay.json`.
+1. Checks the game (`pushplay check <id>`).
+2. Makes the new repo: the game's files at the root, the one workflow file that builds it (`.github/workflows/pushplay.yml`), a short README, and `"movedFrom": "<this repo>"` in `pushplay.json`. Nothing else is added.
 3. Creates the repo (public by default), pushes it, and adds the `pushplay-game` topic. The first push builds and publishes the game.
 4. Removes `games/<id>` from the workshop and commits that.
 
@@ -23,24 +23,19 @@ Players don't lose anything: the launcher sees `movedFrom` and moves its tile to
 
 **A. On a computer with `gh` signed in** (Claude Code locally):
 ```sh
-npm run promote <id>                        # creates owner/<id>, public
-npm run promote <id> -- --repo owner/name   # another name; --private, --keep (leave a copy here)
+pushplay promote <id>                        # creates owner/<id>, public
+pushplay promote <id> --repo owner/name   # another name; --private, --keep (leave a copy here)
 git push                                    # pushes the removal from the workshop
 ```
 
-**B. From a phone or a cloud agent without `gh`: the "Promote a game" workflow.** It runs the same tool in GitHub Actions. Tell the user exactly:
-> Open this repo on GitHub → **Actions** → **Promote a game** → **Run workflow**, type `<id>`, tap **Run**.
-
-If you have a GitHub tool that can start a workflow (workflow_dispatch), run `promote.yml` with `game: <id>` yourself instead. It needs the `PROMOTE_TOKEN` secret once (see the top of `.github/workflows/promote.yml`); if a run fails with "Add a PROMOTE_TOKEN secret", walk the user through creating it.
-
-**C. A cloud agent with a GitHub connector that can create repos** (no workflow token yet): build the folder, then create and push with the connector:
+**B. A cloud agent without `gh`, with a GitHub connector that can create repos:** build the folder, then create and push with the connector:
 ```sh
-npm run promote <id> -- --no-create --out ../<name>
+pushplay promote <id> --no-create --out ../<name>
 ```
 Create the empty repo with the connector (for example `create_repository`, public, no auto-init), give this session push access to it if your environment needs that (for example `add_repo` with push access), then `git -C ../<name> remote add origin https://github.com/<owner>/<name>.git && git -C ../<name> push -u origin main`. Then `git rm -r -q games/<id> && git commit -m "<Name>: moved to <owner>/<name>"` and push. Never push the game to any repo other than the one just created.
 
 ## 3. Verify
-- The new repo's **Build games** run goes green and its `pushplay-latest` release has `<id>-web.zip` (the first push builds everything).
+- The new repo's build run goes green and its `pushplay-latest` release has `<id>-web.zip` (the first push builds everything).
 - This workshop no longer has `games/<id>`, and that commit is pushed.
 
 ## 4. Hand back

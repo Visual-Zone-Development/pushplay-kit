@@ -1,6 +1,6 @@
 # performance-pass in a PushPlay game
 
-The general `performance-pass` skill covers measuring and fixing frame rate, stutter, load time and memory. This page gives the PushPlay side: the target and where to measure. AGENTS.md *Performance* and *Screens and scaling* are the rules.
+The general `performance-pass` skill covers measuring and fixing frame rate, stutter, load time and memory. This page gives the PushPlay side: the target and where to measure. The rules are in the `pushplay-rules` skill: [screens.md](../../../pushplay-rules/references/screens.md) (*Performance*, *Screens and scaling*).
 
 ## Screen and scaling
 

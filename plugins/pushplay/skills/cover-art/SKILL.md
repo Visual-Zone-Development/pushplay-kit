@@ -5,7 +5,7 @@ description: Make or improve the library art for the game in this repo — the 7
 
 # Cover art
 
-Follow AGENTS.md (*Art*) and art-directions.md (in the `art-direction` skill's `references/`). Read the game's `DESIGN.md` (*Art direction*: palette, font, hero object, cover and hero ideas). If the repo has `model-asset` or `canvas2d-assets` skills, use them to draw the hero object the same way as in game.
+Follow the `pushplay-rules` skill and art-directions.md (in the `art-direction` skill's `references/`). `pushplay` is the command the `pushplay-rules` skill gives you. Read the game's `DESIGN.md` (*Art direction*: palette, font, hero object, cover and hero ideas). If the repo has `model-asset` or `canvas2d-assets` skills, use them to draw the hero object the same way as in game.
 
 ## 1. The rules (the check enforces some)
 | | Cover `art/cover.svg` | Hero `art/hero.svg` |
@@ -36,12 +36,12 @@ Also: a full background (no transparency), 2–4 main colours from the game's pa
 6. **Hero banner:** a wide version of the same scene; key visual on the right third, calm, darker area bottom-left for the launcher's title.
 
 ## Optional: painted key art with the user's own key
-With `OPENAI_API_KEY`, `GEMINI_API_KEY` or `REPLICATE_API_TOKEN` set, a painted backdrop or key-art scene can be generated (`npm run art`, [generated-art.md](../pushplay-runtime/references/generated-art.md)) and embedded in `cover.html` / `hero.html` under the game-drawn hero and the title. Keep the title as real text, never generated. It costs the user money: run `--dry`, tell them the cost and only generate with `--approve <$>` once they've agreed to it.
+With `OPENAI_API_KEY`, `GEMINI_API_KEY` or `REPLICATE_API_TOKEN` set, a painted backdrop or key-art scene can be generated (`pushplay art`, [generated-art.md](../pushplay-runtime/references/generated-art.md)) and embedded in `cover.html` / `hero.html` under the game-drawn hero and the title. Keep the title as real text, never generated. It costs the user money: run `--dry`, tell them the cost and only generate with `--approve <$>` once they've agreed to it.
 
 ## 3. Render, look, iterate
-1. `npm run check`; it renders `cover.png` and `hero.png` under `.github/pushplay/.work/out/<id>/__art/`.
+1. `pushplay check`; it renders `cover.png` and `hero.png` and prints their paths.
 2. **Open both PNGs** and judge them:
-   - Shrink test: does the cover still read at ~216×150? `npm run art:shots` renders `cover-thumb.png` at that size. Is the title legible?
+   - Shrink test: does the cover still read at ~216×150? `pushplay art-shots` renders `cover-thumb.png` at that size. Is the title legible?
    - Does it look like *this* game, in its palette, and not a generic placeholder?
    - Anything important in the bottom 110 px of the cover or the bottom-left of the hero? Is the bottom-left dark enough for a light title?
    - Cropped to the middle (x 600–1320, top 250 px, as the phone library shows it), does the hero still show the game?

@@ -1,6 +1,6 @@
 # online-netcode in a PushPlay game
 
-The general `online-netcode` skill teaches the host-authoritative model, the fixes by symptom, designing for delay and the test procedure. This page gives the same advice in terms of `net.js`, for any change to an `--online` game's networking (scaffolded with `npm run new-game <id> --online`). AGENTS.md *Online multiplayer* is the rule. Read [multiplayer.md](../multiplayer.md) first: it has the full `net.js` API. Never edit `net.js` or `lobby.js`.
+The general `online-netcode` skill teaches the host-authoritative model, the fixes by symptom, designing for delay and the test procedure. This page gives the same advice in terms of `net.js`, for any change to an `--online` game's networking (scaffolded with `pushplay new-game <id> --online`). The rules are in the `pushplay-rules` skill: [online-and-party.md](../../../pushplay-rules/references/online-and-party.md) (*Online multiplayer*). Read [multiplayer.md](../multiplayer.md) first: it has the full `net.js` API. Never edit `net.js` or `lobby.js`.
 
 ## Input
 
@@ -37,8 +37,8 @@ The general `online-netcode` skill teaches the host-authoritative model, the fix
 
 ## Debug hooks and the check
 
-- Run `npm run dev` and play in **two browser windows**; the dev relay starts automatically. Play as host and as guest: the non-host is where lag shows.
+- Run `pushplay dev` and play in **two browser windows**; the dev relay starts automatically. Play as host and as guest: the non-host is where lag shows.
 - `window.__kitNet` shows status, players and bytes sent.
 - Throttle one window (DevTools → Network → slow 4G) to feel delay.
 - Take one copy offline for 20 s (DevTools → Network → Offline) and back. It must show "Reconnecting…", rejoin the same room and seat, and carry on. A phone game in device mode should do the same after `visibilitychange`.
-- `npm run check` plays two copies together through a local relay. It warns above about 20 KB/s for two players; fix the bandwidth warning as well as the failures.
+- `pushplay check` plays two copies together through a local relay. It warns above about 20 KB/s for two players; fix the bandwidth warning as well as the failures.

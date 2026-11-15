@@ -1,32 +1,55 @@
 ---
 name: kit-upgrade
-description: Update this repo to the newest PushPlay build kit and shared files, only when the user asks — run npm run update-kit (or npm run sync-template in a repo made from the template), keep this repo's own additions to AGENTS.md, CLAUDE.md, skills and docs, then run the check on every game and fix what the new kit flags. Use for "update the kit", "the launcher says build kit outdated", "sync from the template", "get the latest skills / runtime".
+description: Bring a PushPlay game repo up to date, only when the user asks. Two jobs — clean up a repo set up before kit v14 that still carries the kit's own copy (.github/pushplay, AGENTS.md, kit skills, tools/art, npm scripts) with pushplay migrate, and refresh a JavaScript game's runtime files (input.js, menu.js, fit.js and the rest) with pushplay update-runtime; then run the check on every game and fix what it flags. Use for "update the kit", "the launcher says it builds with an old copy of the kit", "clean up the old kit", "migrate this repo", "get the latest runtime files".
 ---
 
 # Kit upgrade
 
-Follow AGENTS.md. **Only run this when the user asks** (AGENTS.md: `npm run update-kit` only on request). It touches shared files in every game, so work on a branch and commit separately from game changes.
+Follow the `pushplay-rules` skill. `pushplay` is the command the `pushplay-rules` skill gives you. **Only run this when the user asks.** It touches shared files in every game, so work on a branch and commit separately from game changes.
 
-## 1. Pick the tool
-- `npm run update-kit` downloads the newest kit from the latest PushPlay release (or takes a path to a kit folder, an unpacked template repo or a `kit.zip`). It **replaces** `.github/pushplay/` and the workflow, **overwrites** `AGENTS.md` and `CLAUDE.md`, replaces each kit skill folder in `.claude/skills/` (the repo's own extra skills there survive) and links `.agents/skills` to it for agents that read that folder, refreshes `tools/art`, `tools/promote` and `promote.yml`, adds any npm scripts and `.gitignore` lines the repo is missing (it never changes ones the repo already has), and swaps the runtime files in every game (`input.js`, `menu.js`, `fit.js`, `audio.js`, `save.js`, `settings.js`, `prompts.js`, `touch.js`, and the online and party files). A runtime file that is new to this kit (for example `touch.js`, the on-screen controls that came with kit v10) is added to games that don't have it; it only does something when a game imports it.
-- **Coming from kit v12 or older, run `npm run update-kit` twice.** The first run is the old kit's updater: it installs the new kit and skills but doesn't know the newer steps. The second run is the new one and finishes the job (`npm run check` reminds you while it is half-way). The design guides that used to be in the repo's `docs/` folder now live inside the skills (`references/` folders), so the update removes the kit's copies from there (a doc of the repo's own stays). `CLAUDE.md` becomes a one-line import of `AGENTS.md`, which now has the list of skills. If the repo's `.claude/settings.json` enables plugins that only existed for the old template, remove those entries.
-- `npm run sync-template` (only in repos that have `tools/template-sync/`) brings in what changed in the template repo since the last sync as a **3-way merge**, so this repo's own additions survive; conflicts are left with `<<<<<<<` markers. `-- --check` only reports whether anything is new.
+The build kit no longer lives in game repos: a repo holds only its games, their `pushplay.json` and art, and one workflow file that calls the shared build. So there are two jobs left, and a repo may need one, both or neither:
 
-Prefer `sync-template` when it exists; use `update-kit` otherwise, or when the user asks for it.
+| The repo has | Job |
+|---|---|
+| `.github/pushplay/` (the kit's old copy), and usually the kit's `AGENTS.md`, skills in `.claude/skills/`, `tools/art`, `tools/promote` and npm scripts such as `npm run check` | **A. Migrate** (section 1), then B if the user wants the newest runtime files |
+| JavaScript games on the runtime files (`input.js`, `menu.js`, … next to `game.js`) | **B. Update the runtime files** (section 2) |
+| Only engine exports or games on their own engine, and no `.github/pushplay/` | Nothing to do: say so |
 
-## 2. Run it safely
+The launcher shows a repo that still has the old copy as **"Builds with an old copy of the kit"**. Its **Set up auto-builds** pull request only swaps the workflow file, so the repo builds with the shared build; `pushplay migrate` does the full clean-up.
+
+## 1. Migrate a repo set up before kit v14
 1. Start from a clean working tree (`git status`), on a branch.
-2. Run the tool and read its whole output: overwritten runtime files, warnings, conflicts.
-3. **Review the diff of the shared prompt files** (`git diff AGENTS.md CLAUDE.md .claude/ package.json`):
-   - After `update-kit`, re-add any repo-specific lines that were overwritten (for example a `CLAUDE.md` line routing to the repo's own skills). `git diff` shows them as removed lines.
-   - After `sync-template`, resolve each conflict by keeping both the template's change and the repo's addition.
-4. **Hand-edited runtime files:** if a game's `input.js`, `menu.js` or another runtime file was edited, the tool warns and replaces it. Move the game's change into `game.js` (key aliases via `input.extendKeys`, behaviour in the game's own code).
+2. Run `pushplay migrate --dry` and **show the user what it would remove and what it would keep** before changing anything. It removes only what the old kit put there:
+   - `.github/pushplay/` (the kit's copy), and the old `promote.yml` and `update-kit.yml` workflows
+   - the kit's `AGENTS.md`, and the kit's lines in `CLAUDE.md` (a `CLAUDE.md` with nothing else left goes too)
+   - the kit's skills in `.claude/skills/` and the link to them in `.agents/skills`
+   - the kit's design guides in the repo's `docs/` folder (a doc of the repo's own stays)
+   - `tools/art`, `tools/promote` and `.env.example`
+   - the npm scripts that ran the kit (`setup`, `new-game`, `dev`, `check`, `update-kit`, `art`, `art:shots`, `promote`), and a `package.json` that held nothing else
+   - it points each game's `$schema` at the published schema and writes `.github/workflows/pushplay.yml`, which calls the shared build
+3. **What stays:** the games themselves, the repo's own skills, tools, scripts and docs, its own lines in `CLAUDE.md`, an `AGENTS.md` that isn't the kit's, and a Vite game's own `package.json`. The output lists these as "kept". If the user wants something on the remove list kept (a kit skill they edited, say), copy it under another name first.
+4. With the user's yes, run `pushplay migrate`, read its whole output and look at `git status`.
+5. `pushplay check` (it checks every game), and fix what it reports (section 3).
+6. Commit on its own (`Remove the old copy of the build kit`) and push.
+
+From then on **there is nothing in the repo to update**: every push is built by the shared build, and the rules and commands come from the PushPlay skills (or `npx github:Visual-Zone-Development/pushplay-plugin <command>` with no skills installed).
+
+## 2. Update a JavaScript game's runtime files
+The runtime files are shared code copied into each JavaScript game when it was scaffolded. `pushplay update-runtime` brings them up to the current kit's:
+1. Start from a clean working tree, on a branch, and run `pushplay update-runtime`. In every game built on the runtime files it:
+   - **replaces** each file that carries the runtime header (`input.js`, `menu.js`, `fit.js`, `audio.js`, `save.js`, `settings.js`, `prompts.js`, `touch.js`, plus `net.js` and `lobby.js` in an online game and `party.js`, `party-lobby.js`, `qr.js`, `controller.js` and `net.js` in a party game)
+   - **adds** a runtime file the game doesn't have yet (for example `touch.js`, the on-screen controls); it only does something when the game imports it
+   - leaves games that aren't on the runtime files alone
+2. Read its whole output. Two warnings need action:
+   - **"replaced without a runtime header"**: an `input.js`, `menu.js`, `net.js` or `lobby.js` from an old kit, or one edited by hand, was overwritten. Look at `git diff` for that file and move the game's own change into `game.js` (key aliases via `input.extendKeys`, behaviour in the game's own code).
+   - **"kept (the game's own file shares a runtime name)"**: the game wrote its own file under a runtime name; it was not touched. Nothing to do unless the game should be using the runtime's.
+3. `pushplay check`, and fix what it reports (section 3).
+4. Commit on its own (`Update the runtime files`) and push.
 
 ## 3. Check every game
-1. `npm run setup` if dependencies changed, then `npm run check` (all games).
-2. Fix each ✗ in the game that reports it, using the `debug-game` steps; new kit rules (for example a newly required manifest field) are usually small manifest or code fixes. Bump each fixed game's patch `version` and add a Changelog line. Kit v10 added two passes: a **mouse-only** pass for every game (menus by click and the on-screen pause button; it backs the Desktop label, so an older game whose menus or pause button don't answer a click now fails) and a **phone pass** only for games with `phone` in their manifest. No existing game gets `phone` from the upgrade: the phone spaces (720×1280, 1280×720), `fit.safe` and `touch.js` are there to use when the user asks for a phone version (the `mobile-port` skill), and 1280×800 stays every game's default.
-3. Look at a few screenshots to make sure nothing renders differently.
+1. `pushplay check` (all games); `pushplay setup` first if it says the headless browser is missing.
+2. Fix each ✗ in the game that reports it, using the `debug-game` steps; newer rules (for example a newly required manifest field) are usually small manifest or code fixes. Bump each fixed game's patch `version` and add a Changelog line. Kit v10 added two passes: a **mouse-only** pass for every game (menus by click and the on-screen pause button; it backs the Desktop label, so an older game whose menus or pause button don't answer a click now fails) and a **phone pass** only for games with `phone` in their manifest. No existing game gets `phone` from the upgrade: the phone spaces (720×1280, 1280×720), `fit.safe` and `touch.js` are there to use when the user asks for a phone version (the `mobile-port` skill), and 1280×800 stays every game's default.
+3. Look at a few of the screenshots whose paths the check prints, to make sure nothing renders differently.
 
-## 4. Commit and report
-1. Commit the kit update on its own (`Kit: update to <version>` or `Sync from template`), then any game fixes as separate commits (`<Name>: fixes for the new kit`). Push.
-2. Tell the user what the new kit brought (read the tool's output and the diff of `AGENTS.md` and the skills), which games needed fixes, and anything left to do.
+## 4. Report
+Commit any game fixes separately (`<Name>: fixes for the new kit`) and push. Tell the user what was removed and kept (after a migrate), which runtime files changed, which games needed fixes, and anything left to do.

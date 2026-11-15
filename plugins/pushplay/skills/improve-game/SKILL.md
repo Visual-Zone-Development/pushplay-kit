@@ -5,7 +5,7 @@ description: Change or improve the game in this repo. Covers specific requests (
 
 # Improve game
 
-Follow AGENTS.md. Design material lives in the skills' `references/` folders. The specialist skills named below (`game-feel`, `level-design`, `game-audio`, …) are written for any web game. When one says "the game's menu system", "its save data" or "the project's checks", the `pushplay-runtime` skill gives the PushPlay calls, with a page per craft skill.
+Follow the `pushplay-rules` skill. `pushplay` is the command the `pushplay-rules` skill gives you. If the game isn't a JavaScript game on the runtime files (an engine export, a game on its own engine), work in the game's own engine and code, hold it only to what `pushplay-rules` requires of every game, and skip the steps here that are about the runtime files. Design material lives in the skills' `references/` folders. The specialist skills named below (`game-feel`, `level-design`, `game-audio`, …) are written for any web game. When one says "the game's menu system", "its save data" or "the project's checks", the `pushplay-runtime` skill gives the PushPlay calls, with a page per craft skill.
 
 ## 0. Get context, pick a mode
 1. Read `DESIGN.md` and the code relevant to the request.
@@ -21,10 +21,10 @@ Follow AGENTS.md. Design material lives in the skills' `references/` folders. Th
    - "Make it work on my phone / tablet", "mobile version", "earn the Phone label" → the `mobile-port` skill; "add touch controls", "the virtual stick feels bad", "my thumb covers the player" → `touch-controls`.
 
 ## Direct change
-1. **Sanity-check against the design.** If the change would undermine a fun target, break the input or screen rules in AGENTS.md, or blow the Deck / Legion Go performance budget, say so in one line and propose the closest version that works. Otherwise don't ask; just do it.
+1. **Sanity-check against the design.** If the change would undermine a fun target, break the input or screen rules in the `pushplay-rules` skill, or blow the Deck / Legion Go performance budget, say so in one line and propose the closest version that works. Otherwise don't ask; just do it.
 2. **Implement in the existing style.**
    - Numbers go in `TUNING`. If there isn't a `TUNING` object yet, gather the relevant numbers into one as you go.
-   - A **new mechanic must meet the same bar as the rest of the game**: an onboarding prompt (`input.label()` / `drawPrompts`), visual and audio feedback through `audio.js`, a place in the difficulty ramp, and a free button from the AGENTS.md table (never `menu`, F10 or a chord; `b` is fine).
+   - A **new mechanic must meet the same bar as the rest of the game**: an onboarding prompt (`input.label()` / `drawPrompts`), visual and audio feedback through `audio.js`, a place in the difficulty ramp, and a free button from the table in the `pushplay-rules` skill's [controls.md](../pushplay-rules/references/controls.md) (never `menu`, F10 or a chord; `b` is fine).
    - Never edit the runtime files; add key aliases with `input.extendKeys`.
 3. **Check neighbouring systems:**
    - pause (Resume / Restart / Settings / Quit to title) and restart still reset everything correctly; `input.onPause` still lands on `paused`
@@ -32,11 +32,11 @@ Follow AGENTS.md. Design material lives in the skills' `references/` folders. Th
    - settings: new shake or flash honours `reducedShake`; new text honours `textScale`
    - local multiplayer via `input.pads[i]`, if the game has it
    - online play, if the game has it: new state goes in `net.state` on the host, and the check's two-copy test still passes ([multiplayer.md](../pushplay-runtime/references/multiplayer.md)). Bump `version` when the netcode changes: only builds with the same version play together
-   - **adding online play** to a game: copy `net.js` and `lobby.js` from `.github/pushplay/templates/online/`, follow that folder's `game.js` for the screen flow (title → lobby → playing; the pause menu is still opened by `menu` and built with `menu.js`, but it only stops your controls and offers Leave game instead of Restart), move what players see into `net.state`, set `"online": true` and add the `online multiplayer` tag
+   - **adding online play** to a game: copy `net.js` and `lobby.js` from `$(pushplay where)/templates/online/`, follow that folder's `game.js` for the screen flow (title → lobby → playing; the pause menu is still opened by `menu` and built with `menu.js`, but it only stops your controls and offers Leave game instead of Restart), move what players see into `net.state`, set `"online": true` and add the `online multiplayer` tag
    - a phone game (manifest `phone`): new HUD or targets placed from `fit.safe` and out of the thumb zones, text ≥ 32 px, a new verb gets its touch form (a `touch.js` button or a tap), the phone pass still passes
    - title, HUD and help text that mention the old behavior; prompts still come from `input.label`, not literals
    - cover and hero art, if the look changed
-4. `npm run check`, fix every ✗, look at the screenshot, and redo the AGENTS.md **Verification** passes that the change touches (at least the input you changed, plus keyboard-only).
+4. `pushplay check`, fix every ✗, look at the screenshot, and redo the **Verification** passes ([verification.md](../pushplay-rules/references/verification.md) in the `pushplay-rules` skill) that the change touches (at least the input you changed, plus keyboard-only).
 5. **Record it:**
    - bump `version` in `pushplay.json`: patch for tuning or fixes, minor for features or content
    - update DESIGN.md (affected sections plus a Changelog line)
@@ -44,7 +44,7 @@ Follow AGENTS.md. Design material lives in the skills' `references/` folders. Th
 6. Report what changed and how to try it. Optionally suggest 1–2 related follow-ups, but don't build them unasked.
 
 ## Make it better
-1. **Look.** Run `npm run check` and view the screenshot. If deeper states matter, use the repro script in [debugging.md](../pushplay-runtime/references/debugging.md) to capture screenshots at 10s, 60s and so on.
+1. **Look.** Run `pushplay check` and view the screenshot. If deeper states matter, use the repro script in [debugging.md](../pushplay-runtime/references/debugging.md) to capture screenshots at 10s, 60s and so on.
 2. **Playtest debrief.** If the user has played it, ask one round of questions in plain language (with a question tool if you have one). Skip anything they already told you.
    - **Why did you stop?** Got bored / too hard / confused / beat it / wanted more.
    - **How long did a session last?** < 2 min / 2–10 min / longer.
@@ -63,7 +63,7 @@ Follow AGENTS.md. Design material lives in the skills' `references/` folders. Th
    - [complete-game.md](../new-game/references/complete-game.md): missing items are usually the biggest, cheapest wins (no retry hook, silent actions, no ramp, no best score)
    - game feel: response time, acceleration, hit-stop, shake, sound
    - the difficulty curve, read from `TUNING` and the spawn and ramp code
-   - the **AGENTS.md rules checklist** (older games often predate it; each miss is a fix to propose):
+   - the **`pushplay-rules` rules checklist** (older games often predate it; each miss is a fix to propose):
      - menus on `menu.js`, including touch; pause menu = Resume / Restart / Settings / Quit to title; Settings (master/music/SFX, reduced shake, text size via `settings.js`) reachable from title and pause
      - `menu` pauses (Start / Esc / P / on-screen button), `b` is back and otherwise free; no F10, Start+Select or held-Esc binding; no exit of its own (the pause menu's Quit to library comes from `menu.js`)
      - `input.onPause` → `paused`; `window.__game = { state, TUNING }` with `state.screen`
@@ -81,7 +81,7 @@ Follow AGENTS.md. Design material lives in the skills' `references/` folders. Th
    - Mix quick wins (tuning, juice, missing feedback) with one bigger idea: a new mechanic, a mode (daily seed, endless, boss rush, co-op) or a meta loop.
    - Put the fix for the **biggest fun problem** first, marked "(Recommended)", even if it isn't the smallest.
 5. **Implement** the chosen items one at a time, using the Direct change steps 2–4 for each.
-6. **Verify** with the full AGENTS.md **Verification** matrix: controller, keyboard only, mouse only, touch (DevTools device mode), 1920×1080 resize at DPR 2, a phone-sized window for a phone game, and `npm run check` (gamepad, keyboard, mouse-only, touch, Start → `paused`, DPR 2, and the phone pass where it applies, all green).
+6. **Verify** with the full **Verification** matrix in the `pushplay-rules` skill's [verification.md](../pushplay-rules/references/verification.md): controller, keyboard only, mouse only, touch (DevTools device mode), 1920×1080 resize at DPR 2, a phone-sized window for a phone game, and `pushplay check` (gamepad, keyboard, mouse-only, touch, Start → `paused`, DPR 2, and the phone pass where it applies, all green).
 7. **Record and hand back.**
    - Bump `version`.
    - Update DESIGN.md: tick Definition of done items and add a Changelog entry.

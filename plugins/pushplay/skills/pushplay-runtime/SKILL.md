@@ -5,7 +5,7 @@ description: How to do things with PushPlay's runtime files in a game (input.js,
 
 # The PushPlay runtime
 
-AGENTS.md is the contract: its *Game rules* say what every game must do, and the runtime files are how. They are shared code that `npm run update-kit` replaces, so import them and never edit them. This skill is the lookup from a craft skill's plain words to the calls.
+This skill is for JavaScript games built on the runtime files; a game made in another engine doesn't use it. The `pushplay-rules` skill is the contract: it says what every game must do, and the runtime files are how. They are shared code that `pushplay update-runtime` replaces, so import them and never edit them. This skill is the lookup from a craft skill's plain words to the calls. `pushplay` is the command the `pushplay-rules` skill gives you.
 
 ## 1. From the craft skills' words to the runtime
 
@@ -29,14 +29,14 @@ The craft skills (`game-feel`, `game-ui`, `game-audio`, …) are written for any
 | the logical resolution, the scaling layer | 1280×800 (or the phone spaces 720×1280 and 1280×720) through `fitCanvas(canvas, { w, h, maxDpr: 2, … })` from `fit.js`; `fit.safe` for notches; `input.attach(canvas, w, h)` |
 | the target device | A Steam Deck or Legion Go: a mid-range integrated GPU, a 7–8" screen, 60 fps at 1280×800 and no drops at DPR 2 |
 | a debug hook | `window.__game = { state, TUNING }` (the check needs it), with helpers of your own such as `window.__game.jumpTo('boss')`; `?debug` and `?seed=` in the URL |
-| the project's dev server | `npm run dev` (`npm run dev <id>` in a workshop), at `http://localhost:5173/` |
-| the project's checks | `npm run check` (`npm run check <id>`): fix everything it reports, then look at the images it prints |
+| the project's dev server | `pushplay dev` (`pushplay dev <id>` in a workshop), at `http://localhost:5173/` |
+| the project's checks | `pushplay check` (`pushplay check <id>`): fix everything it reports, then look at the images whose paths it prints |
 | how the project finishes a change | Bump `version` in `pushplay.json`, add a Changelog line to `DESIGN.md`, commit and push |
-| a headless-browser script | The repro script in [debugging.md](references/debugging.md), on the kit's Playwright (`.github/pushplay/node_modules/playwright`) |
-| an image-generation tool | `npm run art`, and its cost rules, in [generated-art.md](references/generated-art.md) |
+| a headless-browser script | The repro script in [debugging.md](references/debugging.md), on the kit's Playwright (`PW_MODULE="$(pushplay where)/node_modules/playwright"`) |
+| an image-generation tool | `pushplay art`, and its cost rules, in [generated-art.md](references/generated-art.md) |
 | the project's cover or key art | `art/cover.svg` and `art/hero.svg`: the `cover-art` skill |
 
-The full signatures and the rules around each are in AGENTS.md: *Controls*, *Menus*, *Settings*, *Input hints*, *Saves*, *Audio*, *Flow*, *Screens and scaling*.
+The full signatures and the rules around each are in the `pushplay-rules` skill: [controls.md](../pushplay-rules/references/controls.md) (*Controls*, *Input hints*), [menus-and-exit.md](../pushplay-rules/references/menus-and-exit.md) (*Menus*, *Flow*), [screens.md](../pushplay-rules/references/screens.md) (*Settings*, *Screens and scaling*) and [saves-and-audio.md](../pushplay-rules/references/saves-and-audio.md) (*Saves*, *Audio*).
 
 ## 2. The PushPlay side of each craft skill
 
@@ -57,7 +57,7 @@ When you use a craft skill in a PushPlay game, also read its page in `references
 | [phone.md](references/phone.md) | Phone and tablet play: the phone spaces, `fill: true`, safe areas, thumb zones, the phone pass, the Phone and Tablet labels |
 | [3d.md](references/3d.md) | three.js in a `--vite` game: the fixed render surface, the HUD canvas, budgets for the Deck |
 | [assets.md](references/assets.md) | Bundled sprites, audio, models and fonts: where they go, sizes, licences and `assets/CREDITS.md` |
-| [generated-art.md](references/generated-art.md) | `npm run art`: painted art from the user's own image API key, and never spending their money without a yes |
+| [generated-art.md](references/generated-art.md) | `pushplay art`: painted art from the user's own image API key, and never spending their money without a yes |
 | [multiplayer.md](references/multiplayer.md) | Online games: the whole `net.js` and `lobby.js` API, the host loop, private views, reconnects |
 | [party.md](references/party.md) | Party games: `party.js`, `party.public` and `party.view(id)`, `controller.html`, the lobby and join badge |
 | [motion.md](references/motion.md) | Phone motion controls in a party game: what sensors can and can't do, `motion.js` |

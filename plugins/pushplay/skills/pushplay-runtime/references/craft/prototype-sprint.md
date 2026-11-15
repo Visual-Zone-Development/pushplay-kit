@@ -1,6 +1,6 @@
 # prototype-sprint in a PushPlay game
 
-The general `prototype-sprint` skill covers building two or three small playable directions and picking a winner. This page gives the PushPlay side: all prototypes ship as one game. AGENTS.md *Workflow*, *Menus*, *Manifest* and *Art* are the rules.
+The general `prototype-sprint` skill covers building two or three small playable directions and picking a winner. This page gives the PushPlay side: all prototypes ship as one game. The rules are in the `pushplay-rules` skill: [menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md) (*Menus*), the skill itself for *Workflow* and *Art* and the `pushplay-manifest` skill for the manifest.
 
 ## Menus
 
@@ -9,7 +9,7 @@ The general `prototype-sprint` skill covers building two or three small playable
 
 ## Manifest
 
-- Scaffold one game for all the prototypes: `npm run new-game <id> --name "<Name> Prototypes"`. Add `--vite` if any direction is 3D.
+- Scaffold one game for all the prototypes: `pushplay new-game <id> --name "<Name> Prototypes"`. Add `--vite` if any direction is 3D.
 - When a winner is picked, rename the game if it had "Prototypes" in it: `name` in `pushplay.json`, and the title. Keep the id unless the user wants a new one: a new id means a new folder and a new library entry.
 - To grow the winner, rewrite DESIGN.md as a full brief (Status: approved) and continue with step 5 of the `new-game` skill (build in milestones) through to shipping.
 - Bump `version` to `1.0.0` at release, and record the sprint in the Changelog.

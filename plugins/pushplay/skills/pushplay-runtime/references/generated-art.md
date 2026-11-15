@@ -1,8 +1,8 @@
 # Generated art (optional, with your own API key)
 
-Art drawn in code (the the `art-direction` skill, the `canvas2d-assets` skill, the `pixel-art` skill and the `threejs-models` skill skills) is the default, and every game works without anything here. If you have an image-generation API key, `npm run art` can also make painted sprites, textures, tiles and key art from a prompt catalog. Claude writes the prompts, generates the images, looks at them and re-prompts, which is how Battle Drones made its first sprites and its terrain.
+Art drawn in code (the the `art-direction` skill, the `canvas2d-assets` skill, the `pixel-art` skill and the `threejs-models` skill skills) is the default, and every game works without anything here. If you have an image-generation API key, `pushplay art` can also make painted sprites, textures, tiles and key art from a prompt catalog. Claude writes the prompts, generates the images, looks at them and re-prompts, which is how Battle Drones made its first sprites and its terrain.
 
-Generation only runs on your machine or in your agent's session. The images are saved into the game folder and bundled like any other asset, so **the shipped game never touches the network** and `npm run check` still passes.
+Generation only runs on your machine or in your agent's session. The images are saved into the game folder and bundled like any other asset, so **the shipped game never touches the network** and `pushplay check` still passes.
 
 ## Setup
 
@@ -14,7 +14,7 @@ Set **one** of these keys:
 | `GEMINI_API_KEY` | Google Gemini image models | `GEMINI_IMAGE_MODEL` overrides the model. Imagen was shut down on the Gemini API in August 2026. |
 | `REPLICATE_API_TOKEN` | Replicate (FLUX and many others) | `REPLICATE_IMAGE_MODEL` (`owner/name`) picks the model. |
 
-- **On your computer:** copy `.env.example` to `.env` at the repo root and fill in one key. `.env` is gitignored.
+- **On your computer:** put one key in a `.env` file at the repo root (`OPENAI_API_KEY=…`), and make sure `.env` is in `.gitignore`.
 - **In a cloud agent** (Claude Code on the web, Codex): add the variable to the environment's settings. Keys already in the environment take priority over `.env`.
 - When several keys are set, `ART_PROVIDER=openai|gemini|replicate` picks one. Otherwise the first in the order above is used.
 
@@ -32,7 +32,7 @@ These are rough prices per 1024² image from October 2026 price lists. Check you
 
 A typical game needs 10–30 images plus retries, about **$0.50–$6**. Battle Drones' full set of 74 images would be about $3 at medium or $15 at high. Art drawn in code, and 3D models written in code, cost nothing beyond the agent's own usage.
 
-`npm run art` prints an estimate before it calls anything, stops at 12 images per run unless you pass `--max`, defaults to medium quality and skips images that already exist. `--dry` shows the prompts and the estimate without calling anything.
+`pushplay art` prints an estimate before it calls anything, stops at 12 images per run unless you pass `--max`, defaults to medium quality and skips images that already exist. `--dry` shows the prompts and the estimate without calling anything.
 
 ### Nothing is charged until you agree to the cost
 
@@ -45,7 +45,7 @@ Every run that would spend money stops first and shows what it costs:
 
 ```mermaid
 flowchart LR
-  run[npm run art] --> est[print estimate]
+  run[pushplay art] --> est[print estimate]
   est --> dry{--dry?}
   dry -- yes --> stop0[show prompts, charge nothing]
   dry -- no --> appr{--approve covers estimate?}
@@ -91,11 +91,11 @@ Two parts generated in one image (a hull and its turret, a sheet of 3×3 decorat
 ## Commands
 
 ```sh
-npm run art -- --dry          # prompts + cost estimate, no calls
-npm run art --                # generate everything that's missing (max 12 per run); asks before charging
-npm run art -- --approve 0.60 # agents: generate once the user has agreed to about $0.60
-npm run art -- courier --force  # redo one asset (also asks)
-npm run art -- --list         # which assets exist
+pushplay art --dry          # prompts + cost estimate, no calls
+pushplay art                   # generate everything that's missing (max 12 per run); asks before charging
+pushplay art --approve 0.60 # agents: generate once the user has agreed to about $0.60
+pushplay art courier --force  # redo one asset (also asks)
+pushplay art --list         # which assets exist
 ```
 
 Each run:
@@ -103,7 +103,7 @@ Each run:
 - Saves the raw images to `art/raw/`, which is added to `.pushplayignore` automatically so it isn't shipped.
 - Writes the processed PNGs (keyed, trimmed, scaled) to `assets/art/`.
 - Updates a *Generated art* section in `assets/CREDITS.md`.
-- Writes a contact sheet to `.github/pushplay/.work/out/<id>/__shots/generated.png`.
+- Writes a contact sheet to a scratch folder outside the repo and prints its path.
 
 **Always open the contact sheet** and re-prompt anything off-style before using it.
 

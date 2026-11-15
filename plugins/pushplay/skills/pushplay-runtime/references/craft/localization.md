@@ -1,6 +1,6 @@
 # localization in a PushPlay game
 
-The general `localization` skill covers the strings table, the Language setting, longer text, plurals, number formats and fonts. This page gives the PushPlay side. AGENTS.md *Input hints*, *Settings* and *Manifest* are the rules. Never edit the runtime files: the starter's menus, settings and prompts come from them, and you translate only the strings your game passes in.
+The general `localization` skill covers the strings table, the Language setting, longer text, plurals, number formats and fonts. This page gives the PushPlay side. The rules are in the `pushplay-rules` skill: [controls.md](../../../pushplay-rules/references/controls.md) (*Input hints*), [screens.md](../../../pushplay-rules/references/screens.md) (*Settings*) and the `pushplay-manifest` skill for the manifest. Never edit the runtime files: the starter's menus, settings and prompts come from them, and you translate only the strings your game passes in.
 
 ## Input
 

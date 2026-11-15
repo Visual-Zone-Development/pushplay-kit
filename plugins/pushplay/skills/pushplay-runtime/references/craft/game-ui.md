@@ -1,12 +1,12 @@
 # game-ui in a PushPlay game
 
-The general `game-ui` skill covers the audit questions, HUD rules, onboarding by doing, and menu and results-screen design. This page gives the PushPlay side: how to do it with the runtime files. AGENTS.md *Menus*, *Screens and scaling*, *Input hints* and *Settings* are the rules.
+The general `game-ui` skill covers the audit questions, HUD rules, onboarding by doing, and menu and results-screen design. This page gives the PushPlay side: how to do it with the runtime files. The rules are in the `pushplay-rules` skill: [menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md) (*Menus*), [screens.md](../../../pushplay-rules/references/screens.md) (*Screens and scaling*, *Settings*) and [controls.md](../../../pushplay-rules/references/controls.md) (*Input hints*).
 
 ## Input
 
 - Every prompt comes from `input.label()` / `drawPrompts`, never a literal "A" or "Space".
 - Teach each action the first time it's needed, with an in-world prompt (`` `${input.label('a')} to jump` ``) that disappears once the player has done it. Build prompt strings every frame, so they switch when the player changes device.
-- No prompt row along the bottom (AGENTS.md *Input hints*): a control is taught once, next to the thing it acts on, and never on touch or mouse.
+- No prompt row along the bottom (*Input hints* in the `pushplay-rules` skill's [controls.md](../../../pushplay-rules/references/controls.md)): a control is taught once, next to the thing it acts on, and never on touch or mouse.
 - Everything that isn't one of the resources the player acts on goes on the pause screen or the `select` (Tab) overlay.
 - Keep the top-right or top-left corner clear for the ≥ 56×56 on-screen pause button the starter draws.
 - A custom grid (level select, upgrade tree) uses `input.navX` / `input.navY`, A to choose, B to go back, and `input.pointer` taps on each cell, with a visible highlight.
@@ -38,6 +38,6 @@ The general `game-ui` skill covers the audit questions, HUD rules, onboarding by
 
 ## Debug hooks and the check
 
-- For the audit, run `npm run check` and view the screenshot; capture more states (title, gameplay at 60 s, pause, game over) with a repro script (see [debugging.md](../debugging.md)).
-- Run the verification matrix from AGENTS.md for every screen you touched: controller, keyboard only, mouse only, touch (DevTools device mode), 1920×1080 and DPR 2. For a phone game add 390×844 / 844×390 at DPR 3 with touch only; the check's phone pass measures text under 32 px.
+- For the audit, run `pushplay check` and view the screenshot; capture more states (title, gameplay at 60 s, pause, game over) with a repro script (see [debugging.md](../debugging.md)).
+- Run the verification matrix from the `pushplay-rules` skill ([verification.md](../../../pushplay-rules/references/verification.md)) for every screen you touched: controller, keyboard only, mouse only, touch (DevTools device mode), 1920×1080 and DPR 2. For a phone game add 390×844 / 844×390 at DPR 3 with touch only; the check's phone pass measures text under 32 px.
 - Tick the *Screens and flow* items in DESIGN.md.

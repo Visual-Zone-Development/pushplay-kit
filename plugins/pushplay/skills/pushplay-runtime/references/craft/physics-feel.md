@@ -1,6 +1,6 @@
 # physics-feel in a PushPlay game
 
-The general `physics-feel` skill covers fixed-timestep integration, collision detection and response, bounce, friction, knockback and vehicles. This page gives the PushPlay side. AGENTS.md *Tech* is the rule.
+The general `physics-feel` skill covers fixed-timestep integration, collision detection and response, bounce, friction, knockback and vehicles. This page gives the PushPlay side. The rules are in the `pushplay-rules` skill: [screens.md](../../../pushplay-rules/references/screens.md) (*Tech*).
 
 ## Debug hooks and the check
 

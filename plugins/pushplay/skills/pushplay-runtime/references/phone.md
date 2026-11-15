@@ -3,7 +3,7 @@
 PushPlay lists where each game plays: **Handheld & controller** (every game), **Desktop** (keyboard
 and mouse), **Tablet** (landscape, touch; "Needs a controller" when touch gameplay is missing),
 **Phone** and **Party (TV + phones)**. Those "Plays on" labels are earned, not claimed: each one
-is read from `pushplay.json` and backed by a pass of `npm run check`. This guide is about the
+is read from `pushplay.json` and backed by a pass of `pushplay check`. This guide is about the
 two that take design work, **Phone** and **Tablet**. The `mobile-port` skill is the step-by-step
 version for an existing game; `touch-controls` covers the on-screen controls.
 
@@ -24,7 +24,7 @@ changes it for a game that isn't built for phones. A phone game picks one of two
 | **Portrait 720×1280** | `{ w: 720, h: 1280 }` | one-handed phone games: tappers, stackers, endless runners, puzzles, cards | a phone held upright, a tablet upright |
 | **Landscape 1280×720** | `{ w: 1280, h: 720 }` | two-thumb phone games: platformers, shooters, racers, anything with a stick | a phone or tablet held sideways, and (with bars) the Deck and PC |
 
-`npm run new-game <id> --phone portrait` or `--phone landscape` scaffolds a starter already laid
+`pushplay new-game <id> --phone portrait` or `--phone landscape` scaffolds a starter already laid
 out in that space, with `fitCanvas`, `input.attach(canvas, w, h)` and the manifest's `phone`
 field agreeing. `"orientation": "any"` means the game handles both phone spaces: it lays out
 twice and swaps when the window turns (`fit.onResize`, reading the space `fit.js` picked). That's
@@ -205,7 +205,7 @@ a table).
 
 ## The phone check pass
 
-`npm run check` runs two extra passes:
+`pushplay check` runs two extra passes:
 
 - **Mouse-only**, for every game (it backs the Desktop label): every menu by click, the
   on-screen pause button, gameplay if `inputs` has `"mouse"`.
@@ -217,5 +217,5 @@ a table).
 
 Try it yourself in DevTools device mode (iPhone 14 or Pixel 7 presets, touch emulation on):
 menus by tap, play with thumbs, lock the "screen" with `document.dispatchEvent(new Event('visibilitychange'))`
-while `document.hidden` is stubbed, rotate the device. And on a real phone: `npm run dev -- --host`
+while `document.hidden` is stubbed, rotate the device. And on a real phone: `pushplay dev --host`
 and open the address shown on a phone on the same Wi-Fi.

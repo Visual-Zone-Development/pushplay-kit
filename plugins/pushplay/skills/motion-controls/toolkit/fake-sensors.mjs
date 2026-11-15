@@ -2,7 +2,7 @@
 // without a phone. It loads the page with a stub `controller`, posts sensor samples the way the
 // join page does, and collects what the page sends.
 //
-//   node <skill-dir>/toolkit/fake-sensors.mjs controller.html
+//   PW_MODULE="$(pushplay where)/node_modules/playwright" node <skill-dir>/toolkit/fake-sensors.mjs controller.html
 //   (or public/controller.html in a --vite game). Edit the scenarios at the bottom for your gestures.
 //
 // A scenario is a function of time t (s) returning { a: [x, y, z] m/s² without gravity,
@@ -10,8 +10,15 @@
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 
-const require = createRequire(resolve('.github/pushplay/package.json'))
-const { chromium } = require('playwright')
+// Playwright comes from PW_MODULE (the kit's copy), or from the working directory's own packages.
+const require = createRequire(resolve('package.json'))
+let chromium
+try {
+  ;({ chromium } = require(process.env.PW_MODULE ? resolve(process.env.PW_MODULE) : 'playwright'))
+} catch {
+  console.error('Playwright not found. Set PW_MODULE="$(pushplay where)/node_modules/playwright", or install it: npm i -D playwright')
+  process.exit(2)
+}
 
 const file = resolve(process.argv[2] ?? '')
 const browser = await chromium.launch()

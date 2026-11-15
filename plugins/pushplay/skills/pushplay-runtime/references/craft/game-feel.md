@@ -1,6 +1,6 @@
 # game-feel in a PushPlay game
 
-The general `game-feel` skill covers responsiveness and juice: movement, hit-stop, shake, particles, squash and stretch, and impact sounds. This page gives the PushPlay side. AGENTS.md *Controls*, *Settings* and *Audio* are the rules.
+The general `game-feel` skill covers responsiveness and juice: movement, hit-stop, shake, particles, squash and stretch, and impact sounds. This page gives the PushPlay side. The rules are in the `pushplay-rules` skill: [controls.md](../../../pushplay-rules/references/controls.md) (*Controls*), [screens.md](../../../pushplay-rules/references/screens.md) (*Settings*) and [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Audio*).
 
 ## Input
 
@@ -19,6 +19,6 @@ The general `game-feel` skill covers responsiveness and juice: movement, hit-sto
 ## Debug hooks and the check
 
 - Build the feedback helpers as a small set in `game.js`, not in the runtime files, and use them everywhere.
-- To test the core verb alone, run `npm run dev` (or a repro script from [debugging.md](../debugging.md)) and do only that verb for 30 seconds in an empty space.
+- To test the core verb alone, run `pushplay dev` (or a repro script from [debugging.md](../debugging.md)) and do only that verb for 30 seconds in an empty space.
 - Tune one number at a time. Live-tune through `window.__game.TUNING` in the dev console.
 - A feel pass is a patch `version` bump; tick the *Feel* items in DESIGN.md's Definition of done.

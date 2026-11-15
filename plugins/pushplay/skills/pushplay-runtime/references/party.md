@@ -5,7 +5,7 @@ their phone: they scan the QR code on the lobby screen, or open the address show
 browser and type the four-letter room code. Controllers plugged into the machine can join too,
 so the same game plays with phones, pads, or a mix.
 
-Scaffold one with `npm run new-game <id> --party`, adding `--controller custom` when phones need
+Scaffold one with `pushplay new-game <id> --party`, adding `--controller custom` when phones need
 a screen of their own (a quiz answer, a hand of cards, a drawing pad), or `--controller motion`
 when the phone's motion sensors are the controller (tilt, a steering wheel, swings; see
 [motion.md](../../pushplay-runtime/references/motion.md)).
@@ -100,7 +100,7 @@ pause menu calls `party.close()`, which tells every phone the game ended.
 
 ## Testing
 
-- `npm run dev`: the local relay listens on your Wi-Fi, so scan the lobby's QR code with a
+- `pushplay dev`: the local relay listens on your Wi-Fi, so scan the lobby's QR code with a
   real phone. Open the join address in a few browser windows (one per player) to test alone.
-- `npm run check`: headless phones join by code, send input, must each see exactly their
+- `pushplay check`: headless phones join by code, send input, must each see exactly their
   own `party.view(id)`, and one reloads to check it gets its seat back.

@@ -1,6 +1,6 @@
 # environments in a PushPlay game
 
-The general `environments` skill covers the world the game takes place in: play spaces, tiles, scattering, backdrops, skies, weather and ambient motion. This page gives the PushPlay side. AGENTS.md *Settings* and *Screens and scaling* are the rules.
+The general `environments` skill covers the world the game takes place in: play spaces, tiles, scattering, backdrops, skies, weather and ambient motion. This page gives the PushPlay side. The rules are in the `pushplay-rules` skill: [screens.md](../../../pushplay-rules/references/screens.md) (*Settings*, *Screens and scaling*).
 
 ## Settings
 

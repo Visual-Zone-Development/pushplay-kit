@@ -5,7 +5,7 @@ description: Check that a game works with every input on its own (Steam Deck and
 
 # Input walkthrough
 
-Follow AGENTS.md. This is the headless version of its **Verification** matrix: every screen, with each input alone. Many players have only one input (a controller on a handheld, a keyboard, a mouse or a touchscreen), so each **input setup** in [setups/](setups/README.md) is played through on its own, and you get a matrix of what works where and the fixes that matter most.
+Follow the `pushplay-rules` skill. `pushplay` is the command the `pushplay-rules` skill gives you. This is the headless version of its **Verification** matrix ([verification.md](../pushplay-rules/references/verification.md)): every screen, with each input alone. Many players have only one input (a controller on a handheld, a keyboard, a mouse or a touchscreen), so each **input setup** in [setups/](setups/README.md) is played through on its own, and you get a matrix of what works where and the fixes that matter most.
 
 `<skill-dir>` is the folder this file is in.
 
@@ -13,7 +13,7 @@ Follow AGENTS.md. This is the headless version of its **Verification** matrix: e
 
 Get these from the request. Ask only about what you can't infer.
 
-- **Target:** start the game with `npm run dev <id>` (just `npm run dev` in a one-game repo) in the background and wait until `http://localhost:5173/` responds.
+- **Target:** start the game with `pushplay dev <id>` (just `pushplay dev` in a one-game repo) in the background and wait until `http://localhost:5173/` responds.
 - **Section** (optional): one part to check, such as "the settings menu", "the pause menu", "level select" or "the first boss". Without one, the scope is the whole game.
 - **Screen list:** every screen and menu in scope; these are the rows of the matrix. Title, every menu and submenu, settings, pause, game over or results, level select, shops, dialogs, the lobby in an online or party game, and **gameplay** as its own row, split by mode when modes play differently. List them from the `state.screen` values in `game.js` as well as by looking, so screens that are hard to reach still get listed.
 - **Shortcuts:** read the current screen with `eval window.__game.state.screen`. `?seed=` and `?debug` help reach later states. Use them to check state and save time, but reach every screen with the setup's own inputs at least once.
@@ -22,7 +22,7 @@ Done when you have the screen list and can say how each screen is reached.
 
 ## 2. The controls contract
 
-AGENTS.md's *Controls*, *Menus*, *Leaving your game*, *Exit and pause*, *Input hints* and *Screens and scaling* sections, and the `inputs` list in the game's `pushplay.json`. In short:
+The `pushplay-rules` skill's [controls.md](../pushplay-rules/references/controls.md) (*Controls*, *Input hints*), [menus-and-exit.md](../pushplay-rules/references/menus-and-exit.md) (*Menus*, *Leaving your game*, *Exit and pause*) and [screens.md](../pushplay-rules/references/screens.md) (*Screens and scaling*), and the `inputs` list in the game's `pushplay.json`. In short:
 
 - `menu` (Start, Esc, P, the on-screen pause button) pauses. Esc never acts as back.
 - `b` (B, Backspace, right-click) goes back in menus.
@@ -34,7 +34,11 @@ AGENTS.md's *Controls*, *Menus*, *Leaving your game*, *Exit and pause*, *Input h
 - The cursor is hidden only during gameplay.
 - Mouse and touch gameplay are required only if `inputs` lists them. Menus always need all four inputs.
 
-**Run `npm run check <id>` first** and record the result. It already covers the short gamepad, keyboard, mouse, touch, pause and DPR 2 passes; the walkthrough goes further: every screen, every setup, judged from screenshots.
+**Run `pushplay check <id>` first** and record the result. It already covers the short gamepad, keyboard, mouse, touch, pause and DPR 2 passes; the walkthrough goes further: every screen, every setup, judged from screenshots.
+
+### A game that isn't on the runtime files
+
+For an engine export or a game on its own engine, the contract is only what `pushplay-rules` requires of every game. Kit-only expectations (prompts from `input.label`, the `menu.js` pause menu order, `window.__game.state.screen`) become "n/a" rows in the matrix, not failures; find the current screen by looking at screenshots instead.
 
 ## 3. Pick the setups
 
@@ -47,16 +51,16 @@ Read every file in [setups/](setups/README.md) except the README, then the proje
 ## 4. Check the browser
 
 ```bash
-PW_MODULE=.github/pushplay/node_modules/playwright node <skill-dir>/scripts/browser.mjs help
+PW_MODULE="$(pushplay where)/node_modules/playwright" node <skill-dir>/scripts/browser.mjs help
 ```
 
-Use the kit's copy of Playwright through `PW_MODULE` on every browser command (run `npm run setup` first in a fresh checkout). If the browser can't be installed here, say so and stop: the check in GitHub Actions still covers the short passes.
+Use the kit's copy of Playwright through `PW_MODULE` on every browser command (run `pushplay setup` first if the headless browser isn't installed yet). If the browser can't be installed here, say so and stop: the check in GitHub Actions still covers the short passes.
 
 Add `--webgl` to a setup's browser flags only for WebGL or 3D games. It slows 2D canvas games down badly.
 
 ## 5. Play each setup
 
-Pick an output folder: `walkthrough-reports/<YYYY-MM-DD>-<game-id>/` in the repo root, with `screens/<setup-id>/` per setup. If your agent can run subagents, give each setup to its own subagent and start them all at once; otherwise play the setups one after another yourself. Either way the brief is the same, with the setup file in full:
+Pick an output folder outside the repo (your scratch folder, or the system's temp folder): `walkthrough-<game-id>-<YYYY-MM-DD>/`, with `screens/<setup-id>/` per setup. Nothing from a walkthrough goes into the game's repo. If your agent can run subagents, give each setup to its own subagent and start them all at once; otherwise play the setups one after another yourself. Either way the brief is the same, with the setup file in full:
 
 > You are checking a game with one input setup, and nothing else.
 >
@@ -124,7 +128,6 @@ Don't invent results. A cell that wasn't checked is "not reached", not ✅.
 ## Afterwards
 
 1. Stop any browsers still running, and the dev server if you started it.
-2. Add `walkthrough-reports/` to `.gitignore` if it isn't there: reports are never committed.
-3. In chat, give a short summary: the matrix in compact form, the top 3 fixes and the report path.
-4. Don't fix things in this skill. Offer to fix the findings with `debug-game` (broken input or pause), `game-ui` (prompts, legibility, layout) or `accessibility-audit` (remapping, holds, text size). For each fixed game, bump `version` and add a Changelog line as AGENTS.md says.
-5. Headless checks can't feel the real device: suggest the 2–3 things most worth trying by hand on the actual handheld.
+2. In chat, give a short summary: the matrix in compact form, the top 3 fixes and the report path.
+3. Don't fix things in this skill. Offer to fix the findings with `debug-game` (broken input or pause), `game-ui` (prompts, legibility, layout) or `accessibility-audit` (remapping, holds, text size). For each fixed game, bump `version` and add a Changelog line as the `pushplay-rules` skill says.
+4. Headless checks can't feel the real device: suggest the 2–3 things most worth trying by hand on the actual handheld.
