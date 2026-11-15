@@ -1,8 +1,8 @@
 # Art directions
 
-Style presets to offer the player and then follow consistently in the game and its cover or key art. Each one is a starting point. Tweak the palette to the theme, but keep to 2–4 main colors plus a text color.
+Style presets to offer the player and then follow consistently in the game and its key art. Each one is a starting point. Tweak the palette to the theme, but keep to 2–4 main colors plus a text color.
 
-A preset sets the palette; what makes it look finished is the **light & depth** line under each one, plus the [art-direction skill](../SKILL.md) for the whole-screen look, and cover or key art drawn with the game's own code. Star Courier ([Star Courier's `art.js`](https://github.com/Visual-Zone-Development/arcade-sampler/tree/main/games/star-courier/art.js) in Arcade Sampler) is a worked example of a lit vector look, and Arcade Sampler's other games show flat bold, paper and pastel, parchment, pixel art and neon side by side.
+A preset sets the palette; what makes it look finished is the **light & depth** line under each one, plus the [art-direction skill](../SKILL.md) for the whole-screen look, and key art drawn with the game's own code.
 
 **Fonts.** The fonts named below are `Chakra Petch` (600, 700), `Rubik` (400, 700, 900), `Bungee`, `Lilita One` and `Press Start 2P`. They are **not automatically in the game**: bundle each one you use. Copy its `.woff2` (e.g. `bungee-latin-400-normal.woff2` from the `@fontsource/<font>` npm package's `files/` folder) into `assets/fonts/` and load it with `@font-face` or `new FontFace()`; never link a remote font. These fonts are OFL licensed, so note it in `assets/CREDITS.md`. Wait for `document.fonts.ready` before the first text draw, or text will flash in a fallback font.
 
@@ -14,14 +14,14 @@ Crisp, chunky, retro.
 - **Font:** `Press Start 2P` (titles and HUD; it's wide, so use it sparingly), or `Rubik 700` for body text.
 - **Render:** draw at a low internal resolution (e.g. 320×200 or 427×267) on an offscreen canvas, then scale up by an integer to the game's logical resolution with `ctx.imageSmoothingEnabled = false`. Snap positions to whole pixels. Sprites can be defined as string arrays in code (`'..XX..'`) and baked into canvases once at startup.
 - **Light & depth:** shade each sprite with a 3–4 step ramp per colour (shadows hue-shift toward blue/purple, highlights toward yellow), a 1px dark outline, and 2–3 parallax background layers.
-- **Art:** cover art drawn with the game's own sprite code keeps it pixel-perfect. Otherwise use SVG `<rect>` grids with `shape-rendering="crispEdges"`.
+- **Art:** key art drawn with the game's own sprite code keeps it pixel-perfect. Otherwise use SVG `<rect>` grids with `shape-rendering="crispEdges"`.
 
 ### Flat bold vector
-Clean geometric shapes, strong silhouettes. The house style of Star Courier.
+Clean geometric shapes, strong silhouettes.
 - **Palette:** `#0b1024` deep navy, `#5cc8ff` cyan hero, `#ffb547` amber accent, `#ff7a6b` danger, `#eef0f5` text.
 - **Font:** `Rubik 900` or `Lilita One` for titles, `Rubik 700` in the HUD.
 - **Render:** canvas paths, no outlines or thin dark outlines, one shadow color. Shapes should read as silhouettes at a glance.
-- **Light & depth:** three tones per shape (gradient or faceted fills) from one upper-left light, an ink edge in the darkest palette colour, a highlight edge facing the light, and a nebula/sky gradient backdrop with a vignette (Star Courier's `art.js`).
+- **Light & depth:** three tones per shape (gradient or faceted fills) from one upper-left light, an ink edge in the darkest palette colour, a highlight edge facing the light, and a nebula/sky gradient backdrop with a vignette.
 - **Art:** SVG with the same shapes, enlarged. The hero object breaks the frame edge for energy.
 
 ### Neon / synthwave
@@ -54,7 +54,7 @@ Faceted, flat-shaded, colorful. Needs a bundler (Vite) + three.js (see [`3d.md`]
 - **Font:** `Rubik 900` / `Lilita One`.
 - **Render:** `MeshLambertMaterial` or `MeshStandardMaterial` with `flatShading: true`, vertex colors instead of textures, a hemisphere light plus one directional light, and fog to hide the far plane.
 - **Light & depth:** ACES or Neutral tone mapping, a tinted hemisphere light (cool sky, warm ground) plus a warm sun, fog matched to a gradient sky dome, and vertex-colour jitter with darker bases (the 3D defaults in [3d.md](../../threejs-models/references/3d.md#look)).
-- **Art:** the cover can render the actual scene with three.js, or draw the key model as flat SVG polygons in the same colors.
+- **Art:** the key art can render the actual scene with three.js, or draw the key model as flat SVG polygons in the same colors.
 
 ### Toon 3D
 Cel-shaded, outlined, cartoon.
@@ -67,7 +67,7 @@ Cel-shaded, outlined, cartoon.
 ---
 
 ## Consistency checklist
-- The cover or key art, title screen and gameplay all use the **same palette and hero object**.
+- The key art, title screen and gameplay all use the **same palette and hero object**.
 - The player character or ship has the **most saturated color** on screen. Enemies get the danger color. The background is the darkest or least saturated.
 - Text uses the text color with strong contrast; check it at thumbnail size.
 - Record the chosen preset, palette hex values and font in `DESIGN.md`, so later changes stay on-style.

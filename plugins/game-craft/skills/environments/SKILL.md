@@ -1,6 +1,6 @@
 ---
 name: environments
-description: Design and build the world the game in this repo takes place in, for any genre, camera and art style — side-view stages, top-down maps and rooms, isometric boards, tracks, arenas, space, cities, interiors and 3D scenes — readable play spaces, landmarks and composition, tiles that join up automatically (edge, blob and corner autotiling), natural scattering, levels written as text, parallax backdrops, skies and time of day, atmospheric depth, ambient motion and weather, all matched to the game's references. Ships a renderer-agnostic toolkit (autotile.js, scatter.js, levelmap.js, backdrop.js) and a squint-test readability tool. Use for "make the world / background / level look better", "add a background", "the map looks tiled / repetitive / empty", "I can't tell where I can walk", "add parallax", "day and night", "build a town / dungeon / track / arena", or any environment art. Pairs with pixel-art (pixel terrain and props), art-direction (whole-screen look), level-design (layout and pacing), camera and performance-pass.
+description: Design and build the world a game takes place in, for any engine, genre, camera and art style, whether side-view stages, top-down maps and rooms, isometric boards, tracks, arenas, space, cities, interiors or 3D scenes, with readable play spaces, landmarks and composition, tiles that join up automatically (edge, blob and corner autotiling), natural scattering, levels written as text, parallax backdrops, skies and time of day, atmospheric depth, ambient motion and weather, all matched to the game's references. Ships a JavaScript toolkit (autotile.js, scatter.js, levelmap.js, backdrop.js) and a squint-test readability script; the method works without them. Use for "make the world / background / level look better", "add a background", "the map looks tiled / repetitive / empty", "I can't tell where I can walk", "add parallax", "day and night", "build a town / dungeon / track / arena", or any environment art. Pairs with pixel-art (pixel terrain and props), art-direction (whole-screen look), level-design (layout and pacing), camera and performance-pass.
 ---
 
 # Environments
@@ -8,7 +8,9 @@ description: Design and build the world the game in this repo takes place in, fo
 Follow the project's own rules first (its `AGENTS.md` or platform guide): they decide the APIs, the screen size, the performance budget, the checks and how to finish a change. `<skill-dir>` is the folder this file is in.
 
 Read the game's DESIGN.md (genre, camera, fun
-targets) and STYLE.md. This skill is for every kind of game: it never assumes a genre, a camera or a style.
+targets) and STYLE.md. This is a craft skill for every kind of game: it never assumes an engine, a genre, a
+camera or a style. Use the engine's own tile maps, scatter tools and parallax nodes where it has them; the
+bundled toolkit is JavaScript (see *In a web game*).
 What an environment looks like comes from the game's references. What stays fixed is the craft: the world
 has to be readable, navigable and consistent before it can be pretty.
 
@@ -72,18 +74,18 @@ Write an **Environment style** block in STYLE.md, one per area or biome if they 
 - **Motion budget:** a few ambient movements make a space alive; too many fight the gameplay for attention.
   Honour the game's reduced shake / flash setting (no flashing, lightning or camera-shaking weather when it's on).
 - **Performance:** bake static layers once (ground, backdrops), draw them as images, and cull off-screen tiles.
-  In 3D, instance repeated props and keep to the [3d.md](../threejs-models/references/3d.md) budgets.
+  In 3D, instance repeated props and keep to the project's triangle and draw-call budget.
 
 ## 3. Build: pick the approach per layer
 
-| Approach | Use for | Toolkit |
+| Approach | Use for | How |
 |---|---|---|
-| **Grid + autotiling** | anything made of cells: ground, walls, water, roads, platforms, boards, tracks | `autotile.js`: `edge` (16: side-view ground and platforms, pipes, fences, roads as lines), `blob` (47: top-down walls, cliffs, water bodies, carpets with inner and outer corners), `corner` (16: blending two terrains with a wobbly border). `bakeTileset(scheme, size, draw)` calls *your* draw function for each variant, so the tiles are in the game's style; `drawTiles` draws a grid. Pixel games can use the pixel-art skill's `tiles.js` terrain fills as the draw function. |
-| **Levels as text** | hand-made rooms and stages in any grid game | `levelmap.js`: `parseLevel(text, { legend })` → layers and entity spawns; `solidRects` merges colliders; `reachable` checks the exit can be reached. |
-| **Scattering** | trees, rocks, grass, debris, crowds, stars, asteroids, 3D instances | `scatter.js`: `poisson` (even but natural spacing, with `density` and `avoid` callbacks to keep paths, doors and spawns clear), `clusters` (patches, rubble, belts), `pick` (weighted variants). |
-| **Backdrops** | skies, distant scenery, menus, any background | `backdrop.js`: `sky` gradients; `layer(kind, …)` seamless strips (hills, mountains, dunes, waves, forest, pines, city, clouds, stars) in vector or pixel mode (`pixel: 4`); `drawParallax` by camera; `haze` for atmospheric perspective; `timeOfDay` blends palette keyframes. |
+| **Grid + autotiling** | anything made of cells: ground, walls, water, roads, platforms, boards, tracks | Each cell picks its tile from which neighbours are the same terrain. **Edge** scheme (4 neighbours, 16 tiles): side-view ground and platforms, pipes, fences, roads as lines. **Blob** (8 neighbours, 47 tiles): top-down walls, cliffs, water bodies, carpets with inner and outer corners. **Corner** (4 corners, 16 tiles): blending two terrains with a wobbly border. Draw the variants in the game's style; most engines' tile maps have these rules built in (terrain sets, rule tiles). |
+| **Levels as text** | hand-made rooms and stages in any grid game | One character per cell plus a legend that maps characters to layers and entity spawns. Merge runs of solid cells into a few collider rectangles, and flood-fill from the start to check the exit can be reached. |
+| **Scattering** | trees, rocks, grass, debris, crowds, stars, asteroids, 3D instances | **Poisson-disc** sampling for even but natural spacing, with a density map and an avoid test that keep paths, doors and spawns clear; **clusters** for patches, rubble and belts; weighted variant picks. Seed it so the world is the same every run. |
+| **Backdrops** | skies, distant scenery, menus, any background | A sky gradient; seamless strips (hills, mountains, dunes, waves, forest, city, clouds, stars) baked once and scrolled by the camera at their own factor; each layer's colour mixed toward the haze colour by depth × ~0.85; time of day as blended palette keyframes. |
 | **Set pieces** | landmarks, boss arenas, story spots | Hand-built per game (model-asset workflow) and placed by the level text or by hand. |
-| **3D scenes** | three.js games | Ground as a few large meshes or a heightfield; scatter positions from `scatter.js` → `InstancedMesh`; sky gradient on a large sphere or `scene.background`; fog colour = haze colour; one directional light + hemisphere light; budgets in [3d.md](../threejs-models/references/3d.md). |
+| **3D scenes** | any 3D game | Ground as a few large meshes or a heightfield; scatter positions drive instanced meshes; sky gradient on a large dome or the background; fog colour = haze colour; one directional light plus a sky/ground ambient light. |
 
 Recipes by camera, as starting points to adapt to the measured style:
 
@@ -106,7 +108,7 @@ Recipes by camera, as starting points to adapt to the measured style:
 
 - One light direction for the whole game (matching the characters). Shadows are a darker, cooler version
   of the surface or a translucent haze colour, never pure black.
-- **Time of day** and **area mood** are palette keyframes in STYLE.md (`timeOfDay`), applied to sky, haze,
+- **Time of day** and **area mood** are palette keyframes in STYLE.md, applied to sky, haze,
   ambient tint and light sources together, never to one layer alone.
 - **Light sources** (windows, lamps, neon, lava, crystals) carry their colour onto nearby surfaces as soft
   pools; at night they become the landmarks.
@@ -115,17 +117,39 @@ Recipes by camera, as starting points to adapt to the measured style:
 
 ## 5. Render, squint, compare
 
-1. Capture the area in the game (model-asset's `shot.mjs`, or a screenshot from the project's checks) next to the reference.
-2. Run the squint test:
-   `node <skill-dir>/squint.mjs <shot.png> <scratch> --play x,y,w,h --bg x,y,w,h`. Look at
-   `-values.png` and `-squint.png`: the player, the path and hazards must still read. It also reports the
-   value separation between play layer and background.
+1. Capture the area in the running game next to the reference, at the resolution of each target the game ships
+   on (a phone in the hand, a handheld, a desktop window, a TV across the room): the engine's screenshot or
+   headless render if the project has one, a screenshot from the project's checks, or one from the user
+   (model-asset's *Render and compare* has the options).
+2. **Squint test:** make two copies of the capture, one desaturated to greyscale (values only) and one
+   desaturated and blurred by about 1/160 of its width (shapes only). Any image editor does this. The player,
+   the path and hazards must still read in both. Compare mean brightness (0–1) of a rectangle on the play layer
+   and one on the background: under ~0.15 apart, the play layer sinks into the background. If most of the
+   screen sits in 3 or fewer value bands, it is flat: push darks and lights apart.
 3. List the top 5 differences from the reference, biggest first: value structure > readability of walkable
-   and blocked areas > palette > texture density and edges > detail. Fix, re-render, repeat.
+   and blocked areas > palette > texture density and edges > detail. Fix, re-capture, repeat.
 4. Check scale against a character, every camera position the game uses, the largest and smallest
    areas, and frame time (performance-pass).
 5. Update STYLE.md and add a Changelog line to DESIGN.md.
 6. Run the project's checks and finish the change the way its rules say.
 
-`toolkit/demo.html` shows four game types (side view, top-down, space, a city at dusk in pixel mode) built
-from the same toolkit with placeholder vector art.
+## In a web game: the JavaScript toolkit
+
+In `toolkit/` next to this file. `scatter.js` and `levelmap.js` are plain JavaScript with no drawing, so they
+work with any JavaScript renderer; `autotile.js` and `backdrop.js` bake to a canvas. Copy what the game needs.
+
+| File | Gives you |
+|---|---|
+| `autotile.js` | schemes `edge` (16), `blob` (47), `corner` (16). `bakeTileset(scheme, size, draw)` calls *your* draw function for each variant, so the tiles are in the game's style; `drawTiles` draws a grid. Pixel games can use the pixel-art skill's `tiles.js` terrain fills as the draw function. |
+| `levelmap.js` | `parseLevel(text, { legend })` → layers and entity spawns; `solidRects` merges colliders; `reachable` checks the exit can be reached. |
+| `scatter.js` | `poisson` (with `density` and `avoid` callbacks), `clusters`, `pick` (weighted variants). |
+| `backdrop.js` | `sky` gradients; `layer(kind, …)` seamless strips in vector or pixel mode (`pixel: 4`); `drawParallax` by camera; `haze`; `timeOfDay` blends palette keyframes. |
+
+- `toolkit/demo.html` shows four game types (side view, top-down, space, a city at dusk in pixel mode) built
+  from the same toolkit with placeholder vector art.
+- **three.js:** scatter positions → `InstancedMesh`; sky on a large sphere or `scene.background`; one directional
+  light + hemisphere light; budgets in [3d.md](../threejs-models/references/3d.md).
+- **Capture:** model-asset's `scripts/shot.mjs` (`node <skill-dir>/../model-asset/scripts/shot.mjs <game-dir> <scratch> "index.html|area.png|keys=Enter|wait=2500"`).
+- **Squint script:** `node <skill-dir>/squint.mjs <shot.png> <scratch> --play x,y,w,h --bg x,y,w,h` writes
+  `-values.png` and `-squint.png` and prints the value separation. It works on a screenshot from any engine,
+  but needs Node and a headless browser (Playwright; it says what to install when it finds none).

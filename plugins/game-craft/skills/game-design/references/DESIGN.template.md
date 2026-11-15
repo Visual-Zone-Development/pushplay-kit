@@ -11,6 +11,7 @@ Answers from the kickoff interview (kickoff.md in the `game-design` skill). Mark
 |---|---|
 | Concept / genre | |
 | 2D or 3D | |
+| Built with | <engine, framework or language, and why> |
 | Art style | |
 | Players | <solo / local 2–4 / online 2–N / party with phones> |
 | Platform and devices | <where it runs and what it's played on: handheld / PC / tablet / phone portrait or landscape / TV with phones; the logical resolution; the inputs gameplay supports> |
@@ -73,10 +74,10 @@ List the game's actions by input. Keyboard, mouse and touch equivalents follow t
 - **Style:** <preset from art-directions.md, or custom>
 - **Palette:** `#……` background, `#……` hero, `#……` accent, `#……` danger, `#……` text
 - **Font:** <bundled font for art, and in-game>
-- **Rendering:** 2D canvas / three.js
+- **Rendering:** <2D or 3D, and the engine or library that draws it>
 - **Online:** no / yes: <who runs the game and how it stays in sync>
 - **Assets:** procedural / user-supplied (`assets/`, credits in `assets/CREDITS.md`) / CC0
-- **Key art idea** (cover, banner): …
+- **Key art idea** (store or listing image, banner): …
 
 ## Audio
 - **SFX:** …
@@ -101,11 +102,11 @@ Tailored from definition-of-done.md in the `game-design` skill. Keep the fixed i
 - [ ] <game-specific>
 
 **Audio**
-- [ ] SFX and music through the game's audio layer, following the Settings sliders; nothing assumes sound before the first input
+- [ ] SFX and music through the game's audio layer, following the Settings sliders; muted on pause; nothing depends on sound already playing (web games: none before the first input)
 
 **Screens and flow**
 - [ ] Title (a menu that starts the game, best score), pause with Resume / Restart / Settings / Quit to title, game over with one-press retry
-- [ ] Auto-pause when the game loses focus or the page is hidden; fully frozen while paused
+- [ ] Auto-pause when the game loses focus or goes to the background; fully frozen while paused
 - [ ] Every menu works with controller, keyboard, mouse and touch
 - [ ] Settings from title and pause: master / music / SFX, reduced shake, text size <+ game items>
 - [ ] Saves: best score, unlocks, progress; saved on every change that matters and on pause
@@ -115,12 +116,12 @@ Tailored from definition-of-done.md in the `game-design` skill. Keep the fixed i
 - [ ] Colorblind-safe, no mashing, reduced shake honoured, text ≥ 24px scaled by the text-size setting, no hard-coded button names
 
 **Scaling and inputs**
-- [ ] Scales to any window (letterbox colour, DPR ≤ 2, integer scaling for pixel art); right at the logical resolution, at DPR 2, in a window of another shape and in small windows
+- [ ] Scales to any window (letterbox colour, capped render resolution, integer scaling for pixel art); right at the logical resolution, on a high-density screen, in a window of another shape and in small windows
 - [ ] Verified with each input alone (controller, keyboard only, mouse only, touch) on the target devices
-- [ ] Phone games only: HUD and tap targets inside the safe area and out of the thumb zones; text ≥ 32px; on-screen controls hidden with a controller; a hidden page pauses
+- [ ] Phone games only: HUD and tap targets inside the safe area and out of the thumb zones; text ≥ 32px; on-screen controls hidden with a controller; going to the background pauses
 
 **Under the hood**
-- [ ] `TUNING`, clamped `dt`, `?debug` overlay, 60fps, nothing shipped but the game, the project's checks green
+- [ ] `TUNING`, clamped `dt`, a debug overlay behind the game's debug mode, 60fps, nothing shipped but the game, the project's checks green
 
 ## Open questions / assumptions
 - …

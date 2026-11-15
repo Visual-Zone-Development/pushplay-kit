@@ -4,10 +4,10 @@ Games can be entirely procedural (shapes, generated sound), which is often the f
 
 ## Drawing assets in code
 
-Many small web games draw their art in code rather than shipping files. The skills keep it consistent and good-looking:
+Many small games draw their art in code rather than shipping files. The skills keep it consistent and good-looking:
 **model-asset** (build an asset to a reference the user provides, comparing renders every round, or make one
-focused change to an existing asset), **animate-asset** (natural motion that fits the game's physics), plus the engine
-how-tos **canvas2d-assets** (2D in any art style: vector, pixel art, sprite sheets, SVG; an asset gallery page) and
+focused change to an existing asset), **animate-asset** (natural motion that fits the game's physics), plus the
+how-tos for web games, **canvas2d-assets** (2D in any art style: vector, pixel art, sprite sheets, SVG; an asset gallery page) and
 **threejs-models** (3D models built in three.js code). A game's `STYLE.md` records its palette, proportions,
 shared parts and animation timing.
 
@@ -18,13 +18,13 @@ shared parts and animation timing.
   assets/
     sprites/   PNG / WebP sprite sheets and images
     audio/     OGG / MP3 / WAV sound effects and music
-    models/    GLB / GLTF (three.js games)
-    fonts/     WOFF2
+    models/    GLB / GLTF
+    fonts/     font files (WOFF2 for a web game, TTF / OTF elsewhere)
     CREDITS.md who made what, and the license
 ```
 
 - **Copy files into the game folder.** Never reference files outside it (`../`, absolute paths) or from the internet: the game should work offline, and a dead link must never break it.
-- Use relative URLs from `index.html`, e.g. `assets/sprites/hero.png`. With a bundler such as Vite, files in `public/assets/` are served as-is, or you can `import heroUrl from './assets/hero.png'`.
+- Use paths relative to the game, e.g. `assets/sprites/hero.png`, or the engine's own resource paths. (Web games: relative URLs from the page; with a bundler such as Vite, files in `public/assets/` are served as-is, or you can `import heroUrl from './assets/hero.png'`.)
 - Use lowercase, dash-separated filenames (case matters on Linux, where builds and servers usually run).
 
 ## Licenses
@@ -43,7 +43,7 @@ Only use assets the player owns or that have a license allowing redistribution (
 - **Kenney.nl:** huge CC0 packs of 2D sprites, UI, 3D models and audio. Consistent styles.
 - **OpenGameArt.org:** check each item's license.
 - **Quaternius:** CC0 low-poly 3D models.
-- **jsfxr / sfxr:** generate retro SFX and export WAV. Or generate them live with WebAudio in code.
+- **jsfxr / sfxr:** generate retro SFX and export WAV. Or generate them live in code (WebAudio in a web game).
 
 ## Keep them small
 
@@ -64,6 +64,12 @@ If the player hands over huge files, downscale or re-encode them, and mention wh
 
 Preload everything **before** the title screen accepts input, and draw something while it loads. A progress bar counts; get something on screen within a few seconds.
 
+- **Sprite sheets:** frame `i` of a sheet with `cols` columns and frames of `fw`×`fh` is at `x = (i % cols) * fw`, `y = floor(i / cols) * fh`. For pixel art, turn smoothing (filtering) off and scale by whole numbers.
+- **Audio:** load and play bundled files through the game's audio layer, on its SFX or music bus, so the Settings sliders and pause-mute apply.
+- **Models:** load with the engine's own importer; keep to the budgets above.
+
+### In a web game (canvas and three.js)
+
 ```js
 const load = (src) => new Promise((ok, fail) => {
   const img = new Image()
@@ -74,6 +80,6 @@ const load = (src) => new Promise((ok, fail) => {
 const sprites = await load('assets/sprites/hero.png')
 ```
 
-- **Sprite sheets:** `ctx.drawImage(sheet, sx, sy, sw, sh, dx, dy, dw, dh)` with frame `i` at `sx = (i % cols) * fw`, `sy = Math.floor(i / cols) * fh`. For pixel art, set `ctx.imageSmoothingEnabled = false` and scale by whole numbers.
-- **Audio:** load and play bundled files through the game's audio layer, on its SFX or music bus, so the Settings sliders and pause-mute apply. Don't create a second `AudioContext`: browsers keep one suspended until a user gesture, so the audio layer unlocks it once on the first key, click, tap or button press. Nothing is audible before that first input, so don't rely on title music starting on load.
+- **Sprite sheets:** `ctx.drawImage(sheet, sx, sy, sw, sh, dx, dy, dw, dh)`; for pixel art, set `ctx.imageSmoothingEnabled = false`.
+- **Audio:** don't create a second `AudioContext`: browsers keep one suspended until a user gesture, so the audio layer unlocks it once on the first key, click, tap or button press. Nothing is audible before that first input, so don't rely on title music starting on load.
 - **Models:** `GLTFLoader` from `three/examples/jsm/loaders/GLTFLoader.js` (see [3d.md](../../threejs-models/references/3d.md)).

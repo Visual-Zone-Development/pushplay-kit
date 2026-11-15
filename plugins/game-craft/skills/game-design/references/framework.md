@@ -11,12 +11,12 @@ From Tracy Fullerton's *Game Design Workshop*. Every game has all eight, whether
 | Element | Ask | On the target device |
 |---|---|---|
 | **Players** | How many, and how do they relate: solo, co-op, versus, one vs. the game? | Usually one device, one screen. Local multiplayer means extra controllers on a shared screen (each read on its own, join by press), so no hidden information. Online multiplayer means one device each, so hidden information works, but every action lands about 50–150 ms late. |
-| **Objectives** | What is the player trying to do, right now and overall? | One goal on screen at a time. It must be readable at a glance on a 7–8" display. |
+| **Objectives** | What is the player trying to do, right now and overall? | One goal on screen at a time. It must be readable at a glance on the smallest target screen. |
 | **Procedures** | What actions can they take? What does each button do? | Map every action to the inputs the device has: on a controller, stick + A/B/X/Y/LB/RB/LT/RT, with keyboard, mouse and touch equivalents. One action per button and no chorded inputs. Pause (Start / Esc / an on-screen button) is pause only; B is back in menus and free for gameplay. |
 | **Rules** | What's allowed, what isn't, and what happens when? | Teach rules by letting the player bump into them, not with text. |
 | **Resources** | What do they spend, collect or manage: health, time, ammo, coins, space? | Show the important ones in the HUD, at least 24px and away from the outer 32px. |
 | **Conflict** | What stands in the way: enemies, the clock, the puzzle, other players? | Conflict should scale. Plan how it grows over 1, 5 and 15 minutes. |
-| **Boundaries** | Where does the game happen? What's the play space? | One fixed logical resolution, letterboxed by the game's scaling layer on other screens. Decide whether the camera scrolls or everything fits on one screen. One screen is easier to read on a handheld. |
+| **Boundaries** | Where does the game happen? What's the play space? | One fixed logical resolution, letterboxed by the game's scaling layer on other screens. Decide whether the camera scrolls or everything fits on one screen. One screen is easier to read on a small screen. |
 | **Outcome** | How does it end: win, lose, score, ongoing? | Make the ending feel like a moment: score tally, "new best!", and retry with one press. |
 
 ## The 8 kinds of fun
@@ -26,8 +26,8 @@ From Marc LeBlanc's MDA framework (Mechanics, Dynamics, Aesthetics). Pick **one 
 ### Sensation: game as sense-pleasure
 *"That feels so good."* Crunchy hits, satisfying sounds, juicy motion.
 - Hit-stop (freeze 40–80ms on impact), screen shake scaled to the event, particle bursts (capped).
-- Layered WebAudio: pitch-shift repeated SFX slightly so they don't fatigue; rising pitch on combos.
-- Squash and stretch on jumps and landings, easing on every UI move, rumble via `gamepad.vibrationActuator` where available.
+- Layered sound: pitch-shift repeated SFX slightly so they don't fatigue; rising pitch on combos.
+- Squash and stretch on jumps and landings, easing on every UI move, controller rumble where available.
 - *Pitfall:* juice on everything turns into noise. Save the biggest effects for the biggest moments, and offer a reduced-shake option.
 
 ### Fantasy: game as make-believe
@@ -42,7 +42,7 @@ From Marc LeBlanc's MDA framework (Mechanics, Dynamics, Aesthetics). Pick **one 
 - A situation, not a cutscene: one line of setup, then let play tell the story.
 - Escalation: each stage or wave raises the stakes, so the run has a shape (calm → crisis → climax).
 - Short text beats between levels: 1–2 lines, skippable with A, at least 24px.
-- *Pitfall:* walls of text on a 7" screen. Keep any line readable in 3 seconds.
+- *Pitfall:* walls of text on a small screen. Keep any line readable in 3 seconds.
 
 ### Challenge: game as obstacle course
 *"I can beat this."* Mastery, tension, getting better.
@@ -56,7 +56,7 @@ From Marc LeBlanc's MDA framework (Mechanics, Dynamics, Aesthetics). Pick **one 
 - Local co-op or versus on one screen with 2–4 controllers. Drop in and drop out from the title screen.
 - Shared goals with individual moments to shine. Comeback mechanics so nobody falls hopelessly behind.
 - Rounds of 1–3 minutes, then a results screen that's fun to look at together.
-- *Pitfall:* split screen on a 7" display. Prefer one shared camera.
+- *Pitfall:* split screen on a small display. Prefer one shared camera.
 
 ### Discovery: game as uncharted territory
 *"What's over there? What does this do?"*
@@ -99,7 +99,7 @@ Use this when interviewing the player:
 
 Every game has loops at three timescales. Write each one as **verb → challenge → reward → growth**.
 
-| Loop | Timescale | Example (Star Courier) |
+| Loop | Timescale | Example (a courier-ship score-attack) |
 |---|---|---|
 | **Moment-to-moment** | seconds | steer → weave between rocks → grab a parcel (sparkle and chime) → score goes up |
 | **Round** | 1–5 min | 60-second run → rocks multiply → final tally → new best? |

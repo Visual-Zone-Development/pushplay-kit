@@ -9,7 +9,7 @@ Follow the project's own rules first (its `AGENTS.md` or platform guide): they d
 
 ## 1. Write the boss on one page
 Add a *Boss* section to DESIGN.md:
-- **Fantasy and silhouette:** who it is, one line; a shape that reads at handheld size and differs from every normal enemy (bigger, a unique colour from the palette, a clear weak point).
+- **Fantasy and silhouette:** who it is, one line; a shape that reads at the smallest target screen and differs from every normal enemy (bigger, a unique colour from the palette, a clear weak point).
 - **What it tests:** the 2–3 skills from earlier in the game (dodge timing, aiming, positioning, a puzzle rule).
 - **Attack list:** 3–5 attacks, each as *telegraph → attack → recovery (punish window)*.
 - **Phases:** 2–3, switched at health thresholds (e.g. 66% and 33%). Each phase adds one attack, speeds up, or changes the arena. Never all three at once.
@@ -18,8 +18,8 @@ Add a *Boss* section to DESIGN.md:
 ## 2. Rules for a fair, exciting fight
 | Rule | How |
 |---|---|
-| Telegraph everything | wind-up of 0.4–1.0 s: a pose, a glow, a ground marker, a sound cue. Faster telegraphs only in later phases |
-| Readable on a 7" screen | danger zones in the palette's danger colour, high contrast, no hue-only signals |
+| Telegraph everything | wind-up of 0.3–1.0 s, the same range as normal enemies (`enemy-ai`), with a boss's big attacks at the longer end (0.6–1.0 s): a pose, a glow, a ground marker, a sound cue. Faster telegraphs only in later phases |
+| Readable at the smallest target screen | danger zones in the palette's danger colour, high contrast, no hue-only signals |
 | Punish windows | 1–2 s after a big attack where the boss is open; reward hitting it with extra feedback |
 | One new idea per phase | phase 2 = phase 1 + one change; the last phase is the most intense, not the most complicated |
 | Fair damage | a few hits to lose, not one (unless the genre is one-hit, then generous checkpoints) |
@@ -36,7 +36,7 @@ Model the boss as a **small state machine** in the game's code: `intro → idle 
 - **Retry:** losing to a boss restarts at the boss (a checkpoint) in one press, not at the start of the game.
 
 ## 4. Verify
-1. Add a debug hook (a `jumpTo('boss')` the game exposes behind `?debug`, say) so it can be reached instantly.
+1. Add a debug hook (a `jumpTo('boss')` the game exposes behind its debug mode, say) so it can be reached instantly.
 2. Play it with a controller and with the keyboard; it must be beatable on both, and with mouse/touch if the game supports them.
 3. Run the `playtest` skill with a greedy bot if practical: does it survive phase 1? How long does the fight last (aim for 1–3 minutes)?
 4. Pause during each phase and every attack: everything freezes; Restart resets the boss fully.

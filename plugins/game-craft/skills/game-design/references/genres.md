@@ -12,7 +12,7 @@ A great small game is often a **familiar genre + one twist + a theme**: "a Break
 ---
 
 ### Arcade score-attack
-*Star Courier, Pac-Man, Geometry Wars.*
+*Pac-Man, Geometry Wars, Asteroids.*
 - **Loop:** move/shoot → dodge and collect → points and combo → difficulty rises → beat your best.
 - **Fun:** Challenge, Sensation.
 - **Controls:** stick moves, A main action, B/X secondary (bomb, dash).
@@ -55,8 +55,8 @@ A great small game is often a **familiar genre + one twist + a theme**: "a Break
 *Rhythm Heaven, Crypt of the NecroDancer, Beat Saber.*
 - **Loop:** hear the beat → input on time → rated feedback (Perfect/Good/Miss) → combo builds → song ends with a grade.
 - **Fun:** Sensation, Challenge, Submission (flow).
-- **Controls:** A/B/X/Y or d-pad directions as lanes. Keep it to at most 4 inputs on a handheld.
-- **v1:** a generated WebAudio track with a known BPM, hit timing from `AudioContext.currentTime` (never frame time), an input latency calibration screen, 2–3 songs.
+- **Controls:** A/B/X/Y or d-pad directions as lanes. Keep it to at most 4 inputs on a small screen.
+- **v1:** a generated or bundled track with a known BPM, hit timing from the audio clock, never frame time (in a web game, `AudioContext.currentTime`), an input latency calibration screen, 2–3 songs.
 - **Stretch:** difficulty charts per song, a visual theme per song, mid-song tempo changes.
 
 ### Cozy sim / management
@@ -77,11 +77,11 @@ A great small game is often a **familiar genre + one twist + a theme**: "a Break
 
 ### Motion party (phone as the controller)
 *Wii Sports, WarioWare: Smooth Moves, motion bowling and batting games.*
-- **Loop:** a cue on the TV (a pitch, a beat, a corner, the pins) → a physical motion with the phone → an instant verdict with juice → next try or next player.
+- **Loop:** a cue on the shared screen (a pitch, a beat, a corner, the pins) → a physical motion with the phone → an instant verdict with juice → next try or next player.
 - **Fun:** Sensation, Fellowship (everyone watches the swing), Challenge (timing, the hook).
 - **Controls:** the phone's motion sensors: tilt (tray, lean), a steering wheel, swings, flicks, shakes, grip-and-release, plus one big phone button. Gravity-based inputs and timed events work; **pointing at the screen doesn't**. It needs a way for phones to join the game on the big screen, which the project's platform has to provide. Every station also plays with stick, keyboard, mouse and touch.
-- **v1:** 3–6 short stations or one sport with turns; calibration in each countdown; a phone status chip and strength meter; best scores per player. Tune with fake sensors, then real phones (browsers only give motion data to an https page).
-- **Stretch:** per-player timing calibration, a Sensor Bench, tournaments across stations.
+- **v1:** 3–6 short stations or one sport with turns; calibration in each countdown; on the shared screen, each phone's status (joined, calibrated, lost) and a meter showing how hard the last motion was; best scores per player. Tune with fake sensors, then real phones (in a web game, browsers only give motion data to an https page).
+- **Stretch:** per-player timing calibration, a sensor test screen that shows each phone's live readings, tournaments across stations.
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: prototype-sprint
-description: Quickly build 2–3 tiny playable prototypes of different directions for one game idea, inside one game with a picker on the title screen, so the user can try them on the target device or in a browser and choose; then grow the winner into the full game and remove the rest. Use for "I'm not sure what I want", "try a few ideas", "prototype some options", "which version is more fun?", or when the kickoff interview leaves two strong directions.
+description: Quickly build 2–3 tiny playable prototypes of different directions for one game idea, inside one game with a picker on the title screen, so the user can try them on the target device and choose; then grow the winner into the full game and remove the rest. Use for "I'm not sure what I want", "try a few ideas", "prototype some options", "which version is more fun?", or when the kickoff interview leaves two strong directions.
 ---
 
 # Prototype sprint
@@ -13,7 +13,7 @@ From the request or the kickoff interview ([kickoff.md](../game-design/reference
 ## 2. One game, a picker on the title
 1. Start one game the way the project's rules say, named "<Name> Prototypes" (set up for 3D if any direction is 3D).
 2. Write a short `DESIGN.md` with *Status: prototype*, the directions, and the question each answers.
-3. On the title, the game's menu system lists the prototypes ("A: Dodge", "B: Shoot", "C: Build") plus Settings. Each prototype is a module (`proto-a.js`, …) with `reset()`, `update(dt)` and `draw(ctx)`, sharing one pause, settings, audio and save.
+3. On the title, the game's menu system lists the prototypes ("A: Dodge", "B: Shoot", "C: Build") plus Settings. Each prototype is a self-contained module or scene with the same small interface (reset, update with the frame's `dt`, draw), sharing one pause, settings, audio and save. In a JavaScript game, for example, that is `proto-a.js`, `proto-b.js`, … each exporting `reset()`, `update(dt)` and `draw(ctx)`; in an engine with scenes, one scene per prototype.
 4. Keep each prototype tiny: one screen, the core verb, one challenge that ramps a little, a score or a fail state, a sound per action, quick placeholder shapes in the intended palette. Aim for the **30-second fun test** in [framework.md](../game-design/references/framework.md).
 5. Run the project's checks and get the build to the user the way its rules say. Tell the user how to try each one and **what to pay attention to** ("which one did you keep playing?").
 

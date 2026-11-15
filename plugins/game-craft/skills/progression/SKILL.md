@@ -29,10 +29,10 @@ Pick **one main loop** and at most one small extra. More systems dilute each oth
 
 ## 3. Build it
 1. **Save shape:** add the fields to the defaults of the game's save data (`unlocks`, `currency`, `achievements`, `stats`, `daily`). If the save already exists, **bump the save version and migrate the old data** so existing players keep their best scores.
-2. **Award at the right moments:** at game over, level clear and achievement triggers; save right after every award, as well as on pause and when the game is paused for the player (lost focus, a hidden page).
+2. **Award at the right moments:** at game over, level clear and achievement triggers; save right after every award, as well as on pause and when the game is paused for the player (lost focus, sent to the background).
 3. **Screens:** a shop, collection or unlocks screen reachable from the title, built with the game's menu system (or a grid moved in steps with the d-pad or stick + pointer taps, see `game-ui`); back leaves it. Unlock moments get a popup with a sound and a sparkle (see `game-feel`), shown on the results screen rather than mid-action.
 4. **Title screen:** show progress at a glance (e.g. "12/30 found", today's daily best).
-5. Add a debug helper (an `unlockAll()` the game exposes behind `?debug`) to test every unlock quickly.
+5. Add a debug helper (an `unlockAll()` the game exposes behind the game's debug mode) to test every unlock quickly.
 
 ## 4. Verify
 1. A fresh save: is the first unlock reached in the first few minutes? (Use `playtest` for a measurement.)

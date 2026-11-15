@@ -30,17 +30,17 @@ Each new type should **ask the player a different question** (move, aim, priorit
 | Turn-based / board games | score every legal move with a heuristic; add a little randomness; minimax with a small depth for simple games |
 
 ## 3. Fairness rules
-- **Telegraph every attack** (0.3–1.0 s wind-up with a pose, flash or sound) and give a recovery window after it.
+- **Telegraph every attack** (0.3–1.0 s wind-up with a pose, flash or sound; quick fodder attacks at the short end, bosses and heavy attacks at the longer end, 0.6–1.0 s) and give a recovery window after it.
 - **Reaction delay** of 150–400 ms before an enemy responds to the player, so it never feels psychic.
 - **No off-screen hits** without a warning at the screen edge.
-- **Cap simultaneous threats** (attack tokens, max alive) so the screen stays readable on a 7" display.
+- **Cap simultaneous threats** (attack tokens, max alive) so the screen stays readable at the smallest target screen.
 - **Difficulty through behaviour:** faster decisions, better aim, more attackers allowed at once, rather than only more HP or damage.
 - Enemies never get stuck: if a path fails or an enemy hasn't moved for 2 s, re-path or teleport-respawn it out of view.
 
 ## 4. Build and verify
 1. Put every number (speeds, ranges, wind-ups, reaction delays, token counts) in `TUNING.enemies.<type>`.
 2. Keep per-frame work cheap: path re-computation on a timer (every 0.2–0.5 s) or a shared flow field, a spatial grid for neighbour checks, pooled enemies (see `performance-pass`).
-3. In the `?debug` overlay, draw each enemy's state name, its target and its path or field arrows.
-4. Pause freezes all AI timers; Restart resets them; seeded RNG for any randomness (`?seed=`).
+3. In the game's debug overlay, draw each enemy's state name, its target and its path or field arrows.
+4. Pause freezes all AI timers; Restart resets them; seeded RNG for any randomness, with a way to set the seed.
 5. Play against each enemy type alone, then mixed. Run `playtest` if practical to see which types end runs.
 6. Update DESIGN.md (enemy table, Changelog), then run the project's checks and finish the change the way its rules say.

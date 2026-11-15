@@ -5,12 +5,12 @@ description: Build and tune the physics of the game in this repo so it feels goo
 
 # Physics feel
 
-Follow the project's own rules first (its `AGENTS.md` or platform guide): they decide the tech (whether npm packages are allowed), the performance target, the checks and how to finish a change. Read the game's `DESIGN.md`. Game physics is about **feel and readability**, not realism: tune for what's fun and predictable. For the feel layer on top (hit-stop, shake, squash) use `game-feel`.
+Follow the project's own rules first (its `AGENTS.md` or platform guide): they decide the tech (whether third-party libraries are allowed), the performance target, the checks and how to finish a change. Read the game's `DESIGN.md`. Game physics is about **feel and readability**, not realism: tune for what's fun and predictable. For the feel layer on top (hit-stop, shake, squash) use `game-feel`.
 
 ## 1. A stable base
-- **Fixed timestep:** accumulate the clamped frame `dt` and step physics at a fixed 1/120 s (or 1/60) with a cap on steps per frame; render with interpolation if motion stutters. This makes results identical at 60, 90 and 120 Hz and on any device, and makes `?seed=` replays exact.
+- **Fixed timestep:** accumulate the clamped frame `dt` and step physics at a fixed 1/120 s (or 1/60) with a cap on steps per frame; render with interpolation if motion stutters. This makes results identical at 60, 90 and 120 Hz and on any device, and makes seeded replays exact.
 - **Integration:** semi-implicit Euler (update velocity, then position) is enough for most games.
-- **Units:** pixels and seconds; every constant (gravity, drag, restitution, friction, max speed) in `TUNING.physics`.
+- **Units:** the game's world units (pixels in most 2D games) and seconds; every constant (gravity, drag, restitution, friction, max speed) in `TUNING.physics`.
 - Pause stops the accumulator; Restart clears velocities and contacts.
 
 ## 2. Collisions
@@ -34,10 +34,10 @@ Follow the project's own rules first (its `AGENTS.md` or platform guide): they d
 - **Juice:** sound and particles on impacts scaled by impact speed, rate-limited.
 
 ## 4. A library or your own?
-Hand-written physics is best for platformers, top-down games and arcade bouncing. For stacking, ragdolls, joints or many interacting bodies, use a library if the project's setup allows npm packages (e.g. a small 2D engine such as planck.js or matter-js, or Rapier / cannon-es for 3D), keep its timestep fixed, and keep its debug draw behind `?debug`.
+Hand-written physics is best for platformers, top-down games and arcade bouncing. For stacking, ragdolls, joints or many interacting bodies, use a physics library or the engine's built-in physics if the project's rules allow it (in a web game, for example, planck.js or matter-js for 2D and Rapier or cannon-es for 3D), keep its timestep fixed, and keep its debug draw behind the game's debug mode.
 
 ## 5. Verify
 1. Stress test: the fastest object against the thinnest wall, the biggest pile, the longest run; nothing tunnels, explodes or jitters at rest.
-2. Same seed and inputs → same result (check with a short headless-browser script (Playwright) that replays the inputs and screenshots the result).
-3. 60 fps at the heaviest moment, DPR 2 included (see `performance-pass`).
+2. Same seed and inputs → same result (check with a scripted replay of the inputs that compares the end state or a captured frame; the `playtest` skill has the method).
+3. 60 fps at the heaviest moment on the target device at its full resolution (see `performance-pass`).
 4. Add a Changelog line to DESIGN.md, then run the project's checks and finish the change the way its rules say.

@@ -22,21 +22,21 @@ Rules of thumb ([definition-of-done.md](../game-design/references/definition-of-
 - **Saw-tooth difficulty:** ramp, peak, breather, higher ramp. Never a flat line, never a cliff.
 - **Early wins:** the first minute is nearly impossible to lose.
 - **An ending or a moment:** a boss (build it with the `boss-design` skill), a finale wave, or a milestone (every 5 waves) with a bigger reward.
-- **Handheld readability:** the whole threat fits the game's view, or is telegraphed before it enters it.
+- **Readability at the smallest target screen:** the whole threat fits the game's view, or is telegraphed before it enters it.
 
 ## 2. Pick the content format
-- **Hand-made levels:** data, not code. Tile strings (`'#..^..G'`) or small arrays in a `levels.js` module next to the game's code, one entry per level with its name and parameters. Easy to add, easy to read in a diff.
+- **Hand-made levels:** data, not code. For a grid game use the levels-as-text format of the `environments` skill (rows of characters such as `#..^..G` with a legend, and a reachability check that the exit can be reached) rather than a second format; otherwise small arrays or the engine's own level files. Keep them in one place next to the game's code (a `levels` module or folder, say), one entry per level with its name and parameters. Easy to add, easy to read in a diff.
 - **Waves:** a list of `{ at, spawn, count, pattern }` entries, or a budget system (each wave gets `budget = base + growth × n` points to spend on enemies with costs).
-- **Procedural:** a seeded RNG (e.g. mulberry32) so `?seed=123` replays the same run. Generate from hand-made **chunks** stitched together, not pure noise, and validate each result (reachable exit, no unavoidable damage) and regenerate if it fails.
+- **Procedural:** a seeded RNG (e.g. mulberry32) so a given seed (`seed=123`) replays the same run. Generate from hand-made **chunks** stitched together, not pure noise, and validate each result (reachable exit, with the same reachability check as hand-made levels; no unavoidable damage) and regenerate if it fails.
 - **Daily seed** (stretch): seed from the date so everyone's run is the same that day; save the day's best.
 
 All difficulty knobs (spawn rates, speeds, budgets, growth) go in `TUNING`. A difficulty setting multiplies them; add it to the game's Settings screen if the kickoff asked for selectable difficulty.
 
 ## 3. Build and verify the curve
 1. Build the content in the format above, level by level or wave by wave.
-2. Add a debug hook (a `jumpTo(n)` the game exposes behind `?debug`, say) so any level or wave can be reached instantly.
-3. Drive the game with a short headless-browser script (Playwright) that presses the inputs and captures screenshots at each level or at 10 s, 60 s, 3 min, and read them: is each stage visibly different? Is anything unreadable or overcrowded?
-4. If a bot or replay is practical, run the `playtest` skill to measure where runs end.
+2. Add a debug hook (a `jumpTo(n)` the game exposes behind its debug mode, say) so any level or wave can be reached instantly.
+3. Drive the game with a scripted or bot playthrough (the `playtest` skill) that presses the inputs and captures screenshots at each level or at 10 s, 60 s, 3 min, or ask the user for screenshots, and read them: is each stage visibly different? Is anything unreadable or overcrowded?
+4. If a bot or replay is practical, also measure where runs end (the `playtest` skill).
 5. Progress goes in the game's save data (unlocked levels, best per level); saved on every level clear and on pause.
 6. Update DESIGN.md (pacing table, Changelog), then run the project's checks and finish the change the way its rules say.
 7. Tell the user where the new content starts and what to watch for ("does wave 6 feel like a spike?").

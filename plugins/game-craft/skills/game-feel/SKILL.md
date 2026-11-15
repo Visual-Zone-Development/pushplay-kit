@@ -8,7 +8,7 @@ description: Make the game in this repo feel responsive and satisfying ("juice")
 Follow the project's own rules first (its `AGENTS.md` or platform guide): they decide the APIs, the screen size, the checks and how to finish a change. Read the game's `DESIGN.md` first: feel serves its fun targets ([framework.md](../game-design/references/framework.md)). Calm and cozy wants soft easing and gentle sound, not shake.
 
 ## 1. Find the core verb and test it alone
-Pick the one action the player does most (move, jump, shoot, place, swing). Run the project's dev server (or drive the game with a short headless-browser script (Playwright) that presses the inputs and screenshots the result) and do only that verb for 30 seconds in an empty space. Write down what's wrong in plain words: *slow to start*, *slides too long*, *jump floaty*, *shot feels like nothing happened*.
+Pick the one action the player does most (move, jump, shoot, place, swing). Run the game (or drive it with a short script that presses the inputs and captures the result, see the `playtest` skill, or ask the user to play and describe it) and do only that verb for 30 seconds in an empty space. Write down what's wrong in plain words: *slow to start*, *slides too long*, *jump floaty*, *shot feels like nothing happened*.
 
 ## 2. Responsiveness first (before any effects)
 Every number below goes in `TUNING`.
@@ -30,17 +30,22 @@ Build a small helper set in the game's own code and use it everywhere:
 | Squash and stretch | scale x/y by ±10–30% on jump, land, hit; ease back | 80–150 ms |
 | Easing | `easeOutBack` for UI pops, `easeOutCubic` for movement, never linear for UI | 120–250 ms |
 | Sound | every action; pitch ±5–10% random per play; rising pitch on combos | via the game's audio layer (its SFX bus), changing the playback rate for pitch |
-| Rumble | `navigator.getGamepads()[i]?.vibrationActuator?.playEffect('dual-rumble', { duration, strongMagnitude, weakMagnitude })`, guarded | 60–200 ms; strong only on big events |
+| Rumble | controller rumble, with a strong and a weak motor strength and a duration, skipped where the controller has none (in a browser: the gamepad's vibration actuator, see the last section) | 60–200 ms; strong only on big events |
 | Numbers and text | damage numbers, "+100", combo counter that pops | ≥ 24 px × the game's text-size setting |
 
 Rules:
 - One impact = several layers at once (stop + shake + flash + particles + sound). That's what makes it feel heavy.
 - Scale effects by importance: a pickup gets a sparkle and a chime; a boss kill gets everything.
 - Hit-stop, shake and particles all freeze while paused and reset on Restart.
-- Keep 60 fps at DPR 2: no `shadowBlur` in the frame loop, pre-render glow sprites at 2×, reuse particle objects.
+- Keep 60 fps at the target's full resolution: no per-frame blur or glow passes that cost a full-screen draw, pre-rendered glow sprites, reused particle objects.
 
 ## 4. Check and tune
-1. Play the verb again for 30 seconds and compare with your notes from step 1. Tune one number at a time; live-tune `TUNING` in the dev console through a debug hook the game exposes.
+1. Play the verb again for 30 seconds and compare with your notes from step 1. Tune one number at a time; live-tune `TUNING` through a debug hook the game exposes.
 2. Turn **Reduced shake** on in Settings: the game must still read well, with no shake, no full-screen flashes and no strobing.
 3. Add a Changelog line to DESIGN.md (tick the *Feel* items in Definition of done), then run the project's checks and finish the change the way its rules say.
 4. Tell the user what to notice: "the jump should now feel snappy; the dash freezes for a beat on a hit".
+
+## In a web game
+- **Rumble:** `navigator.getGamepads()[i]?.vibrationActuator?.playEffect('dual-rumble', { duration, strongMagnitude, weakMagnitude })`, guarded because many browsers and pads have no actuator.
+- **Canvas cost:** no `shadowBlur` in the frame loop; pre-render glow sprites at 2× for DPR 2.
+- **Trying the verb:** the project's dev server, or a short headless-browser script (Playwright) that presses the inputs and screenshots the result; live-tune `TUNING` from the dev console.

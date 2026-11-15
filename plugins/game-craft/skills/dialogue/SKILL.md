@@ -1,6 +1,6 @@
 ---
 name: dialogue
-description: Write the story and the words for the game in this repo, and build the system that shows them — a short story bible (one-line premise, tone, cast, a beat per act), story beats between levels, an intro and an ending, character barks during play, names for items, enemies, levels and titles, and NPC conversations with branching choices, conditions and remembered flags, character voices matched to the game's references, portraits and moods, voice blips, and a dialogue box that works with controller, keyboard, mouse and touch and matches the art style. Ships a readable script format and runner (dialogue-script.js), the box (dialogue.js) and a script linter (lint.mjs). Use for "add a story", "write an intro", "give it characters", "add dialogue / cutscenes", "NPCs should talk", "add conversations / choices", "branching dialogue", "character barks", "an ending", "name the enemies / items", "make the characters sound different", "the text is flat / boring / too long", or the Narrative or Fantasy fun target of a game. For translation use localization.
+description: Write the story and the words for the game in this repo, and build the system that shows them — a short story bible (one-line premise, tone, cast, a beat per act), story beats between levels, an intro and an ending, character barks during play, names for items, enemies, levels and titles, and NPC conversations with branching choices, conditions and remembered flags, character voices matched to the game's references, portraits and moods, voice blips, and a dialogue box that works with controller, keyboard, mouse and touch and matches the art style. Ships a plain-text script format and a script linter (lint.mjs, needs Node) that work with any engine, plus a JavaScript reference runner (dialogue-script.js) and dialogue box (dialogue.js) to use as they are or port. Use for "add a story", "write an intro", "give it characters", "add dialogue / cutscenes", "NPCs should talk", "add conversations / choices", "branching dialogue", "character barks", "an ending", "name the enemies / items", "make the characters sound different", "the text is flat / boring / too long", or the Narrative or Fantasy fun target of a game. For translation use localization.
 ---
 
 # Dialogue
@@ -9,6 +9,11 @@ Follow the project's own rules first (its `AGENTS.md` or platform guide): they d
 save and audio APIs, the screen size, the checks and how to finish a change. This skill is for the game's
 words: its story, what characters say to the player and to each other, the choices the player makes, and
 the system that shows them. `<skill-dir>` is the folder this file is in.
+
+The writing method (sections 1–7), the script format (section 8), what the dialogue system must do (section 9)
+and the checks (section 10) hold in any engine. Scripts are plain text, so the format and the linter
+(`lint.mjs`, which needs Node) work whatever the game is built with. The runner and the box in `toolkit/` are
+a JavaScript reference implementation: use them as they are in a JavaScript game, port them otherwise.
 
 The skill doesn't impose a writing voice. Each game's voice comes from its own references, the same way
 its faces and art do. What stays fixed is the craft: structure, choices, length for a small screen, and a
@@ -63,7 +68,7 @@ One short entry per speaking character, also in DESIGN.md:
 - **Speech habits** make characters distinguishable without names: sentence length, favourite words,
   words they never use, how they ask and refuse. Cover the speaker name and check you can tell who's talking.
 - **Moods** list the portrait expressions the art needs (`Brom (grumpy): …` picks the grumpy portrait).
-- **Voice** sets the blip pitch and timbre (`voiceBlip`), so each character sounds different even without audio files.
+- **Voice** sets the pitch and timbre of the blip that plays as the character's text types, so each character sounds different even without audio files.
 
 ## 4. Writing a conversation
 
@@ -79,9 +84,8 @@ One short entry per speaking character, also in DESIGN.md:
   callback lines. That's cheaper than branching and feels far more alive.
 - **One line, one box.** A line must fit the dialogue box without running to a second page, at the game's
   largest text size. Work the maximum out once from the box (lines in the box × characters that fit across
-  it at that size), record it in *Dialogue voice* and pass it to `lint.mjs` as `--max-chars`. The toolkit's
-  default box holds three lines of about 45 characters at that size, hence the linter's default of 140; a
-  two-line box holds about 90.
+  it at that size), record it in *Dialogue voice* and pass it to `lint.mjs` as `--max-chars`. A box of three
+  lines of about 45 characters at that size gives the linter's default of 140; a two-line box holds about 90.
 - **Small-screen budget:** no more than about 4 lines in a row without a choice (`lint.mjs` checks this
   too); a conversation is under a minute unless the player keeps choosing to ask.
 - **Every line has a speaker** the player can see: a portrait, a name plate or a colour.
@@ -151,7 +155,8 @@ Prefer the lightest form that does the job; a bark during play beats a cutscene.
 
 ## 8. The script format
 
-Full reference at the top of `toolkit/dialogue-script.js`. In short:
+Scripts are plain text: keep them as `.dlg` text files or as strings in the game's code, whatever the engine
+loads most easily. The full reference is the comment at the top of `toolkit/dialogue-script.js`. In short:
 
 | Write | Means |
 |---|---|
@@ -160,20 +165,49 @@ Full reference at the top of `toolkit/dialogue-script.js`. In short:
 | `-> text [if cond] [once]` + indented block | a choice; consecutive `->` lines form one set |
 | `if cond:` / `elif cond:` / `else:` | conditions with `and`, `or`, `not`, `==` `!=` `<` `>` `<=` `>=` |
 | `~ set flag` / `~ set gold -= 10` | variables (kept in the game's save) |
-| `~ emit give sword` | an event the game handles: `on.give('sword')` |
+| `~ emit give sword` | an event the game handles (`give` with the argument `sword`) |
 | `>> node` / `>> end` | jump / finish |
 | `$name`, `{w}`, `{w=0.6}`, `*word*`, `{shake}…{/shake}`, `{c=#hex}…{/c}` | variable, pause, emphasis, shake, colour |
 | `… #id` at the end of a line or choice | a stable id for translations |
 
 ## 9. Build it into the game
 
-The toolkit is two plain ES modules with no dependencies. They talk to the game through small objects the
-game passes in; the full contract is at the top of `toolkit/dialogue.js`.
+Two parts, in any engine: a **runner** that walks a script and a **box** that shows what the runner gives it.
+
+- **Runner:** starts at a node and yields one thing at a time: a line (speaker, mood, text, id), a set of
+  choices (those whose conditions hold; `[once]` choices already taken are left out) or the end. It keeps the
+  variables in a plain table that lives in the game's save data; save when a conversation ends, so choices
+  persist. `~ emit` calls a handler the game registered for that event.
+- **Box:** types the line out, then waits. Confirm, a click or a tap anywhere finishes the line, then
+  advances. Skip fast-forwards to the next choice. A log button opens the lines so far. Choices take stepped
+  up / down and confirm, or a tap on the option, with a hover highlight for the mouse. An on-screen Skip
+  button appears for mouse and touch. Tapping the game's pause button never advances the text.
+- **While a conversation is active**, update the box instead of gameplay. The game stays on its playing
+  screen, and the pause button still pauses: the box doesn't update while paused.
+- **Hints** come from the game's input-prompt helper, so they show the right icons for the device in use.
+- **Style it like the game:** the panel, font and colours come from the game's own UI (a pixel-art panel, a
+  parchment card, whatever its menus use), with a colour per speaker name if the voice wants one.
+- **Portraits** come from the game's own art, one per mood listed in the voice sheet (or none), with a
+  mouth flap while the text types.
+- **Voices:** a short blip per typed character or word through the game's audio layer, at the pitch and
+  timbre from the character's voice sheet.
+- **Settings:** honour the game's text-size and reduced shake / flash settings (`{shake}` text holds still
+  when reduced shake is on). Add a *Text speed* range (0.5–2) to the game's Settings screen.
+- **Translation:** every line and choice has an id (`#id`, or `node:line number`), so a strings table can
+  replace its text. The `localization` skill fills that table.
+
+### The JavaScript toolkit
+
+`toolkit/dialogue-script.js` (parser and runner, no DOM) and `toolkit/dialogue.js` (a canvas 2D box) are two
+plain ES modules with no dependencies that do all of the above. In a JavaScript game, use them as below. In
+any other engine, port them: the parser and runner are about 240 lines and the box about 340, and the list
+above is the behaviour to keep. They talk to the game through small objects the game passes in; the full
+contract is at the top of `toolkit/dialogue.js`.
 
 1. Copy `toolkit/dialogue-script.js` and `toolkit/dialogue.js` into the game (next to its main module, or
    `src/`). Put scripts in `dialogue/*.js` as `export default \`…\`` (they load offline everywhere).
 2. **Runner:** `createRunner(script, { vars, on: { give, heal, … }, strings })`, then `.start('smith')`.
-   `vars` is a plain object kept in the game's save data; save when a conversation ends, so choices persist.
+   `vars` is the plain object kept in the game's save data; `~ emit give sword` calls `on.give('sword')`.
 3. **Box:** `createDialogueBox({ input, settings, prompts, portrait, blip, avoid: [PAUSE_BUTTON], style, width, height })`.
    - **`input`** is the game's input state or a thin adapter over it. The box reads four things:
 
@@ -186,31 +220,28 @@ game passes in; the full contract is at the top of `toolkit/dialogue.js`.
 
    - **`width`, `height`**: the game's logical resolution.
    - **`settings`** (optional): an object the box reads live for the game's text-size setting, the game's
-     reduced shake setting and the text speed. The field names it looks for are in the contract.
+     reduced shake setting and the text speed (saved as `textSpeed`). The field names it looks for are in
+     the contract.
    - **`prompts`** (optional): `(ctx, input, pairs, { x, y, align, size }) => void`, where `pairs` is
-     `[[buttonName, label], …]`. Wrap the game's input-prompt helper in it so hints show the right icons for
-     the device. Without it the box draws only its built-in "next" arrow.
-   - While `talk.active`, update the box instead of gameplay. The game stays on its playing screen, and the
-     pause button still pauses: don't call `talk.update` while paused.
-   - **Style it like the game** with `style.panel(ctx, x, y, w, h, kind)`: a pixel-art panel (pixel-art skill's
-     `pixelui.panel`), a parchment card (art-direction's `paperCard`), or whatever the game's UI uses. Also set
-     `font`, colours and `nameColors`.
-   - **Portraits** are a callback, so they come from the game's own art: baked portrait frames per mood
-     (the pixel-art skill renders them from the same model as the sprite), sprites the user supplied, or
-     none. `talking` is true while text types, for a mouth flap.
-   - **Voices:** `voiceBlip(tone, { Brom: { freq: 130 }, Mira: { freq: 300, type: 'triangle' } })`, where `tone`
+     `[[buttonName, label], …]`. Wrap the game's input-prompt helper in it. Without it the box draws only
+     its built-in "next" arrow.
+   - While `talk.active`, call `talk.update` instead of gameplay, and not while paused.
+   - **`style.panel(ctx, x, y, w, h, kind)`** draws the panel: the pixel-art skill's `pixelui.panel`,
+     art-direction's `paperCard`, or the game's own. Also set `font`, colours and `nameColors`.
+   - **`portrait`** is a callback: baked portrait frames per mood (the pixel-art skill renders them from the
+     same model as the sprite), sprites the user supplied, or none. `talking` is true while text types.
+   - **`blip`:** `voiceBlip(tone, { Brom: { freq: 130 }, Mira: { freq: 300, type: 'triangle' } })`, where `tone`
      is the game's tone generator, `({ freq, dur, type, gain }) => void` (see the game-audio skill).
-4. **Controls** (built in): confirm, click or tap anywhere finishes the line, then advances. Skip
-   fast-forwards to the next choice. The log button opens the log. Choices take stepped up / down and confirm,
-   or a tap on the option, with hover highlight for the mouse. An on-screen Skip button appears for mouse and
-   touch. Pass the game's pause button in `avoid` so tapping it doesn't advance the text.
-5. **Settings:** the text-size and reduced shake / flash settings are honoured. Add a *Text speed* range
-   (0.5–2, saved as `textSpeed`) to the game's Settings screen.
-6. **Translation:** lines and choices have ids (`#id` or `node:line`). The localization skill fills `strings`.
+   - **`avoid`:** the game's pause button, so tapping it doesn't advance the text.
+   - **`strings`** (on the runner): the table the localization skill fills, keyed by line id.
+
+`toolkit/demo.html` shows the box in its four states (typing, markup, choices, log) with a stand-in input;
+serve the `toolkit/` folder with any static server to open it.
 
 ## 10. Verify
 
-1. `node <skill-dir>/lint.mjs dialogue/*.js --entry <nodes the game starts>` and fix every ✗.
+1. Lint the scripts and fix every ✗: `node <skill-dir>/lint.mjs <script files> --entry <nodes the game starts>`.
+   It reads plain-text `.dlg` files, and `.js` modules whose default export is the script text.
 2. Read every conversation, beat and bark on the target screen, at the largest text size too: nothing clipped,
    no line running to a second page.
 3. Play each conversation and beat with controller, keyboard only, mouse only and touch: advance, skip, choose, log.
@@ -220,6 +251,3 @@ game passes in; the full contract is at the top of `toolkit/dialogue.js`.
    *Dialogue voice* in DESIGN.md?
 6. Update DESIGN.md (*Story*, Changelog).
 7. Run the project's checks and finish the change the way its rules say.
-
-`toolkit/demo.html` shows the box in its four states (typing, markup, choices, log) with a stand-in input;
-serve the `toolkit/` folder with any static server to open it.

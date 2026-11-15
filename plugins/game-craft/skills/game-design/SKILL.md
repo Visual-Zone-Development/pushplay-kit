@@ -13,7 +13,7 @@ Use it for a new game (all four steps), for a game that has no `DESIGN.md` yet (
 Ask the questions in [kickoff.md](references/kickoff.md) in plain language (with a question tool if you have one, otherwise in chat):
 - **A few at a time**, at most three rounds, each question with 2–4 options tailored to the idea and **your recommended option first**.
 - **Don't re-ask what the request already says.** Recap it instead ("Got it: a 2D frog platformer. A few quick questions…") so the user can correct it.
-- Every required topic gets an answer before any code: concept / genre, 2D or 3D, art style, players, target devices and inputs, how it should *feel*, camera / view, session length and structure, and the games it should feel like. Then whatever is still open: audience and difficulty, assets, sound, theme, progression.
+- Every required topic gets an answer before any code: concept / genre, 2D or 3D and what it's built with, art style, players, target devices and inputs, how it should *feel*, camera / view, session length and structure, and the games it should feel like. Then whatever is still open: audience and difficulty, assets, sound, theme, progression.
 - **Only decide for the user when they say "surprise me" or "you decide"**, and record each choice as an *(assumed)* answer.
 - For a vague request ("make a fun game"), pitch three concepts, each *familiar genre + one twist + theme*, each aimed at a different feel.
 
