@@ -1,6 +1,6 @@
 ---
 name: canvas2d-assets
-description: Draw and animate 2D game assets on canvas in any art style — vector shapes, pixel art, painted or user-supplied sprite sheets, SVG — for any 2D camera or game type, such as side-view platformers and fighters, top-down action, racing and twin-stick shooters, isometric strategy and builders, vertical/horizontal shmups, puzzle, card and board games, and UI. Toolkit for consistent outlines and shading, natural procedural animation, pixel-perfect scaling, sprite sheets and baking, isometric and directional helpers, plus an asset gallery page for renders. Load it with model-asset or animate-asset whenever a 2D game's assets are drawn or animated.
+description: For a canvas 2D game (JavaScript in a browser), draw and animate 2D assets in any art style (vector shapes, pixel art, painted or user-supplied sprite sheets, SVG) for any 2D camera or game type, such as side-view platformers and fighters, top-down action, racing and twin-stick shooters, isometric strategy and builders, vertical/horizontal shmups, puzzle, card and board games, and UI. Toolkit for consistent outlines and shading, natural procedural animation, pixel-perfect scaling, sprite sheets and baking, isometric and directional helpers, plus an asset gallery page for renders. Load it with model-asset or animate-asset whenever a canvas 2D game's assets are drawn or animated; not for other engines.
 ---
 
 # 2D canvas assets
@@ -24,7 +24,7 @@ a bundled game); if the game already has its own versions, extend those instead 
 
 ## Asset contract
 
-Every asset is a **pure draw function plus a little data**, so the game, the gallery and the cover art can all draw
+Every asset is a **pure draw function plus a little data**, so the game, the gallery and its key art can all draw
 any frame of it:
 
 ```js

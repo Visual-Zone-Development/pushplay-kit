@@ -1,6 +1,6 @@
 ---
 name: threejs-models
-description: Build 3D characters, creatures, vehicles, machines and props in code with three.js (no modelling tool) for a bundled (Vite) game — sculpted parts (lofted bodies, extruded plates, horns, armour shells, fur), hand-painted canvas textures, a small skeleton with blended procedural animation, instanced rendering for many copies, and an asset viewer for renders. Load it together with model-asset (workflow) or animate-asset whenever a three.js game's models are made in code.
+description: For a three.js game bundled with Vite, build 3D characters, creatures, vehicles, machines and props in code (no modelling tool) from sculpted parts (lofted bodies, extruded plates, horns, armour shells, fur), hand-painted canvas textures, a small skeleton with blended procedural animation, instanced rendering for many copies, and an asset viewer for renders. Load it together with model-asset (workflow) or animate-asset whenever a three.js game's models are made in code; not for other engines.
 ---
 
 # three.js models in code
