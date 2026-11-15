@@ -30,6 +30,43 @@ const BANNED_IN_GENERAL = [
   [/window\.__game/, 'the kit\'s debug hook'],
 ]
 
+// In a craft skill of game-craft: terms that only exist in a browser. They belong under a heading
+// that says the part is about the web (docs/writing-skills.md), so a reader with another engine
+// can stop before it. Stack skills are about one technology and may use them anywhere.
+const STACK_SKILLS = ['canvas2d-assets', 'threejs-models', 'character-models']
+const WEB_ONLY = [
+  [/\bPlaywright\b/, 'Playwright'],
+  [/\blocalStorage\b/, 'localStorage'],
+  [/\bnavigator\./, 'navigator.'],
+  [/\brequestAnimationFrame\b/, 'requestAnimationFrame'],
+  [/\bDevTools\b/, 'DevTools'],
+  [/\bAudioContext\b|\bWeb Audio\b/, 'Web Audio'],
+  [/\bdocument\.|\baddEventListener\b/, 'DOM API'],
+  [/\bVite\b/, 'Vite'],
+  [/\bnpm (install|i|run|ci)\b/, 'npm command']
+]
+const WEB_HEADING = /\b(web|browser|canvas|three\.js|javascript)\b/i
+
+/** Lines of a craft skill's SKILL.md that use a browser-only term outside a web section. */
+export function webOnlyOutsideWebSections(text) {
+  const found = []
+  let inWeb = false
+  let level = 0
+  text.split(/\r?\n/).forEach((line, i) => {
+    const heading = /^(#{1,6})\s+(.*)$/.exec(line)
+    if (heading) {
+      // A web section lasts until the next heading of the same or a higher level.
+      if (inWeb && heading[1].length > level) return
+      inWeb = WEB_HEADING.test(heading[2])
+      level = heading[1].length
+      return
+    }
+    if (inWeb) return
+    for (const [pattern, what] of WEB_ONLY) if (pattern.test(line)) found.push([i + 1, what])
+  })
+  return found
+}
+
 // In the PushPlay plugin: what game repos don't have.
 const BANNED_IN_PLATFORM = [
   [/npm run (check|dev|new-game|update-kit|art|art:shots|promote|setup)\b/, 'npm script game repos don\'t have (write the pushplay command)'],
@@ -119,6 +156,9 @@ export function lint(root) {
           if (pattern.test(line)) problems.push(`${where}:${i + 1}: ${what}`)
         }
       })
+      if (skill.plugin === 'game-craft' && !STACK_SKILLS.includes(skill.name) && file === skillFile) {
+        for (const [line, what] of webOnlyOutsideWebSections(text)) problems.push(`${where}:${line}: ${what} outside a web section (put browser-only parts under a heading that names the web)`)
+      }
       if (file.endsWith('.md')) checkLinks(file, text, skill.skillsDir, problems, where)
     }
   }

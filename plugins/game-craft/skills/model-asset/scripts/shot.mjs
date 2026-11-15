@@ -1,3 +1,4 @@
+// For web games only (other engines: see "Render and compare" in this skill's SKILL.md).
 // Render pages of a game to PNG with headless Chromium (WebGL via SwiftShader), for comparing assets
 // with their reference and before/after. Works for any game (2D canvas, SVG, WebGL): it serves the game's
 // folder (with the project's Vite when it has one, otherwise a plain static server), takes every shot, then stops.

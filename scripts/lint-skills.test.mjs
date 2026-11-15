@@ -93,3 +93,24 @@ test('a PushPlay skill may not send an agent to npm scripts or a kit folder that
   assert.equal(problems.length, 2, problems.join('\n'))
   assert.ok(problems.every((p) => p.startsWith('pushplay/improve-game/')))
 })
+
+test('a craft skill keeps browser-only parts under a heading that names the web, so any engine can use the rest', () => {
+  const neutral = 'A jump pressed up to 100 ms before landing still fires.'
+  const web = 'Drive it with Playwright and keep the best score in localStorage.'
+  const root = fixture({
+    // Browser terms in the general method: reported.
+    'plugins/game-craft/skills/playtest/SKILL.md': skill('playtest', `${neutral}\n\n${web}`),
+    // The same terms under a web heading, and under its sub-headings: fine.
+    'plugins/game-craft/skills/game-audio/SKILL.md': skill('game-audio', `${neutral}\n\n## In a web game\n\n${web}\n\n### The harness\n\nUse requestAnimationFrame.\n\n## Finish\n\nRun the project's checks.`),
+    // A stack skill is about one technology and may use them anywhere.
+    'plugins/game-craft/skills/threejs-models/SKILL.md': skill('threejs-models', `Bundle with Vite. ${web}`),
+    // After the web section ends, the rule applies again.
+    'plugins/game-craft/skills/camera/SKILL.md': skill('camera', `## In a browser\n\n${web}\n\n## Tuning\n\nOpen DevTools.`)
+  })
+  const problems = lint(root)
+  assert.deepEqual(problems.map((p) => p.replace(/:\d+: /, ': ')).sort(), [
+    'game-craft/camera/SKILL.md: DevTools outside a web section (put browser-only parts under a heading that names the web)',
+    'game-craft/playtest/SKILL.md: Playwright outside a web section (put browser-only parts under a heading that names the web)',
+    'game-craft/playtest/SKILL.md: localStorage outside a web section (put browser-only parts under a heading that names the web)'
+  ])
+})

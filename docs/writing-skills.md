@@ -4,7 +4,7 @@ This repo holds two plugins. Every skill belongs to exactly one, and `node scrip
 
 | Plugin | What goes in it |
 |---|---|
-| `plugins/game-craft` | Craft that helps any web game (canvas 2D, three.js, any framework): design, feel, art, audio, AI, levels. It never mentions PushPlay. |
+| `plugins/game-craft` | Craft that helps any game, in any engine or language (Godot, Unity, Rust, Love2D, plain JavaScript, three.js) and on any device: design, feel, art, audio, AI, levels. It never mentions PushPlay. |
 | `plugins/pushplay` | Everything specific to PushPlay: the manifest, the runtime files, the check, library art, the launcher's rules, the build kit. |
 
 ## Rules for every skill
@@ -19,6 +19,20 @@ This repo holds two plugins. Every skill belongs to exactly one, and `node scrip
 - **No names of private skills or plugins.**
 
 ## Extra rules for `game-craft`
+
+**Anyone making a game should be able to use these**, whatever they build with. So a skill is one of two kinds, and says which:
+
+- **A craft skill** (game feel, camera, enemy AI, levels, UI, audio, design, playtesting, performance, accessibility, multiplayer, touch, story): its topic is the same in every engine. The body leads with what holds anywhere: the numbers, named techniques, checklists and definition of done, written as behaviour ("a jump pressed up to 100 ms before landing still fires"), not as one engine's API. Anything that only works in a browser (code, a tool, an API name, a test harness) goes under a heading that says so, such as `## In a web game`, after the engine-neutral part. A reader with a Godot or Rust game must be able to stop before that heading and still have the whole method.
+- **A stack skill** (`canvas2d-assets`, `threejs-models`, `character-models`, and toolkits written in JavaScript): it is about one technology. Its description names that technology in the first clause, so it never triggers for a game built with something else.
+
+The lint enforces the first kind: in a craft skill's `SKILL.md`, a browser-only term (`Playwright`, `localStorage`, `navigator.`, `requestAnimationFrame`, `DevTools`, `AudioContext`, `Web Audio`, `document.`, `addEventListener`, `Vite`, an `npm` command) may only appear under a heading that names the web, a browser, canvas or three.js.
+
+More that keeps a craft skill general:
+
+- **Steps that need the game running** (render and compare, a bot playthrough, a profile) are described by what to capture and judge. Then say how in a web game (the scripts here), and for other engines say: use the engine's own way to run headless or capture a frame, or ask the user for a screenshot.
+- **Sizes are stated per target**, not as one device: text and targets for a phone held in the hand, a handheld, a desktop window, a TV across the room.
+- **The project's layout is the project's.** `DESIGN.md`, `STYLE.md` and a `TUNING` object are this plugin's conventions and fine to name; file names like `game.js` or `index.html` are examples, never assumptions.
+- **No product words:** not "the launcher", "the library tile", "the cover", "the check" as proper nouns, and no names of particular games as examples that the reader can't see.
 
 A general skill describes the craft and leaves the project's APIs to the project. It starts with this line (adjusted to name what matters for the skill):
 
