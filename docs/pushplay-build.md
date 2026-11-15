@@ -26,7 +26,7 @@ What each level adds:
 | Played headlessly on every version to catch problems | | | ✓ |
 | Discover and the phone app | | | ✓ |
 
-When a repo has both a normal release and a `pushplay-latest` release, the launcher uses the PushPlay one.
+**One rule:** the launcher reads `pushplay.json` on the repo's default branch first. It says what the game is called and how it is described, whichever of these the files come from, and an edit to it shows up in the library within minutes, with no new build. The files themselves come from a checked build in `pushplay-latest` if there is one, else from your normal releases, else (a plain HTML game) from the repo itself. With no `pushplay.json` the launcher guesses from the repo's name, description and file names.
 
 To check on your own machine before pushing, run `pushplay check` in the repo (needs Node.js). It is the same check that runs on GitHub.
 

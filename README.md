@@ -48,6 +48,8 @@ art/cover.png  art/hero.png       the library tile and the banner (optional)
 
 No build tools, no agent files, no scripts.
 
+PushPlay reads `pushplay.json` first, for every kind of game. Change the name, the description or the tags there and the library follows, with no new build.
+
 ## What is in this repo
 
 | What is here | For |
