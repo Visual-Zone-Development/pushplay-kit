@@ -1,6 +1,6 @@
 # prototype-sprint in a PushPlay game
 
-The general `prototype-sprint` skill covers building two or three small playable directions and picking a winner. This page gives the PushPlay side: all prototypes ship as one game. The rules are in the `pushplay-rules` skill: [menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md) (*Menus*), the skill itself for *Workflow* and *Art* and the `pushplay-manifest` skill for the manifest.
+The general `prototype-sprint` skill covers building two or three small playable directions and picking a winner. This page gives the PushPlay side: all prototypes ship as one game. The rules are in the `pushplay-rules` skill: [menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md) (*Menus*), the skill itself for *Workflow* and *Art* and [manifest.md](../../../pushplay-rules/references/manifest.md) for the manifest.
 
 ## Menus
 

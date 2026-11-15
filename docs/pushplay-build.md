@@ -42,7 +42,6 @@ Below, `pushplay` stands for `npx github:Visual-Zone-Development/pushplay-kit`: 
 | `pushplay new-game <id> …` | Start a new JavaScript game (see [The runtime files](#the-runtime-files-optional-javascript-only)) |
 | `pushplay update-runtime` | Refresh the runtime files of JavaScript games |
 | `pushplay promote <id> [--repo owner/name] [--private] [--keep]` | Move one game out of a repo of many (`games/<id>/`) into its own repo |
-| `pushplay migrate [--dry]` | Clean up a repo set up with an older kit (see [Moving off an old kit](#moving-off-an-old-kit)) |
 | `pushplay where`, `pushplay version` | Where the tools are unpacked; their version |
 
 ## The manifest
@@ -594,19 +593,3 @@ It writes a working starter with title, pause and settings screens, the runtime 
 | `party.js`, `party-lobby.js`, `qr.js`, `controller.js`, `net.js` | Party games (`--party`): phones as controllers, the lobby and its QR code |
 
 Each starts with the header `pushplay runtime vN`. Don't edit them: `pushplay update-runtime` replaces them with the current versions (and adds missing ones, such as `touch.js`), leaving alone any file of the same name that you wrote yourself.
-
-## Moving off an old kit
-
-Repos set up before kit v14 carry a copy of the build kit and agent instructions. `pushplay migrate` removes what the kit put there and nothing of yours:
-
-- the kit's old copy in `.github/pushplay/`;
-- the kit's lines in `AGENTS.md` and `CLAUDE.md`;
-- the kit's skills in `.claude/skills/` and its guides in `docs/game-design/`;
-- `tools/art` and `tools/promote`;
-- the npm scripts that ran the kit;
-
-and writes the workflow file. Your own skills, tools, scripts and docs are kept. Run `pushplay migrate --dry` first to see what it would do, then `pushplay migrate`, then `pushplay check`, and commit. From then on every command is `pushplay …` as on this page.
-
----
-
-Agent skills for making and porting PushPlay games are in this repository too, for people who want them; nothing on this page needs them.

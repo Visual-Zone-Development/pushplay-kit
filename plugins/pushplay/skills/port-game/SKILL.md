@@ -61,7 +61,7 @@ Every platform in `entry` needs a folder in `build.outputs` and the other way ro
 
 Prefer reusing the build the repo already does, so there is one build to maintain. A JavaScript project often needs none of this: with a `build` script in `package.json` it is built with `npm run build` (output `dist`, or `build.output`), and a repo with no build ships its folder as it is (`entry.web`). See [javascript.md](references/javascript.md).
 
-**The workflow file.** Don't use `pushplay new-game` here: it scaffolds a new JavaScript game. Write `.github/workflows/pushplay.yml` from [references/workflow.yml](references/workflow.yml), copied as it is (`pushplay migrate` also writes it, in a repo that has an old kit). That is enough for `build.command` and committed folders. For the artifact way, add an export job in front of it:
+**The workflow file.** Don't use `pushplay new-game` here: it scaffolds a new JavaScript game. Write `.github/workflows/pushplay.yml` from [references/workflow.yml](references/workflow.yml), copied as it is. That is enough for `build.command` and committed folders. For the artifact way, add an export job in front of it:
 
 ```yaml
 jobs:
@@ -88,7 +88,7 @@ jobs:
 
 ## 4. The manifest and the art
 
-Write `pushplay.json` at the repo root with the `pushplay-manifest` skill (its table says which fields each kind of game needs) and make `art/cover` and `art/hero` with the `cover-art` skill. A game with a web build gets a cover generated from a screenshot if it has none; **a game with no web build needs both art files**, because there is no screenshot to make them from. Fill `inputs` and `controls` from what the game really supports (step 6).
+Write `pushplay.json` at the repo root from [manifest.md](../pushplay-rules/references/manifest.md) (its table says which fields each kind of game needs) and make `art/cover` and `art/hero` with the `cover-art` skill. A game with a web build gets a cover generated from a screenshot if it has none; **a game with no web build needs both art files**, because there is no screenshot to make them from. Fill `inputs` and `controls` from what the game really supports (step 6).
 
 ## 5. Keep the normal release unchanged
 

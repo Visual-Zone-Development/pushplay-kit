@@ -41,4 +41,4 @@ The check covers these headlessly; cover them for real too. Run the `input-walkt
 
 The check can't play it the way a player does, so do it yourself: start it with only a controller and reach every screen, pause it, and get back out to the library (a web game: its own menu calling `window.pushplay?.quit()`, or the launcher's menu; a native game: its own quit). List in `inputs` only what you saw work.
 
-When a check fails and the cause isn't obvious, see [debugging.md](../../pushplay-runtime/references/debugging.md) and the `debug-game` skill.
+When a check fails and the cause isn't obvious, see [debugging.md](../../pushplay-runtime/references/debugging.md) and *When something is broken* in the `improve-game` skill.

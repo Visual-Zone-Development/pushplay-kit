@@ -1,13 +1,13 @@
 ---
 name: canvas2d-assets
-description: Draw and animate 2D game assets on canvas in any art style — vector shapes, pixel art, painted or user-supplied sprite sheets, SVG — for any 2D camera or game type, such as side-view platformers and fighters, top-down action, racing and twin-stick shooters, isometric strategy and builders, vertical/horizontal shmups, puzzle, card and board games, and UI. Toolkit for consistent outlines and shading, natural procedural animation, pixel-perfect scaling, sprite sheets and baking, isometric and directional helpers, plus an asset gallery page for renders. Load it with model-asset, edit-asset or animate-asset whenever a 2D game's assets are drawn or animated.
+description: Draw and animate 2D game assets on canvas in any art style — vector shapes, pixel art, painted or user-supplied sprite sheets, SVG — for any 2D camera or game type, such as side-view platformers and fighters, top-down action, racing and twin-stick shooters, isometric strategy and builders, vertical/horizontal shmups, puzzle, card and board games, and UI. Toolkit for consistent outlines and shading, natural procedural animation, pixel-perfect scaling, sprite sheets and baking, isometric and directional helpers, plus an asset gallery page for renders. Load it with model-asset or animate-asset whenever a 2D game's assets are drawn or animated.
 ---
 
 # 2D canvas assets
 
 Follow the project's own rules first (its `AGENTS.md` or platform guide): they decide the APIs, the screen size, the checks and how to finish a change. `<skill-dir>` is the folder this file is in.
 
-The general workflow (reference, breakdown, rounds, STYLE.md) is in **model-asset**, **edit-asset** and
+The general workflow (reference, breakdown, rounds, STYLE.md) is in **model-asset** and
 **animate-asset**. This skill is the 2D how-to: how to structure, draw, animate and check 2D assets so they
 look consistent in any art style and read well in the game's camera.
 

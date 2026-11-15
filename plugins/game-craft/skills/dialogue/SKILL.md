@@ -1,28 +1,43 @@
 ---
 name: dialogue
-description: Write and build conversations for the game in this repo — NPC dialogue with branching choices, conditions and remembered flags, character voices matched to the game's references, portraits and moods, voice blips, and a dialogue box that works with controller, keyboard, mouse and touch and matches the art style. Ships a readable script format and runner (dialogue-script.js), the box (dialogue.js) and a script linter (lint.mjs). Use for "add dialogue", "NPCs should talk", "add conversations / choices", "a dialogue system", "branching dialogue", "make the characters sound different", "the dialogue is flat / too long". For the story bible, premise and between-level story beats use story-and-dialogue; for translation use localization.
+description: Write the story and the words for the game in this repo, and build the system that shows them — a short story bible (one-line premise, tone, cast, a beat per act), story beats between levels, an intro and an ending, character barks during play, names for items, enemies, levels and titles, and NPC conversations with branching choices, conditions and remembered flags, character voices matched to the game's references, portraits and moods, voice blips, and a dialogue box that works with controller, keyboard, mouse and touch and matches the art style. Ships a readable script format and runner (dialogue-script.js), the box (dialogue.js) and a script linter (lint.mjs). Use for "add a story", "write an intro", "give it characters", "add dialogue / cutscenes", "NPCs should talk", "add conversations / choices", "branching dialogue", "character barks", "an ending", "name the enemies / items", "make the characters sound different", "the text is flat / boring / too long", or the Narrative or Fantasy fun target of a game. For translation use localization.
 ---
 
 # Dialogue
 
 Follow the project's own rules first (its `AGENTS.md` or platform guide): they decide the input, settings,
-save and audio APIs, the screen size, the checks and how to finish a change. The **story-and-dialogue** skill
-owns the story bible (premise, tone, cast, story beats) in DESIGN.md; read it first and stay inside it.
-This skill is for conversations: what characters say to the player and to each other, the choices the
-player makes, and the system that shows them. `<skill-dir>` is the folder this file is in.
+save and audio APIs, the screen size, the checks and how to finish a change. This skill is for the game's
+words: its story, what characters say to the player and to each other, the choices the player makes, and
+the system that shows them. `<skill-dir>` is the folder this file is in.
 
 The skill doesn't impose a writing voice. Each game's voice comes from its own references, the same way
 its faces and art do. What stays fixed is the craft: structure, choices, length for a small screen, and a
 system that works with every input.
 
-## 1. Match the voice
+## 1. Story first
+
+Story serves the play: one line of setup, then let the player do it
+([framework.md](../game-design/references/framework.md)). Read the game's `DESIGN.md` (fun targets, theme,
+tone, art style). If it has a *Story* section, stay inside it; if not, write this story bible there first:
+
+- **Premise:** one sentence (who you are, what you want, what's in the way), shown on the title or first screen.
+- **Tone:** one or two words (silly, earnest, eerie, cozy) with an example line.
+- **Cast:** 1–4 characters, each with a name, one trait and a way of talking (section 3 expands these).
+- **Shape:** a beat per act (setup → escalation → crisis → climax → ending), matched to the game's levels or
+  waves (the pacing table in [level-design](../level-design/SKILL.md)).
+- **Vocabulary:** in-world names for the game's things ("parcels", not "points"; "the Hollow", not
+  "level 3"). Items, enemies, levels, the title and the game-over line take their names from here.
+
+A game that only wants a few NPC lines still gets the premise, tone and cast.
+
+## 2. Match the voice
 
 Ask the user what the dialogue should sound like: games, films or books it should feel like, or a few sample
 lines of their own. Then measure the reference instead of copying it:
 
 | Measure | What to record |
 |---|---|
-| **Line length** | typical words per line; how often lines run to a second box |
+| **Line length** | typical words per line; one sentence a box or several |
 | **Register** | plain, formal, archaic, slangy, technical; contractions or not; swearing or not |
 | **Humour** | none, dry, absurd, punny; roughly how often (every line, every scene, rarely) |
 | **Rhythm** | short exchanges or speeches; interruptions (`—`), trailing off (`…`), pauses |
@@ -34,7 +49,7 @@ lines of their own. Then measure the reference instead of copying it:
 Write it into DESIGN.md under *Story* as **Dialogue voice**, with three example lines in that voice.
 Every script follows it, and every review checks against it.
 
-## 2. Character voice sheets
+## 3. Character voice sheets
 
 One short entry per speaking character, also in DESIGN.md:
 
@@ -50,7 +65,7 @@ One short entry per speaking character, also in DESIGN.md:
 - **Moods** list the portrait expressions the art needs (`Brom (grumpy): …` picks the grumpy portrait).
 - **Voice** sets the blip pitch and timbre (`voiceBlip`), so each character sounds different even without audio files.
 
-## 3. Writing a conversation
+## 4. Writing a conversation
 
 - **One purpose per conversation:** a quest, a clue, a relationship beat, a laugh. Write it down first.
 - **Enter late, leave early.** No greetings and goodbyes unless they say something about the character.
@@ -62,12 +77,17 @@ One short entry per speaking character, also in DESIGN.md:
   say it.
 - **React and remember.** NPCs respond to what the player did (flags such as `~ set helpedMira`) with short
   callback lines. That's cheaper than branching and feels far more alive.
-- **Small-screen budget:** a line fits in the box (about 140 characters, 2–3 lines at 30 px); no more than about
-  4 lines in a row without a choice; a conversation is under a minute unless the player keeps choosing to
-  ask. `lint.mjs` checks the first two.
+- **One line, one box.** A line must fit the dialogue box without running to a second page, at the game's
+  largest text size. Work the maximum out once from the box (lines in the box × characters that fit across
+  it at that size), record it in *Dialogue voice* and pass it to `lint.mjs` as `--max-chars`. The toolkit's
+  default box holds three lines of about 45 characters at that size, hence the linter's default of 140; a
+  two-line box holds about 90.
+- **Small-screen budget:** no more than about 4 lines in a row without a choice (`lint.mjs` checks this
+  too); a conversation is under a minute unless the player keeps choosing to ask.
+- **Every line has a speaker** the player can see: a portrait, a name plate or a colour.
 - **Read every line aloud** in the character's voice. If it's awkward to say, rewrite it.
 
-## 4. Choices
+## 5. Choices
 
 - **2–4 options** that are different **intents**, not the same answer in three tones (unless tone is the
   point of the game, per the voice).
@@ -79,8 +99,9 @@ One short entry per speaking character, also in DESIGN.md:
 - **Gated options** (`[if gold >= 50]`) appear only when available; don't show options the player can't pick
   unless seeing them is the point.
 - **No timed choices** unless the game has a setting to turn the timer off (accessibility).
+- **No typed text:** if the player names something, offer a list picked with stepped up / down.
 
-## 5. Structure patterns
+## 6. Structure patterns
 
 Keep branching manageable. Trees that split at every choice explode; these don't:
 
@@ -113,7 +134,22 @@ else:
     >> end
 ```
 
-## 6. The script format
+## 7. Barks and beats
+
+Prefer the lightest form that does the job; a bark during play beats a cutscene.
+
+- **Barks** are one short line above a character's head ("They're behind us!"), with no box and no input,
+  shown for 1.5–2.5 s and rate-limited so they don't spam. Keep them as data (lines per trigger and
+  speaker) next to the scripts.
+- **Story beats** between levels (the intro, a turn in the plot) are nodes with no choices, played in the
+  same box: `=== intro`, `=== after_level_3`. A beat is 1–3 boxes, never blocks play for long, and skip takes
+  the player past the whole beat.
+- **Remember which beats were seen** (`~ set sawIntro` in the node, checked before the game starts it) so
+  repeat runs skip them. If the story matters, add a "Replay story" item to a menu.
+- **The ending** is a real screen: a closing line, then the results, then the credits (with the names from
+  `assets/CREDITS.md`, if the game has one).
+
+## 8. The script format
 
 Full reference at the top of `toolkit/dialogue-script.js`. In short:
 
@@ -129,7 +165,7 @@ Full reference at the top of `toolkit/dialogue-script.js`. In short:
 | `$name`, `{w}`, `{w=0.6}`, `*word*`, `{shake}…{/shake}`, `{c=#hex}…{/c}` | variable, pause, emphasis, shake, colour |
 | `… #id` at the end of a line or choice | a stable id for translations |
 
-## 7. Build it into the game
+## 9. Build it into the game
 
 The toolkit is two plain ES modules with no dependencies. They talk to the game through small objects the
 game passes in; the full contract is at the top of `toolkit/dialogue.js`.
@@ -148,8 +184,9 @@ game passes in; the full contract is at the top of `toolkit/dialogue.js`.
      | `pointer` | `{ x, y, pressed }` in the canvas's logical units; `pressed` is true on the frame a click or tap went down |
      | `mode` | the device used last: `'touch'` and `'mouse'` show the Skip button, `'mouse'` gives hover; anything else (`'gamepad'`, `'keyboard'`) doesn't |
 
-   - **`width`, `height`**: the game's logical resolution (default 1280 by 800).
-   - **`settings`** (optional): an object with `textScale`, `textSpeed` and `reducedShake`, read live.
+   - **`width`, `height`**: the game's logical resolution.
+   - **`settings`** (optional): an object the box reads live for the game's text-size setting, the game's
+     reduced shake setting and the text speed. The field names it looks for are in the contract.
    - **`prompts`** (optional): `(ctx, input, pairs, { x, y, align, size }) => void`, where `pairs` is
      `[[buttonName, label], …]`. Wrap the game's input-prompt helper in it so hints show the right icons for
      the device. Without it the box draws only its built-in "next" arrow.
@@ -171,16 +208,17 @@ game passes in; the full contract is at the top of `toolkit/dialogue.js`.
    (0.5–2, saved as `textSpeed`) to the game's Settings screen.
 6. **Translation:** lines and choices have ids (`#id` or `node:line`). The localization skill fills `strings`.
 
-## 8. Verify
+## 10. Verify
 
 1. `node <skill-dir>/lint.mjs dialogue/*.js --entry <nodes the game starts>` and fix every ✗.
-2. Read every conversation on the target screen, at the largest text size too: nothing clipped, nothing over three lines.
-3. Play each conversation with controller, keyboard only, mouse only and touch: advance, skip, choose, log.
-4. Pause mid-line and mid-choice; Restart and Quit to title mid-conversation: nothing replays wrongly, and
-   flags only change when they should.
+2. Read every conversation, beat and bark on the target screen, at the largest text size too: nothing clipped,
+   no line running to a second page.
+3. Play each conversation and beat with controller, keyboard only, mouse only and touch: advance, skip, choose, log.
+4. Pause mid-line and mid-choice; Restart and Quit to title mid-conversation and mid-beat: nothing replays
+   wrongly, seen beats stay skipped, and flags only change when they should.
 5. Check the voice: cover the names and read a scene. Can you tell who's speaking, and does it match the
    *Dialogue voice* in DESIGN.md?
-6. Add a Changelog line to DESIGN.md.
+6. Update DESIGN.md (*Story*, Changelog).
 7. Run the project's checks and finish the change the way its rules say.
 
 `toolkit/demo.html` shows the box in its four states (typing, markup, choices, log) with a stand-in input;

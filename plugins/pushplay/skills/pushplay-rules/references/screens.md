@@ -36,4 +36,4 @@ The Deck and the Legion Go have mid-range integrated GPUs. Aim for a steady 60fp
 - Keep the game self-contained in its repo. The PushPlay build ships the game's files and skips `mockups/`, `*.py`, `__pycache__/`, `DESIGN.md`, `docs/` and dot-folders. List anything else to skip (reference images, notes) in `.pushplayignore` at the root. Don't commit `node_modules/` or `dist/`.
 - For 3D games (three.js), follow the budgets in [3d.md](../../pushplay-runtime/references/3d.md).
 - Put all gameplay numbers in a `TUNING` object at the top of `game.js`, so tuning later is quick. Clamp `dt` (`Math.min(1/20, …)`).
-- The cover and banner are the `cover-art` skill's; `pushplay.json` is the `pushplay-manifest` skill's.
+- The cover and banner are the `cover-art` skill's; `pushplay.json` is in [manifest.md](manifest.md).

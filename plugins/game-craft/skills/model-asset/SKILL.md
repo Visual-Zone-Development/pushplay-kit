@@ -1,6 +1,6 @@
 ---
 name: model-asset
-description: Create or rebuild a visual asset for the game in this repo — a character, creature, vehicle, building, prop, pickup, effect, tile or UI element — to match a reference or art direction, in any rendering style (2D canvas shapes, pixel-art sprites, SVG, 3D, or the user's own files). Covers the game's STYLE.md, reference breakdown, silhouette and proportions, block-out, detail, and render-and-compare rounds. For one focused change to an existing asset use edit-asset; for motion use animate-asset; also load canvas2d-assets for 2D games or threejs-models for 3D models built in three.js code.
+description: Create, rebuild or change a visual asset for the game in this repo — a character, creature, vehicle, building, prop, pickup, effect, tile or UI element — to match a reference or art direction, in any rendering style (2D canvas shapes, pixel-art sprites, SVG, 3D, or the user's own files). Covers the game's STYLE.md, reference breakdown, silhouette and proportions, block-out, detail, render-and-compare rounds, and one focused change to an existing asset with before/after renders and nothing else touched. Use for "make a <thing>", "redo the <thing>", "match this reference", and edits such as "tweak", "recolour", "make the X bigger", "fix the Y on the Z". For motion use animate-asset; also load canvas2d-assets for 2D games or threejs-models for 3D models built in three.js code.
 ---
 
 # Model an asset
@@ -18,7 +18,8 @@ the game's rendering, so pair it with an engine skill when one exists:
 | three.js with model files (GLB) | [3d.md](../threejs-models/references/3d.md) → *Models*, [assets.md](../game-design/references/assets.md) |
 | Cover / key art (SVG) | edit the SVG; render it with the project's own art check, or use the script below |
 
-Sister skills share the game's `STYLE.md`: **edit-asset** (one focused change) and **animate-asset** (motion).
+For one small change to an asset that already exists ("make the sword bigger", "darker red on the armour"), read
+section 0, then go to *Changing one existing asset*. **animate-asset** (motion) shares the game's `STYLE.md`.
 
 ## 0. Read the game first
 
@@ -99,6 +100,31 @@ Renders go to the scratchpad or a temp folder, never into the repo.
 - Add a line to DESIGN.md's changelog.
 - Keep the old version reachable while the user decides (e.g. `<id>Old`), then remove it.
 - Run the project's checks (look at any screenshot they produce) and finish the change the way its rules say.
+
+## Changing one existing asset
+
+The user asks for one thing, one asset changes, and everything else stays exactly as it was. The request is the
+reference, so sections 1–4 don't apply; a sweeping restyle is not this (do the full workflow, or agree a
+STYLE.md change with the user).
+
+1. **Pin down the target:** which asset and which part ("the axe head", "the coin's shine"). If the request is
+   vague ("make it cooler"), offer 2–3 concrete options and let the user pick. If the change would break a
+   STYLE.md rule or a gameplay read (size against hitbox, team or danger colour, facing), say so and ask whether
+   to change the rule or the request.
+2. **Find where it is drawn:** STYLE.md's catalogue, or search the code for its id. If it is tangled with other
+   assets, isolate it first, as a separate step that changes nothing visible and that the user agrees to.
+3. **Capture "before"** with the section 5 commands: the asset alone and in the game, plus a frame strip if
+   motion could be affected.
+4. **Change only that asset's** code, data or file, and keep the old version beside it (`<id>Old`) until the
+   user has seen before and after.
+   - Shared things are off limits by default: palettes, materials, sprite parts, helpers and rigs are used
+     elsewhere. If the change needs one, either fork it for this asset (a copy under the asset's own name) or ask
+     the user, then re-render **every asset that uses it**, before and after.
+   - No refactors, renames or tidying of unrelated code.
+5. **Capture "after"** with the same views and parameters. The change must show **at play size**, nothing else may
+   differ, and motion must still work. Two or three small rounds is typical. Show the user before and after side
+   by side and say exactly what changed and what didn't.
+6. **Finish** as in section 6, as a change of its own (one asset, one change) so it is easy to revert.
 
 ## Lessons so far
 

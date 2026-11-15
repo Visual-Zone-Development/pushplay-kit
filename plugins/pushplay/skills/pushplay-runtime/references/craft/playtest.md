@@ -17,7 +17,7 @@ The general `playtest` skill covers driving the game headlessly with bots, measu
 
   | Finding | Kind | Where it goes |
   |---|---|---|
-  | fps below 55 anywhere | performance | cap entities or particles (the `debug-game` skill) |
+  | fps below 55 anywhere | performance | cap entities or particles (the `performance-pass` skill) |
   | phone shots: the threat appears under a thumb zone, or text under 32 px | phone layout | the `mobile-port` skill, [game-ui.md](game-ui.md) |
 
 - Apply the chosen changes with the `improve-game` skill's steps, then re-run the same playtest to confirm the numbers moved the right way.

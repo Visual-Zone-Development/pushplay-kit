@@ -9,7 +9,6 @@
 //   pushplay art-shots [id]           render a game's cover, banner and art pages to look at
 //   pushplay update-runtime           bring the runtime files of JavaScript games up to this kit's
 //   pushplay promote <id> …           move a workshop game into its own repo
-//   pushplay migrate [--dry]          remove what kits before v14 copied into a repo
 //   pushplay where                    print the folder the kit is unpacked in (its templates, its Playwright)
 //   pushplay version
 //
@@ -34,8 +33,7 @@ const SCRIPTS = {
   art: 'art/generate.mjs',
   'art-shots': 'art/shots.mjs',
   'update-runtime': 'update-runtime.mjs',
-  promote: 'promote.mjs',
-  migrate: 'migrate.mjs'
+  promote: 'promote.mjs'
 }
 const [command, ...args] = process.argv.slice(2)
 const say = (line = '') => console.log(line)

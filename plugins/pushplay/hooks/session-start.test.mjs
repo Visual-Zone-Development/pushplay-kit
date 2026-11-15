@@ -28,7 +28,6 @@ test('in a game repo it names the skill that holds the rules the repo no longer 
   const text = notice(folder({ 'pushplay.json': '{}', 'game.js': '' }))
   assert.match(text, /This repo is a PushPlay game/)
   assert.match(text, /load the pushplay-rules skill/)
-  assert.doesNotMatch(text, /migrate/)
 })
 
 test('in a workshop it counts the games', () => {
@@ -36,9 +35,8 @@ test('in a workshop it counts the games', () => {
   assert.match(text, /workshop with 2 games/)
 })
 
-test('it points out an old in-repo kit, and reads the project folder the session gives it', () => {
-  const root = folder({ 'games/one/pushplay.json': '{}', '.github/pushplay/check.mjs': '' })
+test('it reads the project folder the session gives it', () => {
+  const root = folder({ 'games/one/pushplay.json': '{}' })
   const run = spawnSync('node', [HOOK], { cwd: tmpdir(), encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: root } })
   assert.match(run.stdout, /workshop with 1 game in/)
-  assert.match(run.stdout, /old copy of the build kit[\s\S]*kit-upgrade/)
 })

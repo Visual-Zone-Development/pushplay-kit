@@ -1,9 +1,9 @@
 ---
 name: cover-art
-description: Make or improve the library art for the game in this repo — the 720×500 cover with the title (art/cover.svg or cover.html) and the 1920×450 hero banner (art/hero.svg) — so it reads at thumbnail size, shows what the game is, uses the game's palette and bundled fonts, and keeps clear of the areas the launcher draws over. Use for "make the cover", "the cover looks bad / generic", "new banner", the check's note about placeholder art, or the art step of new-game.
+description: Make or improve how the game in this repo looks in the PushPlay library — the 720×500 cover with the title (art/cover.svg or cover.html), the 1920×450 hero banner (art/hero.svg) and the library screenshot the build captures about 3 seconds into play — plus extra screenshots and short clips to share. Use for "make the cover", "the cover looks bad / generic", "new banner", the check's note about placeholder art, the art step of new-game, "the library screenshot is boring / shows nothing / is just the title", "make screenshots", "record a GIF / clip", or before announcing a game.
 ---
 
-# Cover art
+# Cover art and the library screenshot
 
 Follow the `pushplay-rules` skill and art-directions.md (in the `art-direction` skill's `references/`). `pushplay` is the command the `pushplay-rules` skill gives you. Read the game's `DESIGN.md` (*Art direction*: palette, font, hero object, cover and hero ideas). If the repo has `model-asset` or `canvas2d-assets` skills, use them to draw the hero object the same way as in game.
 
@@ -47,3 +47,20 @@ With `OPENAI_API_KEY`, `GEMINI_API_KEY` or `REPLICATE_API_TOKEN` set, a painted 
    - Cropped to the middle (x 600–1320, top 250 px, as the phone library shows it), does the hero still show the game?
 3. Fix and re-run until both look good: usually by enlarging the hero, simplifying the background and strengthening contrast.
 4. Commit (`<Name>: cover and hero art`) and push. Bump `version` if the game was already released.
+
+## 4. The library screenshot
+The build opens the game at 1280×800, presses confirm (A) on the title up to three times while `state.screen` is still `title`, waits until about 3 s have passed and saves that frame as `screenshot.png`. It **replaces** `art.screenshots` in the shipped manifest with that one image, so listing your own files there has no effect: the way to a good library screenshot is a good first 3 seconds of play. A phone game is captured by the phone pass instead, touch only at phone size in its own orientation, on-screen controls included (a landscape phone game's 1280×720 frame gets bars in the 1280×800 shot); its title's first tap must start play.
+
+Run `pushplay check` and open the `screenshot.png` it prints. It should show **real gameplay**: the hero, the world, a threat or goal, and a clean, readable HUD.
+
+| Shows | Fix |
+|---|---|
+| The title screen | A on the title must start play (or open a menu whose first item, chosen by A, starts it) |
+| An empty field, a black or loading screen | spawn the opening scene immediately; draw before assets finish loading |
+| A wall of tutorial text | teach by doing (the `game-ui` skill): one short in-world prompt instead |
+| A countdown "3, 2, 1" over a blank arena | show the arena and players behind the countdown, or shorten it |
+| A character select screen | default to the last pick and start; put selection in a menu item |
+
+Start with something happening: the first enemies or obstacles already on screen, the hero mid-motion, a pickup in view. That makes the first seconds better for players too. **Never detect the check** (no special case for headless browsers or `__kitCheck`): the screenshot must be what a player really sees.
+
+**Extra shots and clips to share.** Write a scratch capture script (never in the game folder) from the repro script in [debugging.md](../pushplay-runtime/references/debugging.md): `?seed=` for a good run, `window.__game.jumpTo(...)` to reach the best moments (a boss, a big combo, a full level), `page.screenshot()` at 1280×800 and at DPR 2 for crisp images. For a phone game add a phone set (`viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, hasTouch: true`) with the `touch.js` controls visible; store-style shots of phone games are usually portrait. For a clip, Playwright's `recordVideo` option on the browser context records a `.webm`; trim it with `ffmpeg` if available (`ffmpeg -ss 2 -t 6 -i in.webm -vf "fps=30,scale=640:-1" out.gif`). Save the results where the user can open them (the session's scratch directory, or a `media/` folder listed in the game's `.pushplayignore` so it isn't shipped), keep files small, and show the user the best 3–5 with the moment each shows.

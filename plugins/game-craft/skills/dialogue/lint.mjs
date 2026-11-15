@@ -1,5 +1,5 @@
 // Lint dialogue scripts (dialogue skill): parse errors, jumps to missing nodes, nodes nothing reaches, lines
-// too long for a handheld box, long stretches without player input, too many or too long choices,
+// too long to fit one box (--max-chars, see the skill's "One line, one box"), long stretches without player input, too many or too long choices,
 // variables read but never set, and speaker names that differ only in case or spacing.
 //
 //   node <skill-dir>/lint.mjs dialogue/*.js   (<skill-dir> is the folder this file is in) [--max-chars 140] [--max-run 4] [--entry intro,smith]
@@ -38,7 +38,7 @@ function walk(body, file, node, run = { n: 0 }) {
     if (st.t === 'line') {
       run.n++
       const len = visible(st.text).length
-      if (len > maxChars) problems.push(`${file}:${st.n} line is ${len} characters (max ${maxChars}: split it, a handheld box shows ~2–3 lines)`)
+      if (len > maxChars) problems.push(`${file}:${st.n} line is ${len} characters (max ${maxChars}: split it so it fits one box at the largest text size)`)
       if (run.n === maxRun + 1) notes.push(`${file}:${st.n} ${maxRun + 1}+ lines in a row without a choice in "${node}": consider a choice, a bark, or cutting`)
       if (st.who) {
         const key = st.who.toLowerCase().replace(/\s+/g, '')

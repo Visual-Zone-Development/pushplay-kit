@@ -5,13 +5,13 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { BETA_RELEASE_TAG, BUILD_WORKFLOW, IGNORE_FILE, INDEX_ASSET, KIT_VERSION, MANIFEST_FILE, MANIFEST_SCHEMA_URL, OLD_KIT_DIR, RELEASE_TAG, releaseTagFor, RUNTIME_FILES, RUNTIME_HEADER, WORKFLOW_FILE } from './config.mjs'
+import { BETA_RELEASE_TAG, BUILD_WORKFLOW, IGNORE_FILE, INDEX_ASSET, KIT_VERSION, MANIFEST_FILE, MANIFEST_SCHEMA_URL, RELEASE_TAG, releaseTagFor, RUNTIME_FILES, RUNTIME_HEADER, WORKFLOW_FILE } from './config.mjs'
 import { buildWorkflow, kitFiles, kitTree } from './kit.mjs'
 
 /** Where the tests keep the kit's scratch folder, so they can look inside it (by default it is outside the repo). */
 const KIT_DIR = '.kit-test'
 /** The product's short name, as the launcher's object and the build flag are called after it. */
-const SLUG = basename(OLD_KIT_DIR)
+const SLUG = basename(WORKFLOW_FILE, '.yml')
 
 const SRC = import.meta.dirname
 const SAMPLE = join(SRC, '../../samples/gamepad-tester')
@@ -352,7 +352,7 @@ describe('build kit', () => {
 
   it('the kit as shipped is self-contained, with names from brand.json', () => {
     const files = kitTree()
-    for (const name of ['ci.mjs', 'check.mjs', 'new-game.mjs', 'migrate.mjs', 'update-runtime.mjs', 'promote.mjs', 'art/generate.mjs', 'workflow.yml', 'workflow.mjs']) expect(files[name], name).toBeDefined()
+    for (const name of ['ci.mjs', 'check.mjs', 'new-game.mjs', 'update-runtime.mjs', 'promote.mjs', 'art/generate.mjs', 'workflow.yml', 'workflow.mjs']) expect(files[name], name).toBeDefined()
     expect(files['manifest.schema.json']).toContain('"$schema"')
     expect(files['kit-index.schema.json']).toContain('"kit"')
     expect(JSON.parse(files['package-lock.json']).packages[''].dependencies).toEqual(JSON.parse(files['package.json']).dependencies)
@@ -394,82 +394,6 @@ describe('build kit', () => {
     expect(output).toMatch(/input\.extendKeys/)
     expect(output).toMatch(/kept .*games\/forked\/save\.js/)
     expect(runKit('update-runtime.mjs', root).output).toMatch(/already those of kit/)
-  })
-
-  /** A repo as kits before v14 left it: their own copy inside it, with everything that came along. */
-  const oldStyleRepo = (extra = () => {}) =>
-    makeRepo((r) => {
-      write(join(r, OLD_KIT_DIR, 'check.mjs'), '// the old kit')
-      write(join(r, OLD_KIT_DIR, 'manifest.schema.json'), '{}')
-      write(join(r, WORKFLOW_FILE), 'run: node .github/kit/ci.mjs')
-      write(join(r, '.github/workflows/promote.yml'), 'name: promote')
-      write(join(r, 'AGENTS.md'), '# Making games in this repo\n\nrules…')
-      write(join(r, 'CLAUDE.md'), '@AGENTS.md\n\nPick the skill by intent: making a game → `new-game`\n')
-      write(join(r, '.claude/skills/new-game/SKILL.md'), 'kit skill')
-      write(join(r, '.claude/skills/enemy-ai/SKILL.md'), 'kit skill')
-      write(join(r, 'docs/game-design/kickoff.md'), 'kit guide')
-      write(join(r, 'tools/art/generate.mjs'), '// kit tool')
-      write(join(r, 'tools/promote/promote.mjs'), '// kit tool')
-      write(join(r, '.env.example'), 'KEY=')
-      write(join(r, 'games/one/index.html'), DRAW)
-      write(join(r, 'games/one', MANIFEST_FILE), manifest('one', { $schema: `../../${OLD_KIT_DIR}/manifest.schema.json` }))
-      extra(r)
-    })
-
-  it('migrate strips an old in-repo kit down to the games and the one workflow file', () => {
-    const root = oldStyleRepo((r) =>
-      write(join(r, 'package.json'), {
-        name: `${basename(OLD_KIT_DIR)}-games`,
-        private: true,
-        type: 'module',
-        description: 'games',
-        workspaces: ['games/*'],
-        scripts: { setup: `npm install && node ${OLD_KIT_DIR}/node_modules/playwright/cli.js install chromium`, check: `node ${OLD_KIT_DIR}/check.mjs`, art: 'node tools/art/generate.mjs', test: 'node --test "tools/**/*.test.mjs"' },
-        devDependencies: { vite: '^7.3.7' }
-      })
-    )
-    const { status, output } = runKit('migrate.mjs', root)
-    expect(status, output).toBe(0)
-    const left = execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' }).trim().split('\n').sort()
-    expect(left).toEqual([WORKFLOW_FILE, 'games/one/index.html', `games/one/${MANIFEST_FILE}`].sort())
-    expect(readFileSync(join(root, WORKFLOW_FILE), 'utf8')).toContain(`uses: ${BUILD_WORKFLOW}`)
-    expect(JSON.parse(readFileSync(join(root, 'games/one', MANIFEST_FILE), 'utf8')).$schema).toBe(MANIFEST_SCHEMA_URL)
-    // The games still pass, and a second run finds nothing to do.
-    expect(runKit('check.mjs', root).output).toMatch(/All 1 game\(s\) passed/)
-    expect(runKit('migrate.mjs', root).output).toMatch(/Nothing to do/)
-  }, 120_000)
-
-  it('migrate keeps what the repo added itself: its skills, tools, scripts, docs and its own lines in CLAUDE.md', () => {
-    const root = oldStyleRepo((r) => {
-      write(join(r, 'CLAUDE.md'), '@AGENTS.md\n\nPick the skill by intent: making a game → `new-game`\n\n## Agent skills\n\nIssues are tracked in GitHub Issues.\n')
-      write(join(r, '.claude/skills/graduate-game/SKILL.md'), 'the repo’s own skill')
-      write(join(r, '.claude/settings.json'), '{}')
-      write(join(r, 'docs/game-design/house-style.md'), 'the repo’s own doc')
-      write(join(r, 'docs/agents/domain.md'), 'the repo’s own notes')
-      write(join(r, 'tools/graduate/graduate.mjs'), '// the repo’s own tool')
-      write(join(r, 'README.md'), '# My games')
-      write(join(r, 'package.json'), { name: 'my-games', workspaces: ['games/*'], scripts: { check: `node ${OLD_KIT_DIR}/check.mjs`, dev: 'my own dev server', graduate: 'node tools/graduate/graduate.mjs' }, devDependencies: { vite: '^7.3.7' } })
-    })
-    const { status, output } = runKit('migrate.mjs', root)
-    expect(status, output).toBe(0)
-    expect(readFileSync(join(root, 'CLAUDE.md'), 'utf8')).toBe('## Agent skills\n\nIssues are tracked in GitHub Issues.\n')
-    expect(existsSync(join(root, 'AGENTS.md'))).toBe(false)
-    expect(existsSync(join(root, '.claude/skills/new-game'))).toBe(false)
-    for (const file of ['.claude/skills/graduate-game/SKILL.md', '.claude/settings.json', 'docs/game-design/house-style.md', 'docs/agents/domain.md', 'tools/graduate/graduate.mjs', 'README.md']) {
-      expect(existsSync(join(root, file)), file).toBe(true)
-    }
-    expect(existsSync(join(root, 'docs/game-design/kickoff.md'))).toBe(false)
-    expect(existsSync(join(root, 'tools/art'))).toBe(false)
-    expect(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))).toEqual({ name: 'my-games', workspaces: ['games/*'], scripts: { dev: 'my own dev server', graduate: 'node tools/graduate/graduate.mjs' }, devDependencies: { vite: '^7.3.7' } })
-    expect(output).toMatch(/kept .*graduate-game/)
-  })
-
-  it('migrate --dry lists what it would do and changes nothing', () => {
-    const root = oldStyleRepo()
-    const { output } = runKit('migrate.mjs', root, ['--dry'])
-    expect(output).toMatch(/Would do:[\s\S]*the build kit's copy/)
-    expect(existsSync(join(root, OLD_KIT_DIR, 'check.mjs'))).toBe(true)
-    expect(existsSync(join(root, 'AGENTS.md'))).toBe(true)
   })
 
   it('promote makes the new repo from the game and the one workflow file, with no template', () => {

@@ -6,7 +6,7 @@
 // skipped with a note; KIT_BROWSER=/path/to/chrome uses an installed browser instead.
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { ART, brand, CHECK_RUN_MS, CMD, DOCS_URL, MANIFEST_FILE, OLD_KIT_DIR, VIEWPORT, VIEWPORT_PHONE } from './config.mjs'
+import { ART, brand, CHECK_RUN_MS, CMD, DOCS_URL, MANIFEST_FILE, VIEWPORT, VIEWPORT_PHONE } from './config.mjs'
 import { display, listGames, log, layout, ROOT } from './repo.mjs'
 import { ART_DIR, buildGame, launchBrowser } from './pipeline.mjs'
 
@@ -69,6 +69,4 @@ for (const game of selected) {
 }
 await browser?.close()
 log(failed ? `\n${failed} of ${selected.length} game(s) need fixes.` : `\nAll ${selected.length} game(s) passed.`)
-// A repo set up by a kit before v14 still carries a copy of it; nothing reads that copy any more.
-if (existsSync(join(ROOT, OLD_KIT_DIR))) log(`\n⚠ This repo still has an old copy of the build kit in ${OLD_KIT_DIR}/. \`${CMD} migrate\` removes it and everything that came with it.`)
 process.exit(failed ? 1 : 0)

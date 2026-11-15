@@ -1,6 +1,6 @@
 ---
 name: pushplay-rules
-description: The rules every PushPlay game follows and the pushplay command that builds, checks and scaffolds games. Load it first whenever you are about to work on a PushPlay game, meaning any repo with a pushplay.json (at its root or in games/<id>/), or any request to make, change, fix, check, port or publish a game for PushPlay, the launcher for a Steam Deck, Legion Go, PC and phone. It says what any game needs (JavaScript, an engine's web export or a native build), how to run pushplay check, what may go into a game repo, and which skill to use for what.
+description: The rules every PushPlay game follows and the pushplay command that builds, checks and scaffolds games. Load it first whenever you are about to work on a PushPlay game, meaning any repo with a pushplay.json (at its root or in games/<id>/), or any request to make, change, fix, check, port or publish a game for PushPlay, the launcher for a Steam Deck, Legion Go, PC and phone. It says what any game needs (JavaScript, an engine's web export or a native build), how to run pushplay check, what may go into a game repo, and which skill to use for what. It also holds the manifest reference, so use it for "fill in the manifest", "write pushplay.json", "the check says tags / inputs / description is missing", "why doesn't my game show the Phone label", "add tags", "change the name or description", "bump the version".
 ---
 
 # PushPlay rules
@@ -11,7 +11,7 @@ PushPlay is a launcher: it follows a game's GitHub repo and plays its builds on 
 
 ## 1. What every game must do, whatever it is built with
 
-1. **A manifest.** `pushplay.json` next to the game (the repo root, or `games/<id>/` in a workshop repo of many games). Required: `id` (permanent: saves and the listing follow it), `name`, `entry` (or `release`, for a game that plays from its normal releases) and `inputs`, which the check plays the game by. The check asks for a `description` and `tags` with a ⚠; a finished game always has both. Fields and fixes: the `pushplay-manifest` skill.
+1. **A manifest.** `pushplay.json` next to the game (the repo root, or `games/<id>/` in a workshop repo of many games). Required: `id` (permanent: saves and the listing follow it), `name`, `entry` (or `release`, for a game that plays from its normal releases) and `inputs`, which the check plays the game by. The check asks for a `description` and `tags` with a ⚠; a finished game always has both. Every field, which fields each kind of game needs, the Plays-on labels and the fix for each check message: [manifest.md](references/manifest.md).
 2. **Art.** `art/cover` at 720×500 **with** the title, `art/hero` at 1920×450 **without** it (`.svg`, `.html`, `.png`, `.jpg` or `.webp`). The check passes a new game with placeholder art but notes it: a game isn't finished until it has its own. The `cover-art` skill makes both.
 3. **A build PushPlay can use**, one of:
    - the folder as it is (`entry.web`, usually `index.html`), or the repo's npm `build` script (output `dist`);
@@ -55,7 +55,6 @@ Run it from the game's repo. It never leaves a file in the repo except what the 
 | `pushplay art-shots [id]` | Render the game's art pages to PNG and print their paths |
 | `pushplay update-runtime` | Replace the runtime files in JavaScript games with the kit's current ones |
 | `pushplay promote <id> [--repo owner/name] [--private] [--keep]` | Move a workshop game into its own repo |
-| `pushplay migrate [--dry]` | Clean a repo set up before kit v14: removes the old in-repo kit, its AGENTS.md / CLAUDE.md lines, kit skills, guides, tools and npm scripts; writes the workflow file; keeps the repo's own |
 | `pushplay where` / `pushplay version` | The folder the kit is unpacked in (`templates/`, `node_modules/playwright`) / the kit version |
 
 **Every change follows this:**
@@ -94,18 +93,18 @@ Broken most often:
 
 | Intent | Skill |
 |---|---|
-| Make a game / change, tune or improve one / something broken | `new-game` / `improve-game` / `debug-game` |
+| Make a game / change, tune, improve or fix one | `new-game` / `improve-game` |
 | Set up any existing game for PushPlay, any engine | `port-game` |
-| Move a repo off an old in-repo kit, or refresh runtime files | `kit-upgrade` |
 | A finished workshop game ready for Discover or its own repo | `promote-game` |
-| `pushplay.json`, tags, inputs, Plays-on labels / the runtime files' calls | `pushplay-manifest` / `pushplay-runtime` |
-| Cover and banner / library screenshot, shots and clips | `cover-art` / `screenshots` |
+| `pushplay.json`, tags, inputs, Plays-on labels | [manifest.md](references/manifest.md) in this skill |
+| The runtime files' calls, or refreshing them | `pushplay-runtime` |
+| Cover, banner, library screenshot, shots and clips | `cover-art` |
 | Every screen with each input alone / phone and tablet play | `input-walkthrough` / `mobile-port` |
 | A party game's phone screen / phone motion controls | `party-phone-screen` / `motion-controls` |
 | The design brief; not sure which direction | `game-design`; `prototype-sprint` |
 | How it plays | `game-feel`, `physics-feel`, `camera`, `enemy-ai`, `touch-controls`, `local-multiplayer`, `online-netcode` |
-| Content | `level-design`, `boss-design`, `progression`, `story-and-dialogue`, `dialogue` |
-| Art | `art-direction` (whole screen), `model-asset` (new asset), `edit-asset` (one change), `animate-asset` (motion), with `canvas2d-assets` or `threejs-models`; `pixel-art`, `character-models`, `environments` |
+| Content | `level-design`, `boss-design`, `progression`, `dialogue` |
+| Art | `art-direction` (whole screen), `model-asset` (a new asset, or a change to one), `animate-asset` (motion), with `canvas2d-assets` or `threejs-models`; `pixel-art`, `character-models`, `environments` |
 | Sound and interface | `game-audio`, `game-ui` |
 | Quality | `playtest`, `performance-pass`, `accessibility-audit`, `localization`, `release-notes` |
 

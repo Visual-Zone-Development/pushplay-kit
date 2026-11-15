@@ -87,10 +87,9 @@ test('a general skill may not mention PushPlay, its commands or its runtime file
 test('a PushPlay skill may not send an agent to npm scripts or a kit folder that game repos no longer have', () => {
   const body = 'Run `npm run check`, then read `.github/pushplay/config.mjs`.'
   const root = fixture({
-    'plugins/pushplay/skills/debug-game/SKILL.md': skill('debug-game', body),
-    'plugins/pushplay/skills/kit-upgrade/SKILL.md': skill('kit-upgrade', `migrate removes \`.github/pushplay/\` and the \`npm run check\` script.`)
+    'plugins/pushplay/skills/improve-game/SKILL.md': skill('improve-game', body)
   })
   const problems = lint(root)
   assert.equal(problems.length, 2, problems.join('\n'))
-  assert.ok(problems.every((p) => p.startsWith('pushplay/debug-game/')))
+  assert.ok(problems.every((p) => p.startsWith('pushplay/improve-game/')))
 })

@@ -1,6 +1,6 @@
 # local-multiplayer in a PushPlay game
 
-The general `local-multiplayer` skill covers the shape (co-op or versus, one shared screen, rounds, drop in and out), the join screen, colours, fairness and catch-up. This page gives the PushPlay side: how to do it with the runtime files. The rules are in the `pushplay-rules` skill: [controls.md](../../../pushplay-rules/references/controls.md) (*Controls*, the *Local multiplayer* item), [menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md) (*Flow*) and the `pushplay-manifest` skill for the manifest.
+The general `local-multiplayer` skill covers the shape (co-op or versus, one shared screen, rounds, drop in and out), the join screen, colours, fairness and catch-up. This page gives the PushPlay side: how to do it with the runtime files. The rules are in the `pushplay-rules` skill: [controls.md](../../../pushplay-rules/references/controls.md) (*Controls*, the *Local multiplayer* item), [menus-and-exit.md](../../../pushplay-rules/references/menus-and-exit.md) (*Flow*) and [manifest.md](../../../pushplay-rules/references/manifest.md) for the manifest.
 
 ## Input
 

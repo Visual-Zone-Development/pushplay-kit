@@ -1,9 +1,9 @@
 ---
 name: improve-game
-description: Change or improve the game in this repo. Covers specific requests ("add a double jump", "make enemies faster", "new palette", "add co-op") and open-ended ones ("make it more fun", "it gets boring", "polish it"). Use whenever the user wants to modify a game that already exists. For crashes and bugs use debug-game.
+description: Change, improve or fix the game in this repo. Covers specific requests ("add a double jump", "make enemies faster", "new palette", "add co-op"), open-ended ones ("make it more fun", "it gets boring", "polish it") and bugs ("it's broken", "fix the bug", a crash, a failing pushplay check, a blank or black screen, controls not responding, broken saves). Use whenever the user wants to modify or repair a game that already exists. For a full frame-rate pass use performance-pass, for jittery physics physics-feel, for online lag or desync online-netcode, for a phone layout mobile-port.
 ---
 
-# Improve game
+# Improve or fix a game
 
 Follow the `pushplay-rules` skill. `pushplay` is the command the `pushplay-rules` skill gives you. If the game isn't a JavaScript game on the runtime files (an engine export, a game on its own engine), work in the game's own engine and code, hold it only to what `pushplay-rules` requires of every game, and skip the steps here that are about the runtime files. Design material lives in the skills' `references/` folders. The specialist skills named below (`game-feel`, `level-design`, `game-audio`, …) are written for any web game. When one says "the game's menu system", "its save data" or "the project's checks", the `pushplay-runtime` skill gives the PushPlay calls, with a page per craft skill.
 
@@ -17,7 +17,7 @@ Follow the `pushplay-rules` skill. `pushplay` is the command the `pushplay-rules
 3. Pick the mode:
    - **Direct change**: the request names something specific.
    - **Make it better**: the request is open-ended.
-   - Something is broken → switch to the `debug-game` skill.
+   - **Something is broken** (a crash, a failing check, a blank screen, dead controls, "it doesn't work"): the last section.
    - "Make it work on my phone / tablet", "mobile version", "earn the Phone label" → the `mobile-port` skill; "add touch controls", "the virtual stick feels bad", "my thumb covers the player" → `touch-controls`.
 
 ## Direct change
@@ -36,7 +36,7 @@ Follow the `pushplay-rules` skill. `pushplay` is the command the `pushplay-rules
    - a phone game (manifest `phone`): new HUD or targets placed from `fit.safe` and out of the thumb zones, text ≥ 32 px, a new verb gets its touch form (a `touch.js` button or a tap), the phone pass still passes
    - title, HUD and help text that mention the old behavior; prompts still come from `input.label`, not literals
    - cover and hero art, if the look changed
-4. `pushplay check`, fix every ✗, look at the screenshot, and redo the **Verification** passes ([verification.md](../pushplay-rules/references/verification.md) in the `pushplay-rules` skill) that the change touches (at least the input you changed, plus keyboard-only).
+4. `pushplay check`, fix every ✗ (*When something is broken*, below, if the cause isn't obvious), look at the screenshot, and redo the **Verification** passes ([verification.md](../pushplay-rules/references/verification.md) in the `pushplay-rules` skill) that the change touches (at least the input you changed, plus keyboard-only).
 5. **Record it:**
    - bump `version` in `pushplay.json`: patch for tuning or fixes, minor for features or content
    - update DESIGN.md (affected sections plus a Changelog line)
@@ -74,16 +74,25 @@ Follow the `pushplay-rules` skill. `pushplay` is the command the `pushplay-rules
      - screen rules (24px text, 32px margins at 1280×800; 32px text and `fit.safe` margins in a phone space) and performance (60fps, DPR 2 included)
      - a game with `"touch"` in `inputs` but no `phone` field: it already earns Tablet; offer `mobile-port` if the user plays on a phone
 
-   For a deeper look, run the `playtest` skill to measure run length, spikes and boring stretches. Hand the fixes to the specialist skills: `game-feel` (feel and juice), `level-design` (content and ramp), `game-audio` (sound), `game-ui` (HUD, menus, onboarding), `boss-design` (bosses and finales), `progression` (unlocks, upgrades, daily challenge), `story-and-dialogue` (story, characters, writing), `accessibility-audit` (colourblind, remapping, assists), `performance-pass` (frame rate, stutter, load time), `enemy-ai` (enemy behaviour), `camera` (following and framing), `physics-feel` (collisions, bounce, vehicles), `local-multiplayer` (couch play), `online-netcode` (online lag and sync), `mobile-port` (phone and tablet play), `touch-controls` (the touch gameplay scheme), `party-phone-screen` (party games' phone side), `localization` (other languages), `cover-art` and `screenshots` (how it looks in the library). Finish with `release-notes` when the user wants notes for the update.
+   For a deeper look, run the `playtest` skill to measure run length, spikes and boring stretches. Hand the fixes to the specialist skills: `game-feel` (feel and juice), `level-design` (content and ramp), `game-audio` (sound), `game-ui` (HUD, menus, onboarding), `boss-design` (bosses and finales), `progression` (unlocks, upgrades, daily challenge), `dialogue` (story, characters, writing), `accessibility-audit` (colourblind, remapping, assists), `performance-pass` (frame rate, stutter, load time), `enemy-ai` (enemy behaviour), `camera` (following and framing), `physics-feel` (collisions, bounce, vehicles), `local-multiplayer` (couch play), `online-netcode` (online lag and sync), `mobile-port` (phone and tablet play), `touch-controls` (the touch gameplay scheme), `party-phone-screen` (party games' phone side), `localization` (other languages), `cover-art` (the cover, banner and library screenshot). Finish with `release-notes` when the user wants notes for the update.
 
    If it helps, research how the DESIGN.md reference games, or similar games, solved the same problem (inspiration.md (in the `game-design` skill's `references/`)).
 4. **Propose.** Offer 3–5 improvements in one multiple-choice question (let them pick several). Each option gives the problem → the fix, its expected effect on feel, and its size (S/M/L).
    - Mix quick wins (tuning, juice, missing feedback) with one bigger idea: a new mechanic, a mode (daily seed, endless, boss rush, co-op) or a meta loop.
    - Put the fix for the **biggest fun problem** first, marked "(Recommended)", even if it isn't the smallest.
 5. **Implement** the chosen items one at a time, using the Direct change steps 2–4 for each.
-6. **Verify** with the full **Verification** matrix in the `pushplay-rules` skill's [verification.md](../pushplay-rules/references/verification.md): controller, keyboard only, mouse only, touch (DevTools device mode), 1920×1080 resize at DPR 2, a phone-sized window for a phone game, and `pushplay check` (gamepad, keyboard, mouse-only, touch, Start → `paused`, DPR 2, and the phone pass where it applies, all green).
+6. **Verify** with the full matrix in the `pushplay-rules` skill's [verification.md](../pushplay-rules/references/verification.md): every row by hand, and `pushplay check` with every pass green.
 7. **Record and hand back.**
    - Bump `version`.
    - Update DESIGN.md: tick Definition of done items and add a Changelog entry.
    - Commit and push.
    - Tell the user what changed and **what to watch for in the next playtest**, so the next round of feedback is specific.
+
+## When something is broken
+[debugging.md](../pushplay-runtime/references/debugging.md) has the symptom → cause → fix table (pause, touch, stick, screen, sound and save symptoms), the debug overlay and test hooks, and the repro script. What each pass of the check does is in [verification.md](../pushplay-rules/references/verification.md).
+
+1. **Reproduce first.** Run `pushplay check` and read every ✗ and ⚠; a failing pass names the input it used, so reproduce with that input. If the bug comes later than the check's few seconds or needs specific inputs, play it in `pushplay dev`, or copy the repro script into your scratch directory (never the game folder), set its input timeline to the user's steps and **look at its screenshots**. `?debug`, `?seed=` and `window.__game` reach the state quickly; a game without those hooks gets them now, since they are part of the definition of done. Can't reproduce it? Ask one focused question: what they pressed, what they saw, with which input, on which device, and at what window size or orientation.
+2. **One hypothesis at a time.** Look the symptom up in debugging.md's table, then confirm the cause with a trace (`console.error`, the overlay, `page.evaluate`) before changing code. Read the surrounding code; don't guess.
+3. **Fix the cause**, minimally and in the existing style, without tuning unrelated things on the way. Never patch a runtime file: if the bug is really in one, say so, because the fix belongs in the kit. If the real fix is a redesign, say so and treat it as a Direct change. Where it's cheap, add a guard so this class of bug fails safely (clamp `dt`, try/catch around parsing).
+4. **Re-check.** Re-run the repro and `pushplay check`, redo the verification pass for the input the bug was reported on, and remove temporary traces (the debug overlay stays: it is off by default).
+5. **Record it:** bump the patch `version`, add a `Fixed: …` Changelog line to DESIGN.md if the game has one, commit (`<Name>: fix <bug>`) and push. Tell the user in two or three sentences what was wrong, why, and what changed, and what to re-test on the Deck or Legion Go.

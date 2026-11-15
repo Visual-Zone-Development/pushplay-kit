@@ -15,13 +15,11 @@ export function notice(root) {
       if (entry.isDirectory() && existsSync(join(dir, entry.name, 'pushplay.json'))) games.push(`games/${entry.name}`)
     }
   }
-  const oldKit = existsSync(join(root, '.github/pushplay'))
-  if (!games.length && !oldKit) return ''
+  if (!games.length) return ''
   const what = games.length === 1 && games[0] === '.' ? 'This repo is a PushPlay game (pushplay.json at its root).' : games.length ? `This repo is a PushPlay workshop with ${games.length} game${games.length === 1 ? '' : 's'} in games/.` : 'This repo was set up for PushPlay games.'
   const lines = [
     `${what} The repo carries no instructions of its own: before making, changing, checking or publishing a game here, load the pushplay-rules skill. It has the rules every PushPlay game follows, the \`pushplay\` command (check, dev, new-game) and which skill to use for what.`
   ]
-  if (oldKit) lines.push('It still has an old copy of the build kit in .github/pushplay/, which nothing uses any more. When the user asks to update or clean up the repo, the kit-upgrade skill removes it (pushplay migrate).')
   return lines.join('\n')
 }
 

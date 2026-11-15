@@ -1,6 +1,6 @@
 # dialogue in a PushPlay game
 
-The general `dialogue` skill has the writing craft, the script format and a neutral toolkit (`toolkit/dialogue-script.js`, `toolkit/dialogue.js`, `lint.mjs`) that takes an input adapter, an optional `prompts` callback and a tone function. PushPlay's runtime objects fit that contract as they are, so wiring is passing them in. The rules are in the `pushplay-rules` skill: [controls.md](../../../pushplay-rules/references/controls.md) (*Controls*, *Input hints*), [screens.md](../../../pushplay-rules/references/screens.md) (*Screens and scaling*) and [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Saves*).
+The general `dialogue` skill has the story bible and the beats between levels, the writing craft, the script format and a neutral toolkit (`toolkit/dialogue-script.js`, `toolkit/dialogue.js`, `lint.mjs`) that takes an input adapter, an optional `prompts` callback and a tone function. PushPlay's runtime objects fit that contract as they are, so wiring is passing them in. The rules are in the `pushplay-rules` skill: [controls.md](../../../pushplay-rules/references/controls.md) (*Controls*, *Input hints*), [screens.md](../../../pushplay-rules/references/screens.md) (*Screens and scaling*) and [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Saves*).
 
 ```js
 import { createRunner } from './dialogue-script.js'
@@ -67,6 +67,15 @@ talk.draw(ctx)
 - `width` / `height` default to 1280 × 800. A phone game passes its space (720, 1280 or 1280, 720).
 - Handheld budget: a line fits in the box, about 140 characters, 2–3 lines at 30 px on the 1280×800 screen.
 - Read every conversation on the 1280×800 screen, at the largest Text size too: nothing clipped, nothing over three lines.
+
+## Story beats without the toolkit
+
+A beat between levels that needs no choices can be a box the game draws itself. It follows the same rules:
+
+- `a` (or a tap or click) finishes the line, then advances: `drawPrompts(ctx, input, [['a', 'Next']])`. `b` skips the whole beat, with a prompt; for mouse and touch draw a Skip button of at least 56×56 px. `menu` still pauses, and the beat resumes where it was.
+- A line is readable in 3 seconds: about 60 characters, 2 lines per box, ≥ 28 px × `settings.data.textScale`. Type it on at 30–60 characters a second with a soft blip every few letters through `audio.tone` (see [game-audio.md](game-audio.md)).
+- The box is a panel in the game's palette at the bottom of the screen, ≥ 32 px from the edges.
+- Remember in `save.data` which beats were seen, so repeat runs skip them. If the story matters, add a "Replay story" item to a menu.
 
 ## Art and tools
 

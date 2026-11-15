@@ -1,13 +1,13 @@
 ---
 name: threejs-models
-description: Build 3D characters, creatures, vehicles, machines and props in code with three.js (no modelling tool) for a bundled (Vite) game — sculpted parts (lofted bodies, extruded plates, horns, armour shells, fur), hand-painted canvas textures, a small skeleton with blended procedural animation, instanced rendering for many copies, and an asset viewer for renders. Load it together with model-asset (workflow), edit-asset or animate-asset whenever a three.js game's models are made in code.
+description: Build 3D characters, creatures, vehicles, machines and props in code with three.js (no modelling tool) for a bundled (Vite) game — sculpted parts (lofted bodies, extruded plates, horns, armour shells, fur), hand-painted canvas textures, a small skeleton with blended procedural animation, instanced rendering for many copies, and an asset viewer for renders. Load it together with model-asset (workflow) or animate-asset whenever a three.js game's models are made in code.
 ---
 
 # three.js models in code
 
 Follow the project's own rules first (its `AGENTS.md` or platform guide): they decide the APIs, the screen size, the checks and how to finish a change. `<skill-dir>` is the folder this file is in.
 
-The general workflow (reference, breakdown, rounds, STYLE.md) is in **model-asset**, **edit-asset** and
+The general workflow (reference, breakdown, rounds, STYLE.md) is in **model-asset** and
 **animate-asset**. This skill is the three.js how-to: a toolkit for building models from code.
 
 ## Toolkit

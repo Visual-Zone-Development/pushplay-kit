@@ -1,6 +1,6 @@
 ---
 name: pushplay-runtime
-description: How to do things with PushPlay's runtime files in a game (input.js, menu.js, fit.js, audio.js, save.js, settings.js, prompts.js, touch.js, net.js, lobby.js, party.js, controller.js) and the PushPlay side of every craft skill. Use whenever a general skill says "the game's menu system", "its save data", "the input-prompt helper", "the audio layer", "the project's checks" or "a debug hook" and you need the actual PushPlay call, and for "how do I read the controller", "add a setting", "save progress", "play a sound", "show button prompts", "use the on-screen stick", "sync state online", "send something to a phone".
+description: How to do things with PushPlay's runtime files in a game (input.js, menu.js, fit.js, audio.js, save.js, settings.js, prompts.js, touch.js, net.js, lobby.js, party.js, controller.js) and the PushPlay side of every craft skill. Use whenever a general skill says "the game's menu system", "its save data", "the input-prompt helper", "the audio layer", "the project's checks" or "a debug hook" and you need the actual PushPlay call, and for "how do I read the controller", "add a setting", "save progress", "play a sound", "show button prompts", "use the on-screen stick", "sync state online", "send something to a phone". Also refreshes those files to the kit's current ones, for "update the runtime files", "refresh input.js / menu.js", "get the latest runtime".
 ---
 
 # The PushPlay runtime
@@ -44,9 +44,9 @@ When you use a craft skill in a PushPlay game, also read its page in `references
 
 | Area | Pages |
 |---|---|
-| Design and content | [game-design](references/craft/game-design.md), [prototype-sprint](references/craft/prototype-sprint.md), [level-design](references/craft/level-design.md), [boss-design](references/craft/boss-design.md), [progression](references/craft/progression.md), [story-and-dialogue](references/craft/story-and-dialogue.md), [dialogue](references/craft/dialogue.md) |
+| Design and content | [game-design](references/craft/game-design.md), [prototype-sprint](references/craft/prototype-sprint.md), [level-design](references/craft/level-design.md), [boss-design](references/craft/boss-design.md), [progression](references/craft/progression.md), [dialogue](references/craft/dialogue.md) |
 | How it plays | [game-feel](references/craft/game-feel.md), [physics-feel](references/craft/physics-feel.md), [camera](references/craft/camera.md), [enemy-ai](references/craft/enemy-ai.md), [touch-controls](references/craft/touch-controls.md), [local-multiplayer](references/craft/local-multiplayer.md), [online-netcode](references/craft/online-netcode.md) |
-| Art and assets | [art-direction](references/craft/art-direction.md), [model-asset](references/craft/model-asset.md), [edit-asset](references/craft/edit-asset.md), [animate-asset](references/craft/animate-asset.md), [canvas2d-assets](references/craft/canvas2d-assets.md), [pixel-art](references/craft/pixel-art.md), [threejs-models](references/craft/threejs-models.md), [character-models](references/craft/character-models.md), [environments](references/craft/environments.md) |
+| Art and assets | [art-direction](references/craft/art-direction.md), [model-asset](references/craft/model-asset.md), [animate-asset](references/craft/animate-asset.md), [canvas2d-assets](references/craft/canvas2d-assets.md), [pixel-art](references/craft/pixel-art.md), [threejs-models](references/craft/threejs-models.md), [character-models](references/craft/character-models.md), [environments](references/craft/environments.md) |
 | Sound and interface | [game-audio](references/craft/game-audio.md), [game-ui](references/craft/game-ui.md) |
 | Quality | [playtest](references/craft/playtest.md), [performance-pass](references/craft/performance-pass.md), [accessibility-audit](references/craft/accessibility-audit.md), [localization](references/craft/localization.md), [release-notes](references/craft/release-notes.md) |
 
@@ -61,7 +61,7 @@ When you use a craft skill in a PushPlay game, also read its page in `references
 | [multiplayer.md](references/multiplayer.md) | Online games: the whole `net.js` and `lobby.js` API, the host loop, private views, reconnects |
 | [party.md](references/party.md) | Party games: `party.js`, `party.public` and `party.view(id)`, `controller.html`, the lobby and join badge |
 | [motion.md](references/motion.md) | Phone motion controls in a party game: what sensors can and can't do, `motion.js` |
-| [debugging.md](references/debugging.md) | The debug hooks, the repro script and what each check failure means |
+| [debugging.md](references/debugging.md) | Symptom → cause → fix for input, pause, touch, screen, sound and save bugs; the debug hooks and the repro script |
 
 ## 4. Rules that catch people out
 
@@ -70,3 +70,17 @@ When you use a craft skill in a PushPlay game, also read its page in `references
 - **Only `save.js` and `createSettings` touch `localStorage`,** and every key starts with the game id.
 - **No network.** Everything is bundled; only an `--online` or `--party` game talks to the relay, through `net.js`.
 - **`state.screen`** is one of `title`, `playing`, `paused`, `gameover`, `settings` (and `lobby`), with exactly those names: the check reads it.
+
+## 5. Updating the runtime files
+
+**Only when the user asks** ("update the runtime files", "get the latest runtime"). It touches shared files in every game in the repo, so work on a branch and keep it apart from game changes.
+
+1. Start from a clean working tree (`git status`) and run `pushplay update-runtime`. In every game built on the runtime files it:
+   - **replaces** each file that carries the runtime header (`input.js`, `menu.js`, `fit.js`, `audio.js`, `save.js`, `settings.js`, `prompts.js`, `touch.js`, plus `net.js` and `lobby.js` in an online game and `party.js`, `party-lobby.js`, `qr.js`, `controller.js` and `net.js` in a party game);
+   - **adds** a runtime file the game doesn't have yet (`touch.js`, say), which does nothing until the game imports it;
+   - leaves games that aren't on the runtime files alone. With none in the repo there is nothing to do: say so.
+2. Read its whole output. Two warnings need action:
+   - **"replaced without a runtime header"**: a runtime file that had been edited by hand was overwritten. Look at `git diff` for that file and move the game's own change into `game.js` (key aliases through `input.extendKeys`, behaviour in the game's own code).
+   - **"kept (the game's own file shares a runtime name)"**: the game wrote its own file under a runtime name, and it was not touched. Nothing to do unless the game should be using the runtime's.
+3. `pushplay check` (every game), fix each ✗ in the game that reports it ([debugging.md](references/debugging.md)), and open a few of the screenshots it prints to see that nothing renders differently.
+4. Commit on its own (`Update the runtime files`); commit any game fixes separately (`<Name>: fixes for the new runtime files`), each with a patch `version` bump and a Changelog line. Push, and tell the user which files changed and which games needed fixes.

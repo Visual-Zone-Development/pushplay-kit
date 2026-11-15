@@ -1,6 +1,6 @@
 # release-notes in a PushPlay game
 
-The general `release-notes` skill covers choosing the version, writing player-facing "what's new" notes, and showing them in the game. This page gives the PushPlay side: where the version lives and how an update reaches players. The rules are in the `pushplay-rules` skill: [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Saves*), [controls.md](../../../pushplay-rules/references/controls.md) (*Input hints*), the skill itself for *Workflow* and the `pushplay-manifest` skill for the manifest.
+The general `release-notes` skill covers choosing the version, writing player-facing "what's new" notes, and showing them in the game. This page gives the PushPlay side: where the version lives and how an update reaches players. The rules are in the `pushplay-rules` skill: [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Saves*), [controls.md](../../../pushplay-rules/references/controls.md) (*Input hints*), the skill itself for *Workflow* and [manifest.md](../../../pushplay-rules/references/manifest.md) for the manifest.
 
 ## Input
 

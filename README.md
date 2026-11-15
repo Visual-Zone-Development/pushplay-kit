@@ -75,7 +75,6 @@ npx github:Visual-Zone-Development/pushplay-kit <command>
 | `art`, `art-shots` | Painted art from your own image API key (it asks before it costs anything); render your art to look at |
 | `update-runtime` | Refresh the runtime files of a game made with `new-game` |
 | `promote <id>` | Move a game out of a workshop repo into its own repo |
-| `migrate` | Clean up a repo that still carries an old copy of the build kit |
 
 The kit is unpacked once into a cache in your home folder. Nothing it does leaves a file in your repo.
 
@@ -85,7 +84,7 @@ Two plugins of [Agent Skills](https://agentskills.io):
 
 | Plugin | What it is |
 |---|---|
-| **game-craft** | 30 skills of game-making craft for any web game: design briefs, game feel, physics, camera, enemy AI, levels, bosses, progression, story and dialogue, art direction, pixel art, 2D and 3D assets, environments, audio, UI, touch controls, multiplayer, playtesting, performance, accessibility, localization. It never mentions PushPlay. |
+| **game-craft** | 28 skills of game-making craft: design briefs, game feel, physics, camera, enemy AI, levels, bosses, progression, story and dialogue, art direction, pixel art, 2D and 3D assets, environments, audio, UI, touch controls, multiplayer, playtesting, performance, accessibility, localization. It never mentions PushPlay. |
 | **pushplay** | The PushPlay side: the rules every PushPlay game follows, starting a game from one request, setting up an existing game in any engine, the manifest, library art, checking every input, phone and party play. It uses game-craft for the craft. |
 
 **Claude Code.** Start it (`claude` in a terminal, or the desktop app), then type these three lines into its message box, one at a time. Each answers with a line saying what was added.

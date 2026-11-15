@@ -1,7 +1,7 @@
 {
   "name": "pushplay",
   "type": "module",
-  "description": "Run the PushPlay build kit against a game repo (check, dev, new-game, migrate), and the agent skills for making games.",
+  "description": "Run the PushPlay build kit against a game repo (check, dev, new-game), and the agent skills for making games.",
   "scripts": {
     "lint": "node scripts/lint-skills.mjs",
     "test": "node --test \"scripts/*.test.mjs\" \"plugins/pushplay/skills/pushplay-rules/scripts/*.test.mjs\" \"plugins/pushplay/hooks/*.test.mjs\" && vitest run",
@@ -18,7 +18,7 @@
   "bin": {
     "pushplay": "plugins/pushplay/skills/pushplay-rules/scripts/pushplay.mjs"
   },
-  "version": "16.0.0",
+  "version": "17.0.0",
   "files": [
     "plugins/pushplay/skills/pushplay-rules/scripts/pushplay.mjs",
     "plugins/pushplay/skills/pushplay-rules/kit.zip"

@@ -1,14 +1,13 @@
 ---
 name: art-direction
-description: Give the game in this repo a cohesive, polished look across the whole screen, not one asset at a time — a material vocabulary (paper and ink, painted gouache, neon glass…), value and palette structure, textured backgrounds, UI that looks like part of the world (parchment cards, brush-stroke headers, ink-blot prompts), typography pairing with bundled fonts, lighting and atmosphere, and one finishing pass that ties every layer together. Ships a surface toolkit (texture.js) and an OFL serif font. Use for "make it look like <screenshot>", "it looks flat / generic / like a tech demo", "make it prettier", "art pass", "polish the visuals", "the menus look plain", or the visual-polish milestone of a new game. Pairs with model-asset / edit-asset for individual assets and character-models for 3D characters loaded from files.
+description: Give the game in this repo a cohesive, polished look across the whole screen, not one asset at a time — a material vocabulary (paper and ink, painted gouache, neon glass…), value and palette structure, textured backgrounds, UI that looks like part of the world (parchment cards, brush-stroke headers, ink-blot prompts), typography pairing with bundled fonts, lighting and atmosphere, and one finishing pass that ties every layer together. Ships a surface toolkit (texture.js) and an OFL serif font. Use for "make it look like <screenshot>", "it looks flat / generic / like a tech demo", "make it prettier", "art pass", "polish the visuals", "the menus look plain", or the visual-polish milestone of a new game. Pairs with model-asset for individual assets and character-models for 3D characters loaded from files.
 ---
 
 # Art direction
 
 Follow the project's own rules first (its `AGENTS.md` or platform guide): they decide the APIs, the screen size, the performance budget, the checks and how to finish a change. `<skill-dir>` is the folder this file is in.
 
-The asset skills (model-asset, edit-asset,
-animate-asset) make one thing look right; this skill makes **the whole frame** look like one deliberate
+The asset skills (model-asset, animate-asset) make one thing look right; this skill makes **the whole frame** look like one deliberate
 world. Games that look striking in a screenshot nearly always win on four things, in this order:
 
 1. **One material vocabulary.** Everything on screen is visibly *made of something*, and it's the same few

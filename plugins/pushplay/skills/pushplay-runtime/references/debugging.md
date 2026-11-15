@@ -1,6 +1,8 @@
 # Debugging
 
-Reproduce first, then fix the root cause. `pushplay check` is the first tool. It reports crashes, console errors, 404s, network requests (WebSockets too), dialogs and blank screens, and saves a screenshot. It plays several short passes: a **gamepad** pass (A around 1.2s, stick right around 1.5–2.2s, then Start, expecting `window.__game.state.screen === 'paused'`), a **keyboard-only** pass (Enter, then Esc must change the screen), a **mouse-only** pass (menus by click, the pause button), a **touch** pass (tap on the title menu) and a render at **1920×1080 with DPR 2**. A game with `phone` in its manifest also gets a **phone** pass: touch only at 390×844 or 844×390 with DPR 3, menus by tap, the pause button, `visibilitychange` must pause, and text under 32 px in the phone space fails ([phone.md](phone.md)). It also checks the code statically: `menu.js` imported and `input.attach` called (warnings), no F10 binding, `tags` and `inputs` present (failures), `localStorage` keys prefixed with the game id (warning). For anything deeper, write a repro script (below).
+Reproduce first, then fix the root cause. `pushplay check` is the first tool: it reports crashes, console errors, 404s, network requests (WebSockets too), dialogs and blank screens, plays the game with each input alone and saves a screenshot. What each pass does and what fails it is in [verification.md](../../pushplay-rules/references/verification.md). **Each failing pass names the input it used: reproduce with that input first.** The play passes are short (a few seconds: A once, a stick nudge, then Start), so for anything later or needing specific inputs, write a repro script (below).
+
+Static findings (an F10 binding, a save key without the game id prefix, `menu.js` not imported, `input.attach` never called) are code fixes, not play bugs. A phone layout that is wrong everywhere is the `mobile-port` skill's job, not a bug fix.
 
 ## Common failures
 
@@ -9,9 +11,9 @@ Reproduce first, then fix the root cause. `pushplay check` is the first tool. It
 | Controller does nothing | `input.update()` not called each frame, or called after reading input | Call `input.update()` once at the top of the frame, before `update()` |
 | Mouse or touch does nothing | `input.attach(canvas, 1280, 800)` never called, or called on a canvas under another element | Attach once, on the top-most canvas |
 | A press triggers twice, or skips a screen | `held()` used where `pressed()` was meant; or two screens both read the same press in one frame | Use `pressed()` for one-shot actions; `return` after changing screens |
-| Esc quits the run / B pauses | `b` and `menu` confused | Pause only on `input.pressed('menu')`; `b` is back in menus and a gameplay button otherwise |
+| Esc quits the run / B pauses | `b` treated as pause, or `menu` as back | Pause only on `input.pressed('menu')`; `b` is back in menus and a gameplay button otherwise |
 | Check: Start didn't pause | `state.screen` isn't `'paused'` after Start, or `window.__game` missing | Set `state.screen = 'paused'` on `menu` and expose `window.__game = { state, TUNING }` |
-| Pauses by itself / stays paused | `input.onPause` fired (blur, hidden tab, overlay, every pad disconnected); Resume doesn't clear the game's own paused flag | Expected on blur; make Resume the only way out and reset `state.screen = 'playing'` |
+| Pauses by itself / won't unpause | `input.onPause` fired (blur, hidden tab, launcher overlay, a phone's screen lock, every pad disconnected); Resume doesn't clear `input.paused` or the game's own paused flag | Expected on blur; make Resume the only way out and reset `state.screen = 'playing'` |
 | Black or blank screen | Exception in the first frame; drawing before the canvas is sized; waiting on assets or fonts before drawing anything | Look for "the game crashed" in the check; draw a loading screen immediately |
 | Blurry, offset or clipped image; wrong letterbox colour | Hand-written resize code instead of `fitCanvas`; smoothing on pixel art; `devicePixelRatio` read directly | `fitCanvas(canvas, { w: 1280, h: 800, maxDpr: 2, letterbox })`; `integer: true` + `ctx.imageSmoothingEnabled = false` for pixel art |
 | Soft at DPR 2 (Legion Go, DevTools DPR 2) | Bitmaps or cached text pre-rendered at 1× | Render caches at 2×, or draw with vector calls |

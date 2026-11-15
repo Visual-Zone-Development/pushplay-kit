@@ -1,4 +1,4 @@
-// Every model by id, for viewer.html and the model-asset / edit-asset / animate-asset skills.
+// Every model by id, for viewer.html and the model-asset / animate-asset skills.
 // Use "<group>.<unit>" ids. assetTeam picks the team colour the viewer dresses each asset in.
 import { orcGrunt } from './models/orc-grunt.js'
 

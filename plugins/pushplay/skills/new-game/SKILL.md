@@ -65,13 +65,13 @@ Run `pushplay check` after each milestone and fix every ✗.
    - **Online:** read [multiplayer.md](../pushplay-runtime/references/multiplayer.md) first. The host runs the rules in `hostUpdate()` and writes `net.state`; everyone draws `net.view`. Keep the template's title → lobby → playing flow with `state.screen` exposed; `menu` still opens the `menu.js` pause menu (Resume, Settings, Leave game) but it only stops your controls, since the host keeps the world running. Never edit `net.js` or `lobby.js`. Secrets go in `net.privateView(id)`, never `net.state`. Use the `online-netcode` skill to make it feel good despite the delay.
    - **Party:** read [party.md](../pushplay-runtime/references/party.md) first. The TV runs everything: read `party.inputs[id]` and `party.on('msg')`, write `party.public` for every phone and `party.view(id)` for one phone (never secrets in `public`). Build the phone screen in `controller.html` (one file, everything inline) and look at it on a real phone with `pushplay dev`. Never edit the party runtime files. Use the `party-phone-screen` skill for the phone side.
    - If the user supplied assets, import them per [assets.md](../pushplay-runtime/references/assets.md). For 3D, follow [3d.md](../pushplay-runtime/references/3d.md).
-2. **Complete game.** Use the `level-design` skill for levels, waves and the difficulty ramp, `game-audio` for SFX and music, `game-ui` for the HUD, onboarding and results screens, `boss-design` for a boss or finale, `progression` for the meta loop (unlocks, upgrades, daily seed), and `story-and-dialogue` when Narrative or Fantasy is a fun target. Work through the Definition of done: onboarding by doing, difficulty ramp with something new every 30–60s, retry in one press, best score, progression or variety; title / pause (Resume, Restart, Settings, Quit to title) / game-over / settings screens on `menu.js` and `settings.js`; SFX + music through `audio.js` obeying the sliders; `save.js` under `<id>-save-v1`, saved on pause and in `input.onPause`; reduced shake and text size honoured.
+2. **Complete game.** Use the `level-design` skill for levels, waves and the difficulty ramp, `game-audio` for SFX and music, `game-ui` for the HUD, onboarding and results screens, `boss-design` for a boss or finale, `progression` for the meta loop (unlocks, upgrades, daily seed), and `dialogue` when Narrative or Fantasy is a fun target. Work through the Definition of done: onboarding by doing, difficulty ramp with something new every 30–60s, retry in one press, best score, progression or variety; title / pause (Resume, Restart, Settings, Quit to title) / game-over / settings screens on `menu.js` and `settings.js`; SFX + music through `audio.js` obeying the sliders; `save.js` under `<id>-save-v1`, saved on pause and in `input.onPause`; reduced shake and text size honoured.
 3. **Polish.** Use the `game-feel` skill. Add juice aimed at the fun targets: the biggest effects on the biggest moments, with capped particles, all skipped when `reducedShake` is on.
 
 **Self-review** before moving on to art: run the `playtest` skill to check the difficulty curve and pacing, `accessibility-audit` for the Accessibility items, and `performance-pass` on the heaviest moment, then re-read DESIGN.md and tick off every Definition of done item. Build anything missing, or list it as a known gap.
 
 ## 6. Controls, manifest, art
-The `pushplay-manifest` skill has the field-by-field rules for `pushplay.json`, and `cover-art` the art.
+[manifest.md](../pushplay-rules/references/manifest.md) has the field-by-field rules for `pushplay.json`, and `cover-art` the art.
 
 - **Verification matrix.** Run `pushplay dev` and do each pass with only that input; every one must pass:
 
@@ -96,7 +96,7 @@ The `pushplay-manifest` skill has the field-by-field rules for `pushplay.json`, 
   - `art/cover.svg`: 720×500, big title, bottom 110px clear.
   - `art/hero.svg`: 1920×450, no text, key visual on the right.
   - Both use DESIGN.md's palette, font and hero object; see art-directions.md.
-- **Check and review:** run `pushplay check`, then **open the three PNGs it lists** (if the screenshot doesn't show real gameplay, see the `screenshots` skill):
+- **Check and review:** run `pushplay check`, then **open the three PNGs it lists** (if the screenshot doesn't show real gameplay, see *The library screenshot* in the `cover-art` skill):
   - Does the cover read at thumbnail size?
   - Is the title legible?
   - Does the screenshot show real gameplay or the title?

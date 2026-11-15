@@ -1,6 +1,6 @@
 ---
 name: input-walkthrough
-description: Check that a game works with every input on its own (Steam Deck and Legion Go controls, a controller on a PC or TV, keyboard only, mouse only, touch, switching devices, auto-pause, window sizes, and a party game's phone screen), across every menu and screen and the gameplay, or one section you name, and report a screen-by-input matrix with screenshots. Use for "does it work on the Deck", "check every input", "test controller / keyboard / touch", or before calling a game finished. It reports; fixes go through debug-game, game-ui or accessibility-audit.
+description: Check that a game works with every input on its own (Steam Deck and Legion Go controls, a controller on a PC or TV, keyboard only, mouse only, touch, switching devices, auto-pause, window sizes, and a party game's phone screen), across every menu and screen and the gameplay, or one section you name, and report a screen-by-input matrix with screenshots. Use for "does it work on the Deck", "check every input", "test controller / keyboard / touch", or before calling a game finished. It reports; fixes go through improve-game, game-ui or accessibility-audit.
 ---
 
 # Input walkthrough
@@ -129,5 +129,5 @@ Don't invent results. A cell that wasn't checked is "not reached", not ✅.
 
 1. Stop any browsers still running, and the dev server if you started it.
 2. In chat, give a short summary: the matrix in compact form, the top 3 fixes and the report path.
-3. Don't fix things in this skill. Offer to fix the findings with `debug-game` (broken input or pause), `game-ui` (prompts, legibility, layout) or `accessibility-audit` (remapping, holds, text size). For each fixed game, bump `version` and add a Changelog line as the `pushplay-rules` skill says.
+3. Don't fix things in this skill. Offer to fix the findings with `improve-game` (broken input or pause), `game-ui` (prompts, legibility, layout) or `accessibility-audit` (remapping, holds, text size). For each fixed game, bump `version` and add a Changelog line as the `pushplay-rules` skill says.
 4. Headless checks can't feel the real device: suggest the 2–3 things most worth trying by hand on the actual handheld.

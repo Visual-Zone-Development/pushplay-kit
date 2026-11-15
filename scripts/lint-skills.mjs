@@ -30,13 +30,11 @@ const BANNED_IN_GENERAL = [
   [/window\.__game/, 'the kit\'s debug hook'],
 ]
 
-// In the PushPlay plugin: what game repos no longer have. The kit-upgrade skill may name them,
-// because it is the one that removes them from a repo set up before.
+// In the PushPlay plugin: what game repos don't have.
 const BANNED_IN_PLATFORM = [
   [/npm run (check|dev|new-game|update-kit|art|art:shots|promote|setup)\b/, 'npm script game repos don\'t have (write the pushplay command)'],
   [/\.github\/pushplay/, 'the build kit\'s old folder inside a repo (the kit runs from outside it)']
 ]
-const MAY_NAME_THE_OLD_LAYOUT = ['kit-upgrade']
 
 function walk(dir) {
   const out = []
@@ -115,9 +113,7 @@ export function lint(root) {
       const banned =
         skill.plugin === 'game-craft'
           ? [...BANNED_EVERYWHERE, ...BANNED_IN_GENERAL]
-          : MAY_NAME_THE_OLD_LAYOUT.includes(skill.name)
-            ? BANNED_EVERYWHERE
-            : [...BANNED_EVERYWHERE, ...BANNED_IN_PLATFORM]
+          : [...BANNED_EVERYWHERE, ...BANNED_IN_PLATFORM]
       text.split(/\r?\n/).forEach((line, i) => {
         for (const [pattern, what] of banned) {
           if (pattern.test(line)) problems.push(`${where}:${i + 1}: ${what}`)

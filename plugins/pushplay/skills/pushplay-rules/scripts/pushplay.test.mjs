@@ -62,25 +62,10 @@ test('the kit is unpacked once per version, outside the repo', opts, () => {
   assert.deepEqual(readdirSync(root).filter((f) => f !== '.git'), [])
 })
 
-test('migrate, from the command line, strips an old in-repo kit', opts, () => {
-  const root = folder()
-  pushplay(root, 'new-game', 'old-one', '--workshop')
-  writeFileSync(join(root, 'AGENTS.md'), '# Making games in this repo\n')
-  spawnSync('mkdir', ['-p', join(root, '.github/pushplay')])
-  writeFileSync(join(root, '.github/pushplay/check.mjs'), '// old kit')
-  const dry = pushplay(root, 'migrate', '--dry')
-  assert.match(dry.output, /Would do:/)
-  assert.ok(existsSync(join(root, 'AGENTS.md')))
-  assert.equal(pushplay(root, 'migrate').status, 0)
-  assert.ok(!existsSync(join(root, 'AGENTS.md')))
-  assert.ok(!existsSync(join(root, '.github/pushplay')))
-  assert.ok(existsSync(join(root, 'games/old-one/pushplay.json')))
-})
-
 test('help lists the commands, and an unknown one is refused with them', () => {
   const help = pushplay(folder(), 'help')
   assert.equal(help.status, 0)
-  for (const command of ['new-game', 'dev', 'check', 'setup', 'art', 'update-runtime', 'promote', 'migrate']) assert.match(help.output, new RegExp(`pushplay ${command}\\b`))
+  for (const command of ['new-game', 'dev', 'check', 'setup', 'art', 'update-runtime', 'promote']) assert.match(help.output, new RegExp(`pushplay ${command}\\b`))
   const wrong = pushplay(folder(), 'update-kit')
   assert.equal(wrong.status, 2)
   assert.match(wrong.output, /unknown command "update-kit"/)

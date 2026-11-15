@@ -1,6 +1,6 @@
 # Build kit
 
-The tools that build, check and publish games: `check.mjs` (validate, build, play headlessly, render art), `ci.mjs` (the same on GitHub Actions, then publish), `new-game.mjs`, `dev.mjs`, `promote.mjs`, `migrate.mjs`, `update-runtime.mjs` and the art tools, plus the runtime files a JavaScript game imports (`src/templates/shared/`: `input.js`, `menu.js`, `fit.js`, `audio.js`, `save.js`, `settings.js`, `prompts.js`, `touch.js`; `src/templates/online/`: `net.js`, `lobby.js`; `src/templates/party/`). This folder is its source.
+The tools that build, check and publish games: `check.mjs` (validate, build, play headlessly, render art), `ci.mjs` (the same on GitHub Actions, then publish), `new-game.mjs`, `dev.mjs`, `promote.mjs`, `update-runtime.mjs` and the art tools, plus the runtime files a JavaScript game imports (`src/templates/shared/`: `input.js`, `menu.js`, `fit.js`, `audio.js`, `save.js`, `settings.js`, `prompts.js`, `touch.js`; `src/templates/online/`: `net.js`, `lobby.js`; `src/templates/party/`). This folder is its source.
 
 **The kit is never copied into a game repo.** A game repo keeps one small workflow file (`src/workflow.yml`) that calls the shared build (`src/build.yml`), and the kit runs against the repo from outside it: `KIT_REPO_ROOT` (or the working directory) is the repo, and its scratch files go to `KIT_WORK_DIR` (by default a folder under the system's temp folder), so nothing it does leaves a file in the repo.
 
@@ -25,9 +25,8 @@ The runtime files start with `// <slug> runtime vN — shared runtime file, repl
 | Who | How |
 |---|---|
 | GitHub Actions, for every game repo | The repo's workflow file calls `build.yml` in this repo at the tag `brand.buildRef`. That job checks out this repo, unpacks `kit.zip` and runs `ci.mjs` against the game's checkout. |
-| A person or an agent, locally | The command line unpacks the same `kit.zip` into a cache and runs a command against the current folder: `npx github:<pluginRepo> check` (or `new-game`, `dev`, `promote`, `migrate`, `update-runtime`, `art`). |
+| A person or an agent, locally | The command line unpacks the same `kit.zip` into a cache and runs a command against the current folder: `npx github:<pluginRepo> check` (or `new-game`, `dev`, `promote`, `update-runtime`, `art`). |
 | A repo with no builds yet | The launcher's **Set up auto-builds** opens a pull request with the workflow file and a starter manifest. |
-| A repo set up by a kit before v14 | `migrate` removes the kit's old copy and everything that came with it, and writes the workflow file. The launcher shows such repos as "Builds with an old copy of the kit" and offers the same pull request. |
 
 `npm run kit:build` packs `kit.zip` (`kit/` and `kit.json` with `{ kit, hash }`) next to the command line and writes the shared build, the workflow file and the schema to where this repo publishes them.
 
@@ -52,7 +51,7 @@ The play passes need Playwright's Chromium (`npm run setup` in a game repo insta
 
 ## v14: the kit left the game repos
 
-- One workflow file per repo; the build is shared (`build.yml`, `workflow_call`). `update-kit` and `export` are gone; `migrate` and `update-runtime` are new.
+- One workflow file per repo; the build is shared (`build.yml`, `workflow_call`). `update-kit`, `export` and `migrate` are gone; `update-runtime` refreshes a game's runtime files.
 - Any engine: `build.outputs`, `build.command`, native zips, `launch` options, `web.isolated`.
 - `new-game` writes the workflow file and a schema URL; `promote` needs no template; the art and promote tools are part of the kit.
 

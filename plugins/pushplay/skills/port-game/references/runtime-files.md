@@ -33,7 +33,7 @@ Never edit the runtime files; `pushplay update-runtime` replaces them with the k
 
 ## 5. Finish
 
-1. The manifest with the `pushplay-manifest` skill (`description`, `players`, `tags`, `inputs`, `"controls": "gamepad"`), the cover and hero with `cover-art`.
+1. The manifest from [manifest.md](../../pushplay-rules/references/manifest.md) (`description`, `players`, `tags`, `inputs`, `"controls": "gamepad"`), the cover and hero with `cover-art`.
 2. `pushplay check`, fix every ✗, open the screenshot and art PNGs it prints the paths of.
 3. Run the `input-walkthrough` skill and the verification matrix in `pushplay-rules`.
 4. Commit (`Add <Name> (ported)`) and push. Tell the user what changed in the controls and anything that couldn't be kept.

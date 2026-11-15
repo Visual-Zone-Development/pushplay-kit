@@ -1,7 +1,7 @@
 # <Game Name>: art and animation style
 
 The single source of truth for how everything in this game looks and moves: characters, creatures,
-vehicles, buildings, props, effects and UI. `model-asset`, `edit-asset` and `animate-asset` read it
+vehicles, buildings, props, effects and UI. `model-asset` and `animate-asset` read it
 before any change and update it after. Change a rule here first, then bring assets in line; never let
 one asset quietly drift. Keep only the sections that apply to this game.
 

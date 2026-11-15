@@ -1,6 +1,6 @@
 # model-asset in a PushPlay game
 
-The general `model-asset` skill covers creating or rebuilding a visual asset to match a reference: STYLE.md, silhouette, block-out, detail, and render-and-compare rounds. This page gives the PushPlay side: how to render in a PushPlay repo and what the build ships. The rules are in the `pushplay-rules` skill: [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Assets*), [screens.md](../../../pushplay-rules/references/screens.md) (*Tech*) and the skill itself for *Art*.
+The general `model-asset` skill covers creating or rebuilding a visual asset to match a reference (STYLE.md, silhouette, block-out, detail, and render-and-compare rounds) and making one focused change to an existing asset, with before and after renders. This page gives the PushPlay side: how to render in a PushPlay repo and what the build ships. The rules are in the `pushplay-rules` skill: [saves-and-audio.md](../../../pushplay-rules/references/saves-and-audio.md) (*Assets*), [screens.md](../../../pushplay-rules/references/screens.md) (*Tech*) and the skill itself for *Art*.
 
 ## Debug hooks and the check
 
@@ -14,6 +14,7 @@ The general `model-asset` skill covers creating or rebuilding a visual asset to 
   ```
 
 - In a PushPlay repo the game folder is `.` (one game at the root) or `games/<id>` (a workshop); a bare `<id>` also finds `games/<id>`. `PW_MODULE` gives the script the kit's Playwright (`pushplay` is the command the `pushplay-rules` skill gives you).
+- **For one change to an existing asset**, capture the *before* render the same way first, close up in the gallery and in the game (`"gallery.html?asset=<id>&scale=4|close.png" "index.html|in-game.png|keys=Enter|wait=2500"` into `<scratch>/before`), then the *after* with the same arguments.
 - When the asset is done, run `pushplay check` and look at its screenshot. If the asset moves, check the motion first (the `animate-asset` skill).
 
 ## Art and tools
@@ -21,3 +22,4 @@ The general `model-asset` skill covers creating or rebuilding a visual asset to 
 - **Cover and hero art (SVG):** edit the SVG. `pushplay check` renders it, or use `scripts/shot.mjs` as above.
 - **The gallery page** isn't part of the build. Vite only bundles `index.html`; in a plain game, list the gallery in `.pushplayignore`.
 - Update STYLE.md: the catalogue row (file, reference in words, status) and any new shared rule.
+- Commit an edit to one asset on its own, as `<game>: <asset> — <change>`, so it is easy to revert.

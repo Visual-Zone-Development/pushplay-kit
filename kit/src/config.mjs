@@ -8,7 +8,7 @@ export const brand = JSON.parse(readFileSync(join(import.meta.dirname, 'brand.js
  * Bumped whenever the kit's files change (kit-lock.json holds their hash; a test enforces the bump).
  * ci.mjs writes it into the release index, so the launcher can tell a repo its kit is outdated.
  */
-export const KIT_VERSION = 16
+export const KIT_VERSION = 17
 /**
  * Runtime modules copied into every game; `update-runtime` replaces them by this header. The number
  * after `v` is the KIT_VERSION that shipped the file, so a game folder says which kit it carries.
@@ -61,22 +61,6 @@ export const KIT_ZIP_PATH = `plugins/${brand.slug}/skills/${brand.slug}-rules/ki
 export const MANIFEST_SCHEMA_URL = `https://raw.githubusercontent.com/${brand.pluginRepo}/${brand.buildRef}/schema/manifest.schema.json`
 /** Where the build contract is written down; check messages point here. */
 export const DOCS_URL = `https://github.com/${brand.pluginRepo}/blob/main/docs/${brand.slug}-build.md`
-
-/**
- * What kits up to v13 copied into every game repo. `migrate` removes them: the kit folder, the
- * agent files, the guides and tools, and the npm scripts that ran the kit.
- */
-export const OLD_KIT_DIR = `.github/${brand.slug}`
-export const OLD_AGENT_FILES = ['AGENTS.md', 'CLAUDE.md']
-export const OLD_SKILLS_DIR = '.claude/skills'
-export const OLD_SKILLS_LINK = '.agents/skills'
-export const OLD_SKILLS = ['accessibility-audit', 'animate-asset', 'art-direction', 'boss-design', 'camera', 'canvas2d-assets', 'character-models', 'cover-art', 'debug-game', 'dialogue', 'edit-asset', 'enemy-ai', 'environments', 'game-audio', 'game-design', 'game-feel', 'game-ui', 'improve-game', 'input-walkthrough', 'kit-upgrade', 'level-design', 'local-multiplayer', 'localization', 'mobile-port', 'model-asset', 'motion-controls', 'new-game', 'online-netcode', 'party-phone-screen', 'performance-pass', 'physics-feel', 'pixel-art', 'playtest', 'port-game', 'progression', 'promote-game', 'prototype-sprint', `${brand.slug}-manifest`, `${brand.slug}-runtime`, 'release-notes', 'screenshots', 'story-and-dialogue', 'threejs-models', 'touch-controls']
-export const OLD_DOCS_DIR = 'docs/game-design'
-export const OLD_DOCS = ['3d.md', 'DESIGN.template.md', 'art-directions.md', 'assets.md', 'complete-game.md', 'debugging.md', 'framework.md', 'generated-art.md', 'genres.md', 'inspiration.md', 'kickoff.md', 'motion.md', 'multiplayer.md', 'party.md', 'phone.md']
-export const OLD_TOOLS = ['tools/art', 'tools/promote']
-export const OLD_WORKFLOWS = ['.github/workflows/promote.yml', '.github/workflows/update-kit.yml']
-/** npm scripts the old template's package.json ran the kit with (removed only while they still point at the kit or its tools). */
-export const OLD_SCRIPTS = ['setup', 'postinstall', 'new-game', 'dev', 'check', 'update-kit', 'art', 'art:shots', 'promote', 'test']
 
 /** Collection repos keep one game per folder here; single-game repos have the manifest at the root. */
 export const GAMES_DIR = 'games'
