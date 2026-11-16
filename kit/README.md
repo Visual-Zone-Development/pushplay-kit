@@ -49,6 +49,10 @@ The kit builds a JavaScript project itself (`npm run build`, or the folder as it
 
 The play passes need Playwright's Chromium (`npm run setup` in a game repo installs it). Where that download is blocked, set `KIT_BROWSER=/path/to/chrome` to use an installed Chrome or Chromium; with no browser at all, `check.mjs` runs the static checks and says what it skipped.
 
+## v18: a touch screen can host a party
+
+- `party-lobby.js`: with a mouse or touch, the lobby draws real Start and Back buttons (64 game px tall) and a tap or click on them works, also Try again and Back after an error and Back while the party opens. Start is dimmed and ignored until `minPlayers` are in. `lobby.buttons` gives their rects. Before, only A, Space/Enter, B, right-click and the first phone could start or leave, so a tablet with no controller was stuck in the lobby. Controllers and keyboards see the same prompts as before.
+
 ## v14: the kit left the game repos
 
 - One workflow file per repo; the build is shared (`build.yml`, `workflow_call`). `update-kit`, `export` and `migrate` are gone; `update-runtime` refreshes a game's runtime files.

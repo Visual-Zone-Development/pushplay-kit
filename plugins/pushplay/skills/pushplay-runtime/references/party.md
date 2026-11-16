@@ -93,7 +93,10 @@ the game.
 
 `title` → `lobby` → `playing` ↔ `paused`, with `state.screen` and `window.__game` exposed as in
 every game. The lobby (`party-lobby.js`) shows the address, room code, QR code and everyone
-who's in; A on the TV, or Start on the first phone, begins once `minPlayers` are in. During play,
+who's in; A on the TV, or Start on the first phone, begins once `minPlayers` are in. With a mouse
+or touch (a tablet hosting with no controller) it draws real Start and Back buttons and a click or
+tap on them works: Start stays dimmed until `minPlayers` are in, Back leaves for the title.
+`lobby.buttons` gives their rects (`{ start, back, retry }`) for tests. During play,
 `drawJoinBadge(ctx, party, x, y)` keeps the code on screen for latecomers. Pausing freezes the
 game (the TV runs it): set `party.public.paused = true` so phones can say so. "End party" in the
 pause menu calls `party.close()`, which tells every phone the game ended.

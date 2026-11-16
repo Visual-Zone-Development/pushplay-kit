@@ -3,3 +3,4 @@ node_modules/
 *.log
 
 kit/node_modules/
+kit/dist/party-lobby-test/
