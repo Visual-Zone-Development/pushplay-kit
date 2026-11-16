@@ -1,7 +1,11 @@
-// {{SLUG}} runtime v10 — shared runtime file, replaced by update-runtime; don't edit
+// {{SLUG}} runtime v18 — shared runtime file, replaced by update-runtime; don't edit
 // The party lobby on the TV: the game's name, the room code and QR code to join, everyone who's
 // in, and Start. Phones join by scanning or typing the code; controllers on this machine press A.
-// Start: A on a joined controller, Space/Enter/click, or the first phone's Start button.
+// Start: A on a joined controller, Space/Enter, the on-screen Start button, or the first phone's
+// Start button. Back: B, Backspace, right-click, or the on-screen Back button.
+// With a mouse or touch (a tablet hosting with no controller), Start and Back are real buttons
+// drawn at the bottom right: a tap or click on Start starts once enough players are in (it's
+// drawn dimmed and ignored until then), and Back leaves. A controller or keyboard sees prompts.
 // Style it with the options, not by editing.
 //
 //   const lobby = createPartyLobby(party, input, { title: 'Fib Finder' })
@@ -9,6 +13,8 @@
 //   in the lobby screen:  const result = lobby.update()   // 'start' | 'back' | null
 //                         lobby.draw(ctx, W, H)
 //   during play:          drawJoinBadge(ctx, party, x, y)  // so latecomers can still join
+//   lobby.buttons         // { start, back, retry }: { x, y, w, h, disabled } of the on-screen
+//                         // buttons the last draw() showed (none for a controller or keyboard)
 //
 // Options: title, tagline (defaults to the player count), logo (a loaded image drawn in place of
 // the title), accent, ink, quiet, panel (the backdrop; '' to draw over your own), font.
@@ -28,6 +34,12 @@ export function createPartyLobby(party, input, { title = '', tagline = '', logo 
   const arrived = new Map()
   // The build check runs the TV with nobody at the controls.
   const auto = typeof window !== 'undefined' && Boolean(window.__kitPartyTest)
+  /** The on-screen buttons the last draw() showed, by id: { x, y, w, h, disabled }. Mouse and touch only. */
+  let hits = {}
+  /** The button a finger or the mouse went down on: it acts when released on the same button. */
+  let armed = null
+  let hovered = null
+  const pointerMode = () => input.mode === 'touch' || input.mode === 'mouse'
 
   party.on('msg', ({ from, data }) => {
     if (data?.$start && from === vip()) startRequested = true
@@ -37,19 +49,46 @@ export function createPartyLobby(party, input, { title = '', tagline = '', logo 
   const vip = () => party.players.find((p) => p.kind === 'phone' && p.connected)?.id ?? null
   const canStart = () => party.players.length >= party.minPlayers
 
+  /** The on-screen button a click or tap chose this frame ('start' | 'back' | 'retry'), or null. */
+  function tapped() {
+    const p = input.pointer
+    if (!p?.active || !pointerMode()) {
+      armed = hovered = null
+      return null
+    }
+    const over = Object.keys(hits).find((id) => inside(p, hits[id])) ?? null
+    hovered = input.mode === 'mouse' ? over : null
+    let chosen = null
+    // A quick tap can go down and come up between two frames: arm, then act, in that order.
+    if (p.pressed) armed = over
+    if (p.released) {
+      if (armed && armed === over && !hits[armed].disabled) chosen = armed
+      armed = null
+    }
+    return chosen
+  }
+
   const lobby = {
     open() {
       startRequested = false
+      hits = {}
+      armed = null
       party.open()
+    },
+
+    /** The on-screen buttons the last draw() showed: { start, back, retry } as { x, y, w, h, disabled }. */
+    get buttons() {
+      return Object.fromEntries(Object.entries(hits).map(([id, r]) => [id, { ...r }]))
     },
 
     update() {
       const ready = canStart()
       party.public.lobby = { vip: vip(), canStart: ready, need: Math.max(0, party.minPlayers - party.players.length) }
+      const tap = tapped()
 
       if (party.status === 'error') {
-        if (input.pressed('a')) party.open()
-        else if (input.pressed('b')) return back()
+        if (input.pressed('a') || tap === 'retry') party.open()
+        else if (input.pressed('b') || tap === 'back') return back()
         return null
       }
 
@@ -69,7 +108,8 @@ export function createPartyLobby(party, input, { title = '', tagline = '', logo 
         }
       }
       if (!padUsed && input.pressed('a')) start = true
-      if (!padUsed && input.pressed('b')) return back()
+      if ((!padUsed && input.pressed('b')) || tap === 'back') return back()
+      if (tap === 'start') start = true
 
       startRequested = false
       if (!start || !ready) return null
@@ -79,6 +119,9 @@ export function createPartyLobby(party, input, { title = '', tagline = '', logo 
 
     draw(ctx, W, H) {
       const t = now()
+      hits = {}
+      const pointer = pointerMode()
+      const button = (id, label, x, y, opts) => (hits[id] = pill(ctx, label, x, y, { font, accent, ink, quiet, hover: hovered === id, ...opts }))
       ctx.save()
       ctx.textBaseline = 'alphabetic'
       ctx.textAlign = 'left'
@@ -114,12 +157,21 @@ export function createPartyLobby(party, input, { title = '', tagline = '', logo 
           ctx.fillStyle = '#ff7a7a'
           ctx.font = `700 30px ${font}`
           ctx.fillText(fit(ctx, party.error, W - M * 4), W / 2, top + cardH / 2 - 10)
-          drawPrompts(ctx, input, [['a', 'Try again'], ['b', 'Back']], { x: W / 2, y: top + cardH / 2 + 50, color: ink })
+          if (pointer) {
+            // Two buttons side by side, centred under the message.
+            const y = top + cardH / 2 + 50
+            const retryW = pillWidth(ctx, 'Try again', font)
+            const total = retryW + BUTTON_GAP + pillWidth(ctx, 'Back', font)
+            button('retry', 'Try again', W / 2 - total / 2, y, { primary: true })
+            button('back', 'Back', W / 2 - total / 2 + retryW + BUTTON_GAP, y)
+          } else drawPrompts(ctx, input, [['a', 'Try again'], ['b', 'Back']], { x: W / 2, y: top + cardH / 2 + 50, color: ink })
         } else {
           spinner(ctx, W / 2, top + cardH / 2 - 40, accent, t)
           ctx.fillStyle = ink
           ctx.font = `700 30px ${font}`
           ctx.fillText(party.status === 'reconnecting' ? 'Reconnecting…' : 'Opening the party…', W / 2, top + cardH / 2 + 30)
+          // B already leaves while the party opens; a tablet with no controller needs the button.
+          if (pointer) button('back', 'Back', W - M - pillWidth(ctx, 'Back', font), H - 52)
         }
         ctx.restore()
         return
@@ -225,8 +277,9 @@ export function createPartyLobby(party, input, { title = '', tagline = '', logo 
             const room = sw - 40 - (padsCanJoin && sw >= 380 ? 90 : 0)
             const label = ctx.measureText('Waiting for players...').width <= room ? 'Waiting for players' : 'Waiting'
             ctx.fillText(`${label}${dots}`, x + 22, y + sh / 2 + 8)
-            // Controllers on this machine join with A; say so where the next player will appear.
-            if (padsCanJoin && sw >= 380) drawPrompts(ctx, input, [['a', 'Join']], { x: x + sw - 20, y: y + sh / 2, align: 'right', size: 18, color: ink, font: `600 18px ${font}` })
+            // Controllers on this machine join with A; say so where the next player will appear
+            // (as a controller's A even while the host is using touch or a mouse).
+            if (padsCanJoin && sw >= 380) drawPrompts(ctx, pointer ? PAD_VIEW : input, [['a', 'Join']], { x: x + sw - 20, y: y + sh / 2, align: 'right', size: 18, color: ink, font: `600 18px ${font}` })
           }
           continue
         }
@@ -278,8 +331,15 @@ export function createPartyLobby(party, input, { title = '', tagline = '', logo 
       ctx.font = `700 24px ${font}`
       ctx.fillStyle = need > 0 ? quiet : accent
       ctx.fillText(need > 0 ? `Need ${need} more player${need === 1 ? '' : 's'} to start` : 'Ready when you are', M, by + 8)
-      const prompts = need > 0 ? [['b', 'Back']] : [['a', 'Start'], ['b', 'Back']]
-      drawPrompts(ctx, input, prompts, { x: W - M, y: by, align: 'right', size: 22, color: ink })
+      if (pointer) {
+        // Real buttons for a mouse or a finger: Start at the right (dimmed until enough are in), Back beside it.
+        const startX = W - M - pillWidth(ctx, 'Start', font)
+        button('start', 'Start', startX, by, { primary: true, disabled: need > 0 })
+        button('back', 'Back', startX - BUTTON_GAP - pillWidth(ctx, 'Back', font), by)
+      } else {
+        const prompts = need > 0 ? [['b', 'Back']] : [['a', 'Start'], ['b', 'Back']]
+        drawPrompts(ctx, input, prompts, { x: W - M, y: by, align: 'right', size: 22, color: ink })
+      }
       ctx.restore()
     }
   }
@@ -291,6 +351,43 @@ export function createPartyLobby(party, input, { title = '', tagline = '', logo 
 
   return lobby
 }
+
+/** On-screen buttons: tall enough for a thumb (64 game px, over the 56 px minimum). */
+const BUTTON_H = 64
+const BUTTON_GAP = 16
+/** Prompts drawn as a controller's buttons, whatever the host last used. */
+const PAD_VIEW = { mode: 'gamepad', label: (button) => button.toUpperCase() }
+
+function pillWidth(ctx, label, font) {
+  ctx.save()
+  ctx.font = `800 26px ${font}`
+  const w = Math.max(150, ctx.measureText(label).width + 84)
+  ctx.restore()
+  return w
+}
+
+/** A pill button with its left edge at x and its middle at y. Returns its rect. */
+function pill(ctx, label, x, y, { font, accent, ink, quiet, primary = false, disabled = false, hover = false }) {
+  const w = pillWidth(ctx, label, font)
+  const r = { x, y: y - BUTTON_H / 2, w, h: BUTTON_H, disabled }
+  ctx.save()
+  ctx.globalAlpha = disabled ? 0.45 : 1
+  ctx.fillStyle = primary && !disabled ? accent : 'rgba(255,255,255,0.10)'
+  roundRect(ctx, r.x, r.y, r.w, r.h, BUTTON_H / 2)
+  ctx.fill()
+  ctx.strokeStyle = hover && !disabled ? (primary ? ink : accent) : primary && !disabled ? 'rgba(0,0,0,0)' : 'rgba(255,255,255,0.28)'
+  ctx.lineWidth = hover && !disabled ? 3 : 1.5
+  ctx.stroke()
+  ctx.fillStyle = primary && !disabled ? '#1a1206' : disabled ? quiet : ink
+  ctx.font = `800 26px ${font}`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(label, x + w / 2, y + 1)
+  ctx.restore()
+  return r
+}
+
+const inside = (p, r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h
 
 /** The room code in a corner during play, so latecomers can still join. */
 export function drawJoinBadge(ctx, party, x, y, { ink = '#eef0f5', quiet = '#9aa3b5', accent = '#ffb547', font = 'system-ui, sans-serif' } = {}) {

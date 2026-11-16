@@ -199,7 +199,8 @@ is `'reconnecting'` and `net.connection` is `'connected' | 'reconnecting' | 'off
 
 A tablet can be the TV of a party game: it runs `game.js`, shows the QR code, and phones join
 through the relay as usual. The tablet's own touch screen is also the first player's controller
-if the game reads the merged `input.*`. Nothing in `party.js` changes. Keep the TV layout at
+if the game reads the merged `input.*`. Nothing in `party.js` changes. The lobby draws on-screen
+Start and Back buttons in touch mode, so a host with no controller can start the party and leave. Keep the TV layout at
 1280×800 (a tablet is landscape; the lobby's QR code must stay large enough to scan from across
 a table).
 
