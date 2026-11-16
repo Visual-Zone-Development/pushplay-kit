@@ -54,7 +54,7 @@ Follow the `touch-controls` skill. In short: `import { createTouchControls } fro
 3. Redo the **Verification** passes ([verification.md](../pushplay-rules/references/verification.md) in the `pushplay-rules` skill) the port touched: touch on a phone-sized device-mode window, plus controller and keyboard (nothing may have regressed on the Deck), plus the Scaling pass at 1920×1080 (a landscape phone game fills it; a portrait one gets wide bars in the letterbox colour).
 4. On a real phone if you can: `pushplay dev --host`, open the address on a phone on the same Wi-Fi, play a minute with thumbs, lock the screen and come back.
 5. `DESIGN.md`: fill the *Devices* row (which labels the game earns and the space), update *Controls* (touch scheme, on-screen buttons) and the *Scaling and inputs* items, add a Changelog line (`Plays on a phone: landscape layout, on-screen controls`). Commit (`<Name>: phone and tablet`) and push.
-6. Tell the user which labels the game now earns, what changed for Deck players (ideally nothing), and 2–3 things to feel for on their phone: "can you see the next enemy with both thumbs down?", "does the jump button sit under your right thumb without looking?".
+6. Tell the user which labels the game now earns, what changed for Deck players (ideally nothing), how to get it onto their phone (in the PushPlay app, **Library → Add game → Connect GitHub**, then pick the repo), and 2–3 things to feel for there: "can you see the next enemy with both thumbs down?", "does the jump button sit under your right thumb without looking?".
 
 ## The reverse: a phone-first game for the Deck and a PC
 A game made with `--phone` already earns Handheld & controller and Desktop if it plays with a pad and a keyboard; usually it doesn't yet:

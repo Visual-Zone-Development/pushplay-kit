@@ -111,7 +111,7 @@ The game reaches PushPlay through GitHub, so it has to be in a repo there. Don't
 Tell the user:
 - the name, the pitch and the controls
 - what feel the game aims for, and any known gaps
-- how to see it, step by step, the first time: open PushPlay (on a Steam Deck, a Legion Go or a PC), choose **Add game → Connect GitHub**, sign in with the code it shows, and pick the game's repo in **My repositories**. It is in the **Library** from then on, once GitHub has finished building it (a couple of minutes), and every later push updates it by itself
+- how to see it, step by step, the first time: open PushPlay (on a Steam Deck, a Legion Go or a PC; in the phone app it is **Library → Add game**), choose **Add game → Connect GitHub**, sign in with the code it shows, and pick the game's repo in **My repositories**. It is in the **Library** from then on, once GitHub has finished building it (a couple of minutes), and every later push updates it by itself
 - which Plays on labels it earns (a phone game: Phone as well)
 
 Then suggest they play it and come back with feedback, or with "improve <name>". Give 2–3 specific things to notice while playing, e.g. "does minute two get boring?" or "is the dash satisfying?".

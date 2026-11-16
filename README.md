@@ -31,7 +31,7 @@ Pick the line that is you. Each one ends the same way: in PushPlay, **Add game â
 
 No workflow, no second export, nothing in your normal build.
 
-**I want every version checked, and the game on Discover and phones.** Add [one small workflow file](docs/workflow.yml), or press **Set up auto-builds** on the game's page in PushPlay (or in Settings, under the repo), which opens a pull request with it. It checks every push (or packages every release you publish) and publishes to its own `pushplay-latest` prerelease. Your releases and your "Latest" badge are not touched.
+**I want every version checked, and the game listed on Discover.** Add [one small workflow file](docs/workflow.yml), or press **Set up auto-builds** on the game's page in PushPlay (or in Settings, under the repo), which opens a pull request with it. It checks every push (or packages every release you publish) and publishes to its own `pushplay-latest` prerelease. Your releases and your "Latest" badge are not touched.
 
 The [build guide](docs/pushplay-build.md) has the detail and a worked example per engine: Godot, Unity, GameMaker, Rust or C++, Love2D, Ren'Py, plain JavaScript.
 

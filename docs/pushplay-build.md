@@ -24,7 +24,8 @@ What each level adds:
 | Its own name, description, tags, launch options | | ✓ | ✓ |
 | Cover and banner | made up | PNG, JPG or WebP from the repo | any format, rendered and checked |
 | Played headlessly on every version to catch problems | | | ✓ |
-| Discover and the phone app | | | ✓ |
+| Plays in the phone app, when it has a web build (Library → Add game) | ✓ | ✓ | ✓ |
+| Can be listed on Discover for everyone | | | ✓ |
 
 **One rule:** the launcher reads `pushplay.json` on the repo's default branch first. It says what the game is called and how it is described, whichever of these the files come from, and an edit to it shows up in the library within minutes, with no new build. The files themselves come from a checked build in `pushplay-latest` if there is one, else from your normal releases, else (a plain HTML game) from the repo itself. With no `pushplay.json` the launcher guesses from the repo's name, description and file names.
 
@@ -132,13 +133,13 @@ With no files of ours at all, the launcher finds the zips by their names (`Game-
 ```
 
 - **`release`** names the file for each platform in your newest release that isn't a draft or a prerelease, exactly as it appears there. If the name changes with each version, put `*` where it changes: `StarDrift-*-linux.zip` matches `StarDrift-1.2.0-linux.zip` (and not `StarDrift-linux.zip`). A name that matches nothing leaves that platform out, and the launcher shows which platforms it found. `"release": true` keeps finding them by name.
-- To be on Discover and in the phone app a game needs a web build, so name a web zip too (`"web": "StarDrift-web.zip"`) if you export one.
+- A phone plays web builds only, and so does Discover, so name a web zip too (`"web": "StarDrift-web.zip"`) if you export one.
 - **`entry`** is optional. Without it the launcher looks inside the zip for an `index.html` or the program. Name it when the zip holds more than one program.
 - **`art`**: a 720×500 cover and a 1920×450 banner kept in the repo. Without the workflow file the launcher shows PNG, JPG and WebP pictures; SVG and HTML art is drawn by the build, so it needs the workflow. With no art the launcher makes up a cover.
 - Everything except `id`, `name` and `release` is optional. `pushplay check` reads the file and tells you what would make the game look better; it doesn't check the game's files, because they are in your releases.
 - The launcher reads the file from the default branch each time it looks at the repo, so a change shows up without a new release.
 
-This plays in the launcher on the systems your zips are for. A Linux build plays on a Steam Deck; a Windows-only game doesn't. Discover and the phone app take checked builds only: for those, add the workflow file below. It then packages each release you publish from its own files, so there is still only one export.
+This plays in the launcher on the systems your zips are for. A Linux build plays on a Steam Deck; a Windows-only game doesn't. With a web zip it plays in the phone app too (Library → Add game there). Discover takes checked builds only: for that, add the workflow file below. It then packages each release you publish from its own files, so there is still only one export.
 
 ## The workflow file
 
@@ -478,7 +479,7 @@ From a PushPlay release the launcher installs the native build for the device wh
 
 ## Phones
 
-The phone app plays checked web builds of games listed on Discover. A game marked `"web": { "isolated": true }` is served isolated there too, as in the launcher. Pre-compressed files (`.br`, `.gz`) are not supported in the phone app.
+The phone app plays web builds: of games listed on Discover, and of any repo you link in it (Library → Add game → Connect GitHub, or a public repo by its address), exactly as the launcher does. A game marked `"web": { "isolated": true }` is served isolated there too, as in the launcher. Pre-compressed files (`.br`, `.gz`) are not supported in the phone app.
 
 A game earns the **Phone** label when it is laid out for a phone, plays with touch alone and says so in the manifest:
 
