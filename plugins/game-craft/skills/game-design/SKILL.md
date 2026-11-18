@@ -1,11 +1,13 @@
 ---
 name: game-design
-description: Design the game in this repo before building it, or decide whether it's finished — a short kickoff interview, fun targets and the 8 formal elements, the genre's core loop, research into the games it should feel like, a design brief (DESIGN.md) the user approves, and a definition of done to build toward. Use for "design a game", "write a design brief", "what should the game be", "kickoff questions", "is this game finished", "it isn't fun and I don't know why", or at the start of any new game.
+description: Design the game in this repo before building it, or decide whether it's finished — a short kickoff interview, fun targets and the 8 formal elements, the genre's core loop, research into the games it should feel like, a design brief (DESIGN.md) the user approves, and a definition of done to build toward. Use for "design a game", "write a design brief", "what should the game be", "kickoff questions", "is this game finished", "it isn't fun and I don't know why", or at the start of any new game. Not for a full design doc with a section-by-section interview (use design-doc).
 ---
 
 # Game design
 
 Follow the project's own rules first (its `AGENTS.md` or platform guide): they decide the APIs, the screen size, the target devices, the checks and how a game is started and finished. This skill decides **what the game is**, in a brief short enough to read in two minutes, before any code is written. A complete, fun game beats a quick tech demo.
+
+For a big game, or an owner who isn't sure yet what they want, use the `design-doc` skill instead: it walks the same frameworks section by section, with no cap on rounds, into a full design doc.
 
 Use it for a new game (all four steps), for a game that has no `DESIGN.md` yet (write one from the code, then ask only what's unclear), and for "is it finished?" or "why isn't it fun?" (steps 2 and 4 as an audit).
 
@@ -46,5 +48,7 @@ The **30-second fun test** decides the order of building: the core verb alone, i
 | Sound effects and music | `game-audio` |
 | The look of the whole screen, palette, fonts | `art-direction` |
 | Is it balanced, where do runs end | `playtest` |
+| Finding, licensing and crediting assets | `game-assets` |
+| Building the brief in small, checked pieces | `piecewise` |
 
 Run the project's checks and finish the change the way its rules say.

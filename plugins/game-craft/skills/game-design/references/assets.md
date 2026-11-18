@@ -11,6 +11,10 @@ how-tos for web games, **canvas2d-assets** (2D in any art style: vector, pixel a
 **threejs-models** (3D models built in three.js code). A game's `STYLE.md` records its palette, proportions,
 shared parts and animation timing.
 
+## Finding or buying them
+
+For where to get models, animations, textures, sounds, music and fonts (free or paid), what each source's licence allows, and how to process them to the game's budget, use the **game-assets** skill.
+
 ## Where they go
 
 ```
