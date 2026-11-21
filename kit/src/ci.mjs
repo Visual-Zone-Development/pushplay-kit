@@ -1,10 +1,11 @@
 // Runs in GitHub Actions in two stages, so game code never runs with a token in reach:
 //   STAGE=build    builds and checks the games a push changed; writes zips, art and
 //                  build-results.json to the work folder (uploaded as a workflow artifact).
-//   STAGE=publish  (default and `beta` branches only) uploads those to the rolling release the
-//                  launcher watches, using the `gh` CLI with the workflow's token, and updates the
-//                  index. The default branch publishes to RELEASE_TAG (stable), `beta` to
-//                  BETA_RELEASE_TAG (the beta channel, with its own index).
+//   STAGE=publish  (default branch, `beta`, and branches a channel in pushplay.json names) uploads
+//                  those to the rolling release the launcher watches, using the `gh` CLI with the
+//                  workflow's token, and updates the index. The default branch publishes to
+//                  RELEASE_TAG (stable), `beta` to BETA_RELEASE_TAG, any other channel branch to
+//                  its own release (branchReleaseTag), each with its own index.
 // With no STAGE both run in one go (local runs and tests).
 //
 // The release holds one index (INDEX_ASSET) plus, per game: <id>-web.zip, <id>-cover.png,
@@ -15,8 +16,8 @@
 import { execFileSync, spawnSync } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { BETA_RELEASE_TAG, INDEX_ASSET, KIT_VERSION, RELAY_URL, RELEASE_TAG, releaseTagFor, WORKFLOW_FILE } from './config.mjs'
-import { distDir, layout, listGames, log, readManifest, ROOT, validateIndex, WORK_DIR } from './repo.mjs'
+import { INDEX_ASSET, KIT_VERSION, RELAY_URL, RELEASE_TAG, releaseTagFor, WORKFLOW_FILE } from './config.mjs'
+import { channelBranches, distDir, layout, listGames, log, readManifest, ROOT, validateIndex, WORK_DIR } from './repo.mjs'
 
 const env = process.env
 const dryRun = Boolean(env.DRY_RUN)
@@ -78,7 +79,10 @@ async function build() {
   log(`${repo} · ${layout()} repo · branch ${branch} @ ${sha.slice(0, 7)} · build #${buildNumber}`)
   log(targets.length ? `Building: ${targets.map((g) => g.id).join(', ')}` : 'No game changes to build.')
 
-  const out = { sha, branch, buildNumber, runUrl, games: [] }
+  // Where publish will put this push, decided here where the branch's manifests are checked out.
+  const releaseTag = fromRelease ? RELEASE_TAG : releaseTagFor(branch, defaultBranch, channelBranches())
+  if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, `release-tag=${releaseTag ?? ''}\n`)
+  const out = { sha, branch, buildNumber, runUrl, releaseTag, games: [] }
   if (targets.length) {
     const browser = await launchBrowser()
     for (const game of targets) {
@@ -173,9 +177,11 @@ async function onlinePass(out, manifest) {
 
 // --- Stage 2: merge into the release index and upload ---
 async function publish(results) {
-  // Local runs and tests (no STAGE) publish like the default branch, whatever the branch is called.
-  const releaseTag = releaseTagFor(results.branch, defaultBranch) ?? (stage === 'all' || fromRelease ? RELEASE_TAG : null)
-  const beta = releaseTag === BETA_RELEASE_TAG
+  // The build stage decided where this push goes (results from older kits didn't say). Local runs
+  // and tests (no STAGE) publish like the default branch, whatever the branch is called.
+  const decided = 'releaseTag' in results ? results.releaseTag : releaseTagFor(results.branch, defaultBranch, channelBranches())
+  const releaseTag = decided ?? (stage === 'all' || fromRelease ? RELEASE_TAG : null)
+  const channel = releaseTag !== RELEASE_TAG
   if (!releaseTag) {
     log(`Branch ${results.branch} only builds and checks; nothing published.`)
     return
@@ -194,8 +200,8 @@ async function publish(results) {
   if (dryRun) {
     if (existsSync(indexPath)) index = JSON.parse(readFileSync(indexPath, 'utf8'))
   } else if (!ghOk('release', 'view', releaseTag)) {
-    gh('release', 'create', releaseTag, '--prerelease', '--target', results.sha, '--title', beta ? 'Beta game builds' : 'Game builds', '--notes',
-      `Rolling ${beta ? 'beta ' : ''}game builds, updated automatically on every push${beta ? ' to the beta branch' : ''}. Not a versioned release.`)
+    gh('release', 'create', releaseTag, '--prerelease', '--target', results.sha, '--title', channel ? `Game builds from ${results.branch}` : 'Game builds', '--notes',
+      `Rolling game builds, updated automatically on every push${channel ? ` to the ${results.branch} branch` : ''}. Not a versioned release.`)
     log(`Created release ${releaseTag}`)
   } else if (ghOk('release', 'download', releaseTag, '--pattern', INDEX_ASSET, '--dir', scratch, '--clobber')) {
     index = JSON.parse(readFileSync(indexPath, 'utf8'))
@@ -214,7 +220,7 @@ async function publish(results) {
     }
   }
 
-  // Games deleted on the published branch (default or beta) disappear from that channel.
+  // Games deleted on the published branch disappear from that channel.
   const games = listGames()
   if (results.branch === defaultBranch || stage === 'publish') {
     for (const id of Object.keys(index.games)) if (!games.some((g) => g.id === id)) delete index.games[id]

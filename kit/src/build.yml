@@ -7,7 +7,9 @@
 #
 # It builds every game that changed (on any branch), checks it, and on the default branch
 # publishes it to the "{{RELEASE_TAG}}" release, where the launcher picks it up. Pushes to a
-# branch named "beta" publish to "{{BETA_RELEASE_TAG}}". Other branches only check.
+# branch named "beta" publish to "{{BETA_RELEASE_TAG}}", and pushes to a branch a channel in the
+# game's manifest names ("channels": [{ ..., "branch": "next" }]) to "{{SLUG}}-next". Players
+# choose those under Versions on the game's page. Other branches only check.
 # When the calling workflow also runs on "release: published", a game whose manifest has
 # "release" is packaged from that release's own files, so nothing is built twice.
 #
@@ -36,10 +38,10 @@ on:
 permissions:
   contents: read
 
-# Builds publishing to the same release share its index, so they run one at a time (stable and
-# beta each have their own queue).
+# Builds publishing to the same release share its index, so they run one at a time (each branch
+# has its own queue; the default branch and published releases share the stable one).
 concurrency:
-  group: {{SLUG}}-publish-${{ github.ref_name == 'beta' && 'beta' || 'latest' }}
+  group: {{SLUG}}-publish-${{ (github.event_name == 'release' || github.ref_name == github.event.repository.default_branch) && 'latest' || github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -51,6 +53,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      # The release this push publishes to, read from the branch's manifests; empty: check only.
+      release-tag: ${{ steps.build.outputs.release-tag }}
     permissions:
       contents: read
       id-token: write # online games: prove which repo built them, to get a pass for the online relay
@@ -117,6 +122,7 @@ jobs:
         run: node "$RUNNER_TEMP/kit/kit/node_modules/playwright/cli.js" install --with-deps chromium
 
       - name: Build and check
+        id: build
         working-directory: game
         run: node "$RUNNER_TEMP/kit/kit/ci.mjs"
         env:
@@ -136,10 +142,11 @@ jobs:
           retention-days: 3
 
   # Uploads what build produced. Only this job can write, and only from the default branch or a
-  # published release (to {{RELEASE_TAG}}) or the beta branch (to {{BETA_RELEASE_TAG}}).
+  # published release (to {{RELEASE_TAG}}), or a branch that publishes to its own release (beta,
+  # to {{BETA_RELEASE_TAG}}, or one a channel names), as the build job reported.
   publish:
     needs: build
-    if: always() && needs.build.result != 'cancelled' && needs.build.result != 'skipped' && (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || github.ref == 'refs/heads/beta' || (github.event_name == 'release' && !github.event.release.prerelease))
+    if: always() && needs.build.result != 'cancelled' && needs.build.result != 'skipped' && (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || (github.event_name != 'release' && needs.build.outputs.release-tag != '') || (github.event_name == 'release' && !github.event.release.prerelease))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
