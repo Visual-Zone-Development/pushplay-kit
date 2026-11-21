@@ -64,7 +64,7 @@ Run it from the game's repo. It never leaves a file in the repo except what the 
 3. Bump `version` in `pushplay.json` (and add a Changelog line to `DESIGN.md` when it has one).
 4. Run `pushplay check` and fix every ✗. Read the ⚠ notes.
 5. Open the PNGs it prints and look at them: the screenshot must show the game, the cover must read at tile size.
-6. Commit and push. The default branch publishes; a branch named `beta` publishes to `pushplay-beta`; other branches only run the check.
+6. Commit and push. The default branch publishes; a branch named `beta` publishes to `pushplay-beta`, and a branch a `channels` entry in `pushplay.json` names to its own release; other branches only run the check.
 
 ## 3. A JavaScript game built on the runtime files
 

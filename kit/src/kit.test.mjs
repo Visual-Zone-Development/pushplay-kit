@@ -5,8 +5,9 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { BETA_RELEASE_TAG, BUILD_WORKFLOW, IGNORE_FILE, INDEX_ASSET, KIT_VERSION, MANIFEST_FILE, MANIFEST_SCHEMA_URL, RELEASE_TAG, releaseTagFor, RUNTIME_FILES, RUNTIME_HEADER, WORKFLOW_FILE } from './config.mjs'
+import { BETA_RELEASE_TAG, brand, branchReleaseTag, BUILD_WORKFLOW, IGNORE_FILE, INDEX_ASSET, KIT_VERSION, MANIFEST_FILE, MANIFEST_SCHEMA_URL, RELEASE_TAG, releaseTagFor, RUNTIME_FILES, RUNTIME_HEADER, WORKFLOW_FILE } from './config.mjs'
 import { buildWorkflow, kitFiles, kitTree } from './kit.mjs'
+import { channelBranches } from './repo.mjs'
 
 /** Where the tests keep the kit's scratch folder, so they can look inside it (by default it is outside the repo). */
 const KIT_DIR = '.kit-test'
@@ -785,6 +786,24 @@ describe('release channels', () => {
     expect(BETA_RELEASE_TAG).not.toBe(RELEASE_TAG)
   })
 
+  it('publishes a branch a channel in the manifest names to its own release, and nothing else', () => {
+    expect(releaseTagFor('next', 'main', ['next'])).toBe(`${brand.slug}-next`)
+    expect(releaseTagFor('feature/Night_Tracks', 'main', ['feature/Night_Tracks'])).toBe(`${brand.slug}-feature-night-tracks`)
+    expect(releaseTagFor('next', 'main', [])).toBeNull()
+    // A branch whose release would be the stable one's stays check-only.
+    expect(releaseTagFor(RELEASE_TAG.slice(brand.slug.length + 1), 'main', [RELEASE_TAG.slice(brand.slug.length + 1)])).toBeNull()
+    expect(branchReleaseTag('beta')).toBe(BETA_RELEASE_TAG)
+  })
+
+  it('reads the branches channels name from every manifest in the repo', () => {
+    const root = makeRepo((r) => {
+      write(join(r, 'games/comet', MANIFEST_FILE), { id: 'comet', name: 'Comet', entry: { web: 'index.html' }, channels: [{ id: 'next', name: 'Next', branch: 'next' }, { id: 'beta', name: 'Beta', prerelease: true }] })
+      write(join(r, 'games/rally', MANIFEST_FILE), { id: 'rally', name: 'Rally', entry: { web: 'index.html' }, channels: [{ id: 'nightly', name: 'Nightly', branch: 'nightly' }] })
+      write(join(r, 'games/broken', MANIFEST_FILE), '{ not json')
+    })
+    expect(channelBranches(root).sort()).toEqual(['next', 'nightly'])
+  })
+
   it('the publish stage picks the release by branch (dry run)', () => {
     const publish = (branch) => {
       const root = makeRepo(() => {})
@@ -802,16 +821,25 @@ describe('release channels', () => {
     expect(other.output).toMatch(/only builds and checks; nothing published/)
   })
 
-  it('the workflow publishes from the default and beta branches, one queue per release', () => {
+  it('the publish stage uses the release the build stage chose for a channel branch (dry run)', () => {
+    const root = makeRepo(() => {})
+    write(join(root, KIT_DIR, '.work/dist/build-results.json'), { sha: 'a'.repeat(40), branch: 'next', releaseTag: `${brand.slug}-next`, buildNumber: 1, runUrl: null, games: [] })
+    const next = runKit('ci.mjs', root, [], { DRY_RUN: '1', STAGE: 'publish', DEFAULT_BRANCH: 'main' })
+    expect(next.status, next.output).toBe(0)
+    expect(next.output).toContain(`Publishing to ${brand.slug}-next`)
+  })
+
+  it('the workflow publishes from the default branch and the branches the build reports, one queue per release', () => {
     const workflow = buildWorkflow()
     expect(workflow).not.toMatch(/\{\{[A-Z_]+\}\}/)
     expect(workflow).toContain('workflow_call')
     expect(workflow).toMatch(/uses: actions\/checkout@[0-9a-f]{40}/)
     expect(workflow).toContain('persist-credentials: false')
     expect(workflow).toContain('id-token: write')
-    expect(workflow).toContain("github.ref == 'refs/heads/beta'")
+    expect(workflow).toContain('release-tag: ${{ steps.build.outputs.release-tag }}')
+    expect(workflow).toContain("(github.event_name != 'release' && needs.build.outputs.release-tag != '')")
     expect(workflow).toContain("github.ref == format('refs/heads/{0}', github.event.repository.default_branch)")
-    expect(workflow).toMatch(/group: \S+-publish-\$\{\{ github\.ref_name == 'beta' && 'beta' \|\| 'latest' \}\}/)
+    expect(workflow).toMatch(/group: \S+-publish-\$\{\{ \(github\.event_name == 'release' \|\| github\.ref_name == github\.event\.repository\.default_branch\) && 'latest' \|\| github\.ref_name \}\}/)
     expect(workflow).toContain(BETA_RELEASE_TAG)
   })
 })

@@ -8,7 +8,7 @@ export const brand = JSON.parse(readFileSync(join(import.meta.dirname, 'brand.js
  * Bumped whenever the kit's files change (kit-lock.json holds their hash; a test enforces the bump).
  * ci.mjs writes it into the release index, so the launcher can tell a repo its kit is outdated.
  */
-export const KIT_VERSION = 18
+export const KIT_VERSION = 19
 /**
  * Runtime modules copied into every game; `update-runtime` replaces them by this header. The number
  * after `v` is the KIT_VERSION that shipped the file, so a game folder says which kit it carries.
@@ -33,13 +33,26 @@ export const BETA_RELEASE_TAG = brand.betaReleaseTag ?? `${brand.slug}-beta`
 export const BETA_BRANCH = 'beta'
 
 /**
- * The release a push publishes to: the default branch's builds are the stable channel, the `beta`
- * branch's the beta channel. Other branches only build and check (null).
+ * The release another branch publishes to: `<slug>-<branch>`, lowercased, with anything but
+ * letters and digits as dashes (`beta` is BETA_RELEASE_TAG). The launcher looks for the same name.
  */
-export function releaseTagFor(branch, defaultBranch) {
-  if (branch === defaultBranch) return RELEASE_TAG
+export function branchReleaseTag(branch) {
   if (branch === BETA_BRANCH) return BETA_RELEASE_TAG
-  return null
+  const name = branch.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  return `${brand.slug}-${name}`
+}
+
+/**
+ * The release a push publishes to: the default branch's builds are the stable channel, the `beta`
+ * branch's the beta channel, and a branch a channel in pushplay.json names (`"branch": "next"`)
+ * its own. Other branches only build and check (null), as does a branch whose release name would
+ * be the stable one's.
+ */
+export function releaseTagFor(branch, defaultBranch, channelBranches = []) {
+  if (branch === defaultBranch) return RELEASE_TAG
+  if (branch !== BETA_BRANCH && !channelBranches.includes(branch)) return null
+  const tag = branchReleaseTag(branch)
+  return tag === RELEASE_TAG || tag === `${brand.slug}-` ? null : tag
 }
 export const INDEX_ASSET = brand.indexAsset
 

@@ -1,6 +1,7 @@
 # Builds this repo's games on every push and checks them; on the default branch it publishes
 # them to the "pushplay-latest" release, where the PushPlay launcher picks them up (a branch named
-# "beta" publishes to "pushplay-beta"). The build itself is PushPlay's, shared by every
+# "beta" publishes to "pushplay-beta", and a branch a channel in the manifest names to its
+# own release, for players to choose). The build itself is PushPlay's, shared by every
 # game repo, so there is nothing else to keep up to date here.
 #
 # Your own release workflow is not affected: this one has its own file and its own releases.

@@ -77,6 +77,7 @@ Below, `pushplay` stands for `npx github:Visual-Zone-Development/pushplay-kit`: 
 | `inputs` | **Required by the check.** What the whole game, gameplay included, can be played with: any of `"gamepad"`, `"keyboard"`, `"mouse"`, `"touch"`. List only what works. |
 | `version` | A label players see next to the build, such as `1.2.0`. It is not what makes the launcher update: every new build does that. Change it when you want players to see a new number. |
 | `release` | Play the game from the repo's normal GitHub releases, with nothing built for PushPlay. `true` finds each platform's zip by its name; an object names them: `{ "linux-x64": "Game-*-linux.zip" }`. See [Play from your normal releases](#play-from-your-normal-releases). |
+| `channels` | Other versions players can add beside the main one, each with its own saves: `[{ "id": "beta", "name": "Beta", "prerelease": true }]`. See [Other versions: channels](#other-versions-channels). |
 | `art` | `cover` and `hero`: paths to `.svg`, `.html`, `.png`, `.jpg` or `.webp` files (see [The art](#the-art)). The build adds `screenshots` itself. |
 | `controls` | `"gamepad"` once the game works with a controller; `"keyboard-mapped"` for a game that has no controller support yet. |
 | `players` | `"1"`, or a range like `"1-4"`. |
@@ -141,6 +142,29 @@ With no files of ours at all, the launcher finds the zips by their names (`Game-
 
 This plays in the launcher on the systems your zips are for. A Linux build plays on a Steam Deck; a Windows-only game doesn't. With a web zip it plays in the phone app too (Library → Add game there). Discover takes checked builds only: for that, add the workflow file below. It then packages each release you publish from its own files, so there is still only one export.
 
+## Other versions: channels
+
+Players can add another version of your game beside the main one, from **Version** on the game's page in PushPlay: each is its own game in their library, with its own saves, and updates on its own. Without any setup they can choose pre-releases (when your releases have any), keep one release, or follow releases whose tag matches a pattern; for an auto-built game, any branch that publishes to its own release; for a plain HTML game, any branch. `channels` in `pushplay.json` names the ones you mean, with a line about each, and they are listed first:
+
+```json
+"channels": [
+  { "id": "beta", "name": "Beta", "about": "Tested by me first.", "prerelease": true },
+  { "id": "demo", "name": "Festival demo", "tag": "demo-*", "release": { "linux-x64": "StarDrift-demo-*.zip" } },
+  { "id": "next", "name": "Next", "about": "Every push to the next branch. May break.", "branch": "next" }
+]
+```
+
+| Field | What it does |
+|---|---|
+| `id` | Stays the same when you rename the channel, so players who chose it keep it. Lowercase letters, digits and `-`. |
+| `name`, `about` | What players see. |
+| `prerelease` | Releases marked pre-release on GitHub count too. |
+| `tag` | Only releases whose tag (or title) matches; `*` is any run of characters. |
+| `release` | Which zip is which platform's build in those releases, when the names differ from your main `release` entry. |
+| `branch` | Play this branch instead of releases. With the workflow file, pushes to it publish to their own release (`pushplay-<branch>`); a plain HTML game plays the branch's latest commit. |
+
+A channel follows either a `branch` or releases (`prerelease`, `tag`, `release`), not both. Up to 8. Removing one leaves players' copies as they are, with a note that it isn't offered any more.
+
 ## The workflow file
 
 Save this as `.github/workflows/pushplay.yml` (it is [workflow.yml](workflow.yml) in this folder):
@@ -167,12 +191,12 @@ jobs:
 What it does:
 
 - On every push, on any branch, it builds the games that changed and checks them. Running it by hand (`workflow_dispatch`) rebuilds every game.
-- On the default branch it publishes them to a release named `pushplay-latest`, where the launcher picks them up. A branch named `beta` publishes to `pushplay-beta`. Other branches only check.
+- On the default branch it publishes them to a release named `pushplay-latest`, where the launcher picks them up. A branch named `beta` publishes to `pushplay-beta`, and a branch one of your [channels](#other-versions-channels) names (`"branch": "next"`) to `pushplay-next`. Other branches only check.
 - `pushplay-latest` is a prerelease, so your repo's own "Latest" release is untouched.
 - For a game with `release` in its manifest, publishing one of your own releases is what triggers it: it takes that release's zips, checks them, renders the art and publishes them to `pushplay-latest`. Pushes only check the manifest.
 - The build itself is shared by every game repo, so there is nothing to keep up to date in yours.
 - Keep both permissions, whatever the game. The shared build asks for `id-token` for every game (it is how an online game proves which repo built it), and GitHub refuses to start a called workflow that asks for more than its caller grants.
-- Keep it in its own file. Called from a workflow that only runs on tags, it would check and publish nothing: it publishes from the default branch, from `beta`, and from a published release.
+- Keep it in its own file. Called from a workflow that only runs on tags, it would check and publish nothing: it publishes from the default branch, from `beta` and channel branches, and from a published release.
 
 It lives beside your own release workflow and doesn't affect it: a separate file, separate releases. A game can have a normal release and a PushPlay release side by side.
 

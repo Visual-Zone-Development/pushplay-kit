@@ -125,6 +125,24 @@ export function readManifest(game) {
   }
 }
 
+/**
+ * Branches the repo's manifests name in `channels` (`"branch": "next"`): pushes to them publish
+ * to their own release, so players can follow them. Read from the branch being built.
+ */
+export function channelBranches(root = ROOT) {
+  const branches = new Set()
+  for (const game of listGames(root)) {
+    let manifest
+    try {
+      manifest = readManifest(game)
+    } catch {
+      continue
+    }
+    for (const c of Array.isArray(manifest?.channels) ? manifest.channels : []) if (typeof c?.branch === 'string' && c.branch) branches.add(c.branch)
+  }
+  return [...branches]
+}
+
 /** Path relative to the repo root, for messages. */
 export const display = (path) => relative(ROOT, path) || '.'
 

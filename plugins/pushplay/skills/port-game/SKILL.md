@@ -92,7 +92,7 @@ Write `pushplay.json` at the repo root from [manifest.md](../pushplay-rules/refe
 
 ## 5. Keep the normal release unchanged
 
-- **Separate file, separate release.** `pushplay.yml` is its own workflow, and it publishes to the `pushplay-latest` release, a prerelease, so the repo's own "Latest" release is untouched (a branch named `beta` publishes to `pushplay-beta`).
+- **Separate file, separate release.** `pushplay.yml` is its own workflow, and it publishes to the `pushplay-latest` release, a prerelease, so the repo's own "Latest" release is untouched (a branch named `beta` publishes to `pushplay-beta`, and a branch a `channels` entry names to its own release; see the build guide's "Other versions: channels").
 - **At run time, in a web build:** `window.pushplay` exists only inside the launcher. Keep what belongs to the normal release behind `if (!window.pushplay) { … }` (analytics, an ad, a dialog, an online leaderboard). The check runs the game with that object present, so it judges only what the game does inside the launcher.
 - **At run time, in a native build:** the environment variable `PUSHPLAY=1` is set.
 - **At build time:** `PUSHPLAY_BUILD=1` is set when the PushPlay build runs `build.command` or `npm run build`, so one build script can make both versions. In an export job of your own, set a variable yourself.
