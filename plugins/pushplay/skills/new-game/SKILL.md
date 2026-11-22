@@ -82,7 +82,7 @@ Run `pushplay check` after each milestone and fix every ✗.
   | Mouse only | hands off the keyboard | every menu by click; the on-screen pause button pauses; gameplay too if `inputs` includes `"mouse"`; cursor visible in every menu |
   | Touch | Chrome DevTools → device toolbar with touch emulation | every menu by tap; pause button; no button prompts shown; gameplay too if `inputs` includes `"touch"` |
   | Phone (if `--phone`) | device mode at 390×844 or 844×390, DPR 3, touch only | menus by tap; thumbs don't cover the action; nothing under the notch or home bar; on-screen controls vanish with a pad; a hidden page pauses |
-  | Scaling | resize the window to 1920×1080, then device mode at DPR 2 | centred and letterboxed in the game's colour, text crisp, nothing clipped or blurry |
+  | Scaling | resize the window to 1920×1080 and 1024×768, then device mode at DPR 2 (or the `screen-shapes` skill's script) | fills the screen with no bars, HUD on the real edges, menus centred, text crisp, nothing clipped or blurry |
   | `pushplay check` | | passes: gamepad, keyboard-only, mouse-only, touch, Start → `__game.state.screen === 'paused'`, a 16:9 window at DPR 2, and the phone pass for a phone game |
 
   Also confirm: menus use `menu.js`; pause menu is Resume / Restart / Settings / Quit to title; Settings is reachable from title and pause; no `F10`, Start+Select or held-Esc binding; no hard-coded button names (`input.label`, `drawPrompts`); nothing needs hover, a double-click, a scroll wheel or text entry; `window.__game.state.screen` is exposed.

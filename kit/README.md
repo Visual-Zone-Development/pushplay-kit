@@ -49,6 +49,13 @@ The kit builds a JavaScript project itself (`npm run build`, or the folder as it
 
 The play passes need Playwright's Chromium (`npm run setup` in a game repo installs it). Where that download is blocked, set `KIT_BROWSER=/path/to/chrome` to use an installed Chrome or Chromium; with no browser at all, `check.mjs` runs the static checks and says what it skipped.
 
+## v20: every game fills a TV
+
+- New games (`new-game`, plain, `--online`, `--party` and `--phone`) call `fitCanvas(…, { fill: true })`: the space grows from 1280×800 (or the phone space) to the screen's shape, so a 16:9 TV, a 4:3 iPad or an ultrawide shows no bars. Each starter keeps `MIN_W` × `MIN_H` for what decides the game (where orbs appear, the online world in shared units, the party room) and re-lays out its menus in `layout()` on `fit.onResize`. Existing games change only if they opt in.
+- `menu.js`: `menu.place({ x, y })` moves a menu (keeping the Quit to library offset), for menus that follow `fit.w` / `fit.h`.
+- `settings.js`: `settingsScreen.place({ x, y })` moves the Settings screen, title included.
+- `check.mjs`: the 16:9 pass notes (⚠, never fails) a game whose canvas leaves bars on that screen, with how to fill it.
+
 ## v18: a touch screen can host a party
 
 - `party-lobby.js`: with a mouse or touch, the lobby draws real Start and Back buttons (64 game px tall) and a tap or click on them works, also Try again and Back after an error and Back while the party opens. Start is dimmed and ignored until `minPlayers` are in. `lobby.buttons` gives their rects. Before, only A, Space/Enter, B, right-click and the first phone could start or leave, so a tablet with no controller was stuck in the lobby. Controllers and keyboards see the same prompts as before.

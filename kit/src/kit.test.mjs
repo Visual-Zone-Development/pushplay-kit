@@ -173,6 +173,26 @@ describe('build kit', () => {
     expect(output).not.toMatch(/⚠/)
   }, 150_000)
 
+  it('fills a 16:9 screen from the starter, and warns about bars when a game letterboxes instead', () => {
+    const root = makeRepo((r) => mkdirSync(join(r, 'games')))
+    for (const id of ['wide', 'boxed']) {
+      expect(runKit('new-game.mjs', root, [id]).status).toBe(0)
+      const dir = join(root, 'games', id)
+      const m = JSON.parse(readFileSync(join(dir, MANIFEST_FILE), 'utf8'))
+      write(join(dir, MANIFEST_FILE), { ...m, description: 'Collect orbs before the clock runs out.', tags: ['arcade'] })
+      write(join(dir, 'art/cover.svg'), SVG)
+      write(join(dir, 'art/hero.svg'), SVG)
+    }
+    // The same starter drawn at a fixed 1280×800: a TV shows it with bars at the sides.
+    const boxed = join(root, 'games/boxed/game.js')
+    write(boxed, readFileSync(boxed, 'utf8').replace(", fill: true", ''))
+    const { status, output } = runCi(root)
+    expect(status, output).toBe(0)
+    const section = (id) => output.split(`▶ ${id}`)[1]?.split('▶ ')[0] ?? ''
+    expect(section('wide')).not.toMatch(/bars at the sides/)
+    expect(section('boxed')).toMatch(/on a 16:9 screen \(a TV, a monitor, a docked handheld\) the game has bars at the sides: it draws 1152×720 of a 1280×720 window/)
+  }, 150_000)
+
   it('scaffolds the game at the root of a repo with no games/ folder, and ships none of the repo files', () => {
     const root = makeRepo((r) => {
       write(join(r, 'AGENTS.md'), '# rules')
@@ -248,8 +268,9 @@ describe('build kit', () => {
     expect(made.output).toMatch(/portrait phone game \(720×1280\)/)
     const dir = join(root, 'games/tap-tap')
     const code = readFileSync(join(dir, 'game.js'), 'utf8')
-    expect(code).toContain('const W = 720')
-    expect(code).toContain('const H = 1280')
+    expect(code).toContain('const MIN_W = 720')
+    expect(code).toContain('const MIN_H = 1280')
+    expect(code).toContain('fill: true')
     expect(code).toContain("orientation: 'portrait'")
     expect(code).toContain('createTouchControls')
     expect(existsSync(join(dir, 'touch.js'))).toBe(true)
@@ -263,7 +284,7 @@ describe('build kit', () => {
     const small = runKit('new-game.mjs', root, ['tiny', '--phone', 'landscape'])
     expect(small.status, small.output).toBe(0)
     const tinyDir = join(root, 'games/tiny')
-    expect(readFileSync(join(tinyDir, 'game.js'), 'utf8')).toContain('const W = 1280')
+    expect(readFileSync(join(tinyDir, 'game.js'), 'utf8')).toContain('const MIN_W = 1280')
     write(join(tinyDir, 'game.js'), readFileSync(join(tinyDir, 'game.js'), 'utf8').replace('const UI = PHONE ? 1.35 : 1', 'const UI = 0.9'))
     const tm = JSON.parse(readFileSync(join(tinyDir, MANIFEST_FILE), 'utf8'))
     write(join(tinyDir, MANIFEST_FILE), { ...tm, description: 'A phone game with text that is too small to read.', tags: ['arcade'] })

@@ -87,7 +87,7 @@ Broken most often:
 - **Every menu goes through `menu.js`**; the pause menu keeps a `resume` item, which is what earns Quit to library.
 - **No prompt row along the bottom of the screen**, and no literal "Press A" / "Tap": prompts come from `input.label()`.
 - **All `localStorage` goes through `save.js` and `createSettings`**, with keys that start with the game id.
-- **1280×800 logical space through `fitCanvas`** (or a phone space); never your own resize code.
+- **At least a 1280×800 logical space through `fitCanvas`, with `fill: true`** (or a phone space): it grows to a TV's, tablet's or phone's shape with no bars, and what decides difficulty stays inside the 1280×800. Never your own resize code. The `screen-shapes` skill measures and fixes it.
 
 ## 4. Which skill for what
 
@@ -100,6 +100,7 @@ Broken most often:
 | The runtime files' calls, or refreshing them | `pushplay-runtime` |
 | Cover, banner, library screenshot, shots and clips | `cover-art` |
 | Every screen with each input alone / phone and tablet play | `input-walkthrough` / `mobile-port` |
+| Black bars on a TV, tablet or ultrawide; filling every screen shape | `screen-shapes` |
 | A party game's phone screen / phone motion controls | `party-phone-screen` / `motion-controls` |
 | The design brief; not sure which direction | `game-design`; `prototype-sprint` |
 | How it plays | `game-feel`, `physics-feel`, `camera`, `enemy-ai`, `touch-controls`, `local-multiplayer`, `online-netcode` |

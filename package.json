@@ -6,7 +6,7 @@
     "lint": "node scripts/lint-skills.mjs",
     "test": "node --test \"scripts/*.test.mjs\" \"plugins/pushplay/skills/pushplay-rules/scripts/*.test.mjs\" \"plugins/pushplay/hooks/*.test.mjs\" && vitest run",
     "test:kit": "vitest run",
-    "test:browser": "node --test \"plugins/pushplay/skills/input-walkthrough/scripts/*.test.mjs\"",
+    "test:browser": "node --test \"plugins/pushplay/skills/input-walkthrough/scripts/*.test.mjs\" \"plugins/pushplay/skills/screen-shapes/scripts/*.test.mjs\"",
     "kit:build": "node kit/src/zip.mjs",
     "template": "node kit/src/template.mjs",
     "kit:lock": "UPDATE_KIT_LOCK=${UPDATE_KIT_LOCK:-1} vitest run kit/src/kit-lock.test.mjs -t 'KIT_VERSION was bumped'",
@@ -18,7 +18,7 @@
   "bin": {
     "pushplay": "plugins/pushplay/skills/pushplay-rules/scripts/pushplay.mjs"
   },
-  "version": "19.0.0",
+  "version": "20.0.0",
   "files": [
     "plugins/pushplay/skills/pushplay-rules/scripts/pushplay.mjs",
     "plugins/pushplay/skills/pushplay-rules/kit.zip"

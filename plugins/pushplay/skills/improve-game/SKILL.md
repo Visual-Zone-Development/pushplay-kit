@@ -67,7 +67,7 @@ Follow the `pushplay-rules` skill. `pushplay` is the command the `pushplay-rules
      - menus on `menu.js`, including touch; pause menu = Resume / Restart / Settings / Quit to title; Settings (master/music/SFX, reduced shake, text size via `settings.js`) reachable from title and pause
      - `menu` pauses (Start / Esc / P / on-screen button), `b` is back and otherwise free; no F10, Start+Select or held-Esc binding; no exit of its own (the pause menu's Quit to library comes from `menu.js`)
      - `input.onPause` → `paused`; `window.__game = { state, TUNING }` with `state.screen`
-     - `fitCanvas` for scaling (no hand-written resize, DPR capped at 2, letterbox colour set); cursor hidden only during gameplay
+     - `fitCanvas` for scaling with `fill: true` (no hand-written resize, DPR capped at 2, no bars on a TV or tablet: the `screen-shapes` skill); cursor hidden only during gameplay
      - prompts from `input.label` / `drawPrompts`, no literal "A", "Space", "LB/RB"
      - `save.js` with `<id>-save-v1` keys, saved on pause; `audio.js` with buses that follow the sliders
      - manifest has `tags` and `inputs`; `tools/`, `mockups/`, `*.py` not committed; runtime files unedited (header intact)
