@@ -18,12 +18,20 @@ import { createParty } from './party.js'
 import { createPartyLobby, drawJoinBadge } from './party-lobby.js'
 
 const ID = '{{ID}}'
-const W = 1280
-const H = 800
+// A party game is on a TV: fill makes the drawing space grow from 1280×800 to the TV's shape
+// (1422×800 on 16:9), so there are no bars. W and H follow the screen (layout() runs on every
+// resize); the room the dots move in stays MIN_W × MIN_H in the middle (field()).
+const MIN_W = 1280
+const MIN_H = 800
 const canvas = document.getElementById('game')
-const fit = fitCanvas(canvas, { w: W, h: H, letterbox: '#0d0f14' })
+const fit = fitCanvas(canvas, { w: MIN_W, h: MIN_H, letterbox: '#0d0f14', fill: true })
 const ctx = fit.ctx
-input.attach(canvas, W, H)
+input.attach(canvas, MIN_W, MIN_H)
+let W = fit.w
+let H = fit.h
+const field = () => ({ x: (W - MIN_W) / 2, y: (H - MIN_H) / 2, w: MIN_W, h: MIN_H })
+/** The on-screen pause button, top-right of the real screen. */
+const pauseButton = () => ({ x: W - 88, y: 32, w: 56, h: 56 })
 
 const settings = createSettings(ID) // <id>-settings-v1: volumes, reduced shake, text size
 const audio = createAudio({ settings })
@@ -44,8 +52,8 @@ const state = {
   dots: {},
   picks: {}
 }
-// The check presses Start and expects state.screen 'paused', taps titleMenu's first item, and clicks PAUSE_BUTTON.
-window.__game = { state, TUNING, party, settings, get titleMenu() { return titleMenu }, get pauseMenu() { return pauseMenu }, pauseButton: { x: W - 88, y: 32, w: 56, h: 56 } }
+// The check presses Start and expects state.screen 'paused', taps titleMenu's first item, and clicks pauseButton.
+window.__game = { state, TUNING, party, settings, get titleMenu() { return titleMenu }, get pauseMenu() { return pauseMenu }, get pauseButton() { return pauseButton() } }
 const debug = new URLSearchParams(location.search).has('debug')
 
 const titleMenu = createMenu(
@@ -65,7 +73,16 @@ const pauseMenu = createMenu(
 )
 const settingsScreen = createSettingsScreen({ settings, audio })
 
-const PAUSE_BUTTON = window.__game.pauseButton
+/** Centre the menus on the screen's current shape. */
+function layout() {
+  W = fit.w
+  H = fit.h
+  titleMenu.place({ x: W / 2, y: H / 2 + 20 })
+  pauseMenu.place({ x: W / 2, y: H / 2 - 40 })
+  settingsScreen.place({ x: W / 2, y: Math.max(190, H / 2 - 210) })
+}
+layout()
+fit.onResize(layout)
 const inside = (p, r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h
 
 input.onPause(() => {
@@ -124,7 +141,8 @@ function startRound() {
 /** A dot on the TV, and a secret only this player's phone shows. */
 function deal(p) {
   const slot = party.slot(p.id)
-  state.dots[p.id] = { x: W / 2 + (slot - (party.players.length - 1) / 2) * 110, y: H / 2 + 40 }
+  // In the room's units (MIN_W × MIN_H); drawPlay() puts the room in the middle of the TV.
+  state.dots[p.id] = { x: MIN_W / 2 + (slot - (party.players.length - 1) / 2) * 110, y: MIN_H / 2 + 40 }
   party.view(p.id).secret = SECRETS[Math.floor(Math.random() * SECRETS.length)]
   delete party.view(p.id).picked
 }
@@ -171,14 +189,14 @@ function update(dt) {
 
 /** One frame of the game. Inputs look the same from a phone's pad and a local controller. */
 function playUpdate(dt) {
-  if (input.pointer.pressed && inside(input.pointer, PAUSE_BUTTON)) input.requestMenu()
+  if (input.pointer.pressed && inside(input.pointer, pauseButton())) input.requestMenu()
   if (input.pressed('menu')) return pause()
   for (const p of party.players) {
     const dot = state.dots[p.id]
     if (!dot) continue
     const i = party.inputs[p.id] ?? {}
-    dot.x = clamp(dot.x + (i.x ?? 0) * TUNING.speed * dt, TUNING.radius, W - TUNING.radius)
-    dot.y = clamp(dot.y + (i.y ?? 0) * TUNING.speed * dt, 160, H - TUNING.radius)
+    dot.x = clamp(dot.x + (i.x ?? 0) * TUNING.speed * dt, TUNING.radius, MIN_W - TUNING.radius)
+    dot.y = clamp(dot.y + (i.y ?? 0) * TUNING.speed * dt, 160, MIN_H - TUNING.radius)
     if (party.pressed(p.id, 'a')) {
       dot.pop = 1
       audio.tone({ freq: 880, dur: 0.05 })
@@ -235,6 +253,9 @@ function drawPlay() {
   ctx.fillStyle = '#9aa3b5'
   ctx.fillText(CHOICES.map((c, i) => `${c} ${counts[i]}`).join('     '), W / 2, 130)
 
+  const f = field()
+  ctx.save()
+  ctx.translate(f.x, f.y)
   for (const p of party.players) {
     const dot = state.dots[p.id]
     if (!dot) continue
@@ -249,14 +270,17 @@ function drawPlay() {
     ctx.globalAlpha = 1
   }
 
+  ctx.restore()
+
   drawJoinBadge(ctx, party, 32, H - 90)
+  const b = pauseButton()
   ctx.fillStyle = 'rgba(255,255,255,0.12)'
   ctx.beginPath()
-  ctx.roundRect(PAUSE_BUTTON.x, PAUSE_BUTTON.y, PAUSE_BUTTON.w, PAUSE_BUTTON.h, 12)
+  ctx.roundRect(b.x, b.y, b.w, b.h, 12)
   ctx.fill()
   ctx.fillStyle = '#eef0f5'
-  ctx.fillRect(PAUSE_BUTTON.x + 18, PAUSE_BUTTON.y + 16, 7, 24)
-  ctx.fillRect(PAUSE_BUTTON.x + 31, PAUSE_BUTTON.y + 16, 7, 24)
+  ctx.fillRect(b.x + 18, b.y + 16, 7, 24)
+  ctx.fillRect(b.x + 31, b.y + 16, 7, 24)
   drawPrompts(ctx, input, [['menu', 'Pause']], { size: 22 * settings.data.textScale })
 }
 

@@ -26,8 +26,8 @@ The craft skills (`game-feel`, `game-ui`, `game-audio`, …) are written for any
 | the game's save data | `createSave(id, 1, defaults, migrate?)` from `save.js`: `save.data`, `save.save()` after every change that matters, on pause and in `input.onPause` |
 | the game's audio layer, its buses | `createAudio({ settings })` from `audio.js`: `audio.tone()`, `audio.noise()`, `audio.load()` + `audio.play()`, buses `master`, `music`, `sfx` |
 | on-screen touch controls | `createTouchControls(input, { stick, buttons, labels })` from `touch.js`: `touch.update()` right after `input.update()`, `touch.draw(ctx)` last during play |
-| the logical resolution, the scaling layer | 1280×800 (or the phone spaces 720×1280 and 1280×720) through `fitCanvas(canvas, { w, h, maxDpr: 2, … })` from `fit.js`; `fit.safe` for notches; `input.attach(canvas, w, h)` |
-| the target device | A Steam Deck or Legion Go: a mid-range integrated GPU, a 7–8" screen, 60 fps at 1280×800 and no drops at DPR 2 |
+| the logical resolution, the scaling layer | At least 1280×800 (or the phone spaces 720×1280 and 1280×720) through `fitCanvas(canvas, { w, h, fill: true, maxDpr: 2, … })` from `fit.js`: `fit.w` / `fit.h` follow the screen's shape, `fit.minW` / `fit.minH` are the size asked for, `fit.onResize(cb)` to lay out again (`menu.place()`, `settingsScreen.place()`); `fit.safe` for notches; `input.attach(canvas, w, h)` (see the `screen-shapes` skill) |
+| the target device | A Steam Deck or Legion Go: a mid-range integrated GPU, a 7–8" screen, 60 fps at 1280×800 and no drops at DPR 2; also a TV across the room (16:9, a docked handheld or a PC) and a tablet (4:3) |
 | a debug hook | `window.__game = { state, TUNING }` (the check needs it), with helpers of your own such as `window.__game.jumpTo('boss')`; `?debug` and `?seed=` in the URL |
 | the project's dev server | `pushplay dev` (`pushplay dev <id>` in a workshop), at `http://localhost:5173/` |
 | the project's checks | `pushplay check` (`pushplay check <id>`): fix everything it reports, then look at the images whose paths it prints |

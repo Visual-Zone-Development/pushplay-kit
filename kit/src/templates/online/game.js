@@ -14,15 +14,23 @@ import { createNet } from './net.js'
 import { createTouchControls } from './touch.js'
 
 const ID = '{{ID}}'
-// The drawing space: 1280×800 (a Deck's screen), or a phone's 720×1280 / 1280×720 for a phone game.
-const W = {{W}}
-const H = {{H}}
+// The drawing space is at least 1280×800 (a Deck's screen), or a phone's 720×1280 / 1280×720 for a
+// phone game. fill makes it grow to the screen's shape, so a TV, a tablet or a tall phone has no
+// bars: W and H follow the screen (layout() runs on every resize). The world is MIN_W × MIN_H for
+// everyone, whatever their screen: the host plays it in those units and each player draws it in
+// the middle of their own screen (field()), with the HUD on the real edges.
+const MIN_W = {{W}}
+const MIN_H = {{H}}
 /** A phone game: thumbs on glass, a notch and a home bar (fit.safe), text that reads at arm's length. */
 const PHONE = {{PHONE}}
 const canvas = document.getElementById('game')
-const fit = fitCanvas(canvas, { w: W, h: H, letterbox: '#0d0f14'{{ORIENTATION}} })
+const fit = fitCanvas(canvas, { w: MIN_W, h: MIN_H, letterbox: '#0d0f14', fill: true{{ORIENTATION}} })
 const ctx = fit.ctx
-input.attach(canvas, W, H)
+input.attach(canvas, MIN_W, MIN_H)
+let W = fit.w
+let H = fit.h
+/** Where the MIN_W × MIN_H world sits on this screen. */
+const field = () => ({ x: (W - MIN_W) / 2, y: (H - MIN_H) / 2, w: MIN_W, h: MIN_H })
 
 const settings = createSettings(ID) // <id>-settings-v1: volumes, reduced shake, text size
 const audio = createAudio({ settings })
@@ -34,7 +42,7 @@ const TUNING = { speed: 420, radius: 24 }
 /** Text sizes: phone text stays at 32px or more (the check's phone pass measures every fillText). */
 const UI = PHONE ? 1.35 : 1
 const PROMPT_SIZE = PHONE ? 44 : 24
-const MENU_WIDTH = Math.min(PHONE ? 560 : 420, W - 120)
+const MENU_WIDTH = Math.min(PHONE ? 560 : 420, MIN_W - 120)
 const COLORS = ['#ffb547', '#5ad1ff', '#ff6b8a', '#7dff8a', '#c18cff', '#ffe066', '#ff9f43', '#9aa3b5']
 
 const net = createNet({ minPlayers: {{MIN_PLAYERS}}, maxPlayers: {{MAX_PLAYERS}} })
@@ -67,7 +75,18 @@ const pauseMenu = createMenu(
   ],
   { ...menuOptions, y: H / 2 - 40 }
 )
-const settingsScreen = createSettingsScreen({ settings, audio, x: W / 2, y: PHONE ? Math.max(190, fit.safe.top + 160) : 190, width: Math.min(680, W - 80) })
+const settingsScreen = createSettingsScreen({ settings, audio, x: W / 2, y: 190, width: Math.min(680, MIN_W - 80) })
+
+/** Centre the menus on the screen's current shape. */
+function layout() {
+  W = fit.w
+  H = fit.h
+  titleMenu.place({ x: W / 2, y: H / 2 + 20 })
+  pauseMenu.place({ x: W / 2, y: H / 2 - 40 })
+  settingsScreen.place({ x: W / 2, y: PHONE ? Math.max(190, fit.safe.top + 160) : Math.max(190, H / 2 - 210) })
+}
+layout()
+fit.onResize(layout)
 
 // On-screen pause button for mouse and touch players (a controller uses Start, a keyboard Esc).
 // Top-right, inside the safe area (a phone's notch and corners), ≥ 56×56.
@@ -122,10 +141,11 @@ function hostUpdate(dt) {
   s.players ??= {}
   for (const id of net.players) {
     const slot = net.slot(id)
-    const p = (s.players[id] ??= { x: W / 2 + (slot - (net.players.length - 1) / 2) * 120, y: H / 2, slot })
+    // World units (MIN_W × MIN_H), the same for every player whatever their screen.
+    const p = (s.players[id] ??= { x: MIN_W / 2 + (slot - (net.players.length - 1) / 2) * 120, y: MIN_H / 2, slot })
     const i = net.inputs[id] ?? {}
-    p.x = clamp(p.x + (i.x ?? 0) * TUNING.speed * dt, TUNING.radius, W - TUNING.radius)
-    p.y = clamp(p.y + (i.y ?? 0) * TUNING.speed * dt, TUNING.radius, H - TUNING.radius)
+    p.x = clamp(p.x + (i.x ?? 0) * TUNING.speed * dt, TUNING.radius, MIN_W - TUNING.radius)
+    p.y = clamp(p.y + (i.y ?? 0) * TUNING.speed * dt, TUNING.radius, MIN_H - TUNING.radius)
   }
   for (const id of Object.keys(s.players)) if (!net.players.includes(id)) delete s.players[id]
 }
@@ -241,6 +261,10 @@ function draw() {
 /** Everyone draws net.view: the host's world, smoothed between updates. */
 function drawPlay() {
   const safe = fit.safe
+  // The world in the middle of this screen; the HUD below is drawn on the real edges.
+  const f = field()
+  ctx.save()
+  ctx.translate(f.x, f.y)
   for (const [id, p] of Object.entries(net.view.players ?? {})) {
     ctx.globalAlpha = net.away.includes(id) ? 0.4 : 1 // a player whose connection dropped, until they're back
     ctx.fillStyle = COLORS[p.slot % COLORS.length]
@@ -255,6 +279,7 @@ function drawPlay() {
     }
     ctx.globalAlpha = 1
   }
+  ctx.restore()
   if (state.screen === 'playing') {
     // HUD inside the safe area: a phone's notch or rounded corners never cover it.
     ctx.fillStyle = '#eef0f5'

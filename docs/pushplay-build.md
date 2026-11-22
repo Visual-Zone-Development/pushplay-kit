@@ -416,7 +416,7 @@ Each folder holds the program and every file it needs beside it. With no web bui
 |---|---|
 | **Every game** | The manifest is valid; `inputs` is there; art files that are named exist; every `entry` exists. A missing `description` or `tags`, and art that is still the starter's placeholder, are ⚠ notes: the game still passes. |
 | **A web build** (your own engine, or an engine's export) | Must not crash, must not request the internet, must not open `alert` / `confirm` dialogs, must have no missing files, and must show a picture within 30 seconds (a loading screen counts). Pausing and menus are only reported (⚠), never failed. Nothing inside an exported folder is scanned. An `F10` binding in your own JavaScript is only pointed out. |
-| **A JavaScript game on the runtime files** | All of the above within 3 seconds, plus every play pass: a controller, keyboard only (Enter starts, Esc pauses), mouse only, touch, a 16:9 window at 2× pixels, and for a `phone` game a touch-only pass at phone size. See [The runtime files](#the-runtime-files-optional-javascript-only). |
+| **A JavaScript game on the runtime files** | All of the above within 3 seconds, plus every play pass: a controller, keyboard only (Enter starts, Esc pauses), mouse only, touch, a 16:9 window at 2× pixels, and for a `phone` game a touch-only pass at phone size. The 16:9 pass also notes (⚠) a game that shows bars there. See [The runtime files](#the-runtime-files-optional-javascript-only). |
 | **A native build** | The entry exists in its folder and is a real program for that platform. It is not played. |
 | **No web build** | `art.cover` and `art.hero` are required: there is no screenshot to make them from. |
 
@@ -491,6 +491,8 @@ if (window.pushplay?.quit) pauseMenu.add('Quit to library', () => window.pushpla
 - A native game needs its own quit, reachable with a controller. On Linux the launcher also closes a native game when Start+Select is held for 3 seconds; on Windows and Mac it does not.
 
 **Controls.** The game is played on a handheld with a controller, on the couch. Every screen must work with a controller alone, and text must be readable on a 7–8" 1280×800 screen. A controller has no hover, scroll wheel or typed text, so nothing may depend on them; anything aimed or dragged with a pointer also needs a stick-driven way to do it.
+
+**Screens.** The same build is played on a handheld (16:10), on a TV or monitor (16:9, often 4K, a handheld docked or a PC from Big Picture), on an ultrawide, a laptop, a tablet (4:3 to 3:2) and, for web builds, a phone. Fill each of them: let the view grow to the screen's shape instead of drawing a fixed frame with black bars around it, put the HUD on the real edges and centre the menus. A bigger or wider screen may show more of the world, never make the game easier or harder: keep spawns, rooms and boards the size they are on the handheld. A game that letterboxes still passes; the check notes the bars it shows on a 16:9 screen. (Godot: stretch aspect `expand`. Unity: a Canvas Scaler that matches height and a camera that keeps its vertical size. A game on the runtime files: `fitCanvas(canvas, { w: 1280, h: 800, fill: true })`, which the starter uses.)
 
 **Where each kind of build plays.**
 
@@ -609,7 +611,7 @@ It writes a working starter with title, pause and settings screens, the runtime 
 |---|---|
 | `input.js` | One view of controller, keyboard, mouse and touch; button labels for the device in use; pause requests from the launcher |
 | `menu.js` | Menus that work with every input; adds "Quit to library" to the pause menu inside the launcher |
-| `fit.js` | Scales a fixed 1280×800 space (or a phone space) to any window; safe areas |
+| `fit.js` | Scales a 1280×800 space (or a phone space) to any window; with `fill` the space grows to the screen's shape so there are no bars; safe areas |
 | `audio.js` | Master, music and SFX buses; generated tones and noise; bundled files; unlocks on first input, mutes on pause |
 | `save.js` | Versioned saves in `localStorage` under the game's id |
 | `settings.js` | The Settings screen: volumes, reduced shake and flash, text size, your own options |

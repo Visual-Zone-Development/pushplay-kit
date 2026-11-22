@@ -33,7 +33,7 @@ The check covers these headlessly; cover them for real too. Run the `input-walkt
 | Mouse only | hands off the keyboard | every menu by click; pause button works; gameplay if `inputs` includes `"mouse"` (the check's mouse-only pass backs the Desktop label) |
 | Touch | DevTools device mode (touch emulation) | every menu by tap; pause button; prompts say "Tap"; gameplay if `inputs` includes `"touch"` |
 | Phone (games with `phone`) | DevTools device mode at 390×844 or 844×390, DPR 3, touch only; or `pushplay dev --host` and a real phone on the same Wi-Fi | menus by tap; on-screen controls where needed and hidden with a controller; text ≥ 32px; nothing under the notch or home bar; `visibilitychange` pauses and saves |
-| Scaling | resize the window to 1920×1080, then DevTools device mode at DPR 2 | centred, letterboxed in the right colour, crisp text, no blur or clipping |
+| Scaling | resize the window to 1920×1080 (a TV) and 1024×768 (an iPad), then DevTools device mode at DPR 2; the `screen-shapes` skill's script does every shape | fills the screen with no bars (`fill: true`), HUD on the real edges, menus centred, crisp text, no blur or clipping; a phone-portrait game draws a designed backdrop beside its play area |
 | `pushplay check` | | passes; the screenshot shows real content; `window.__game.state.screen` exposed |
 | Every screen, every input | the `input-walkthrough` skill | every screen works with each input alone, or the report explains why not |
 

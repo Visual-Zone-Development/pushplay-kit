@@ -777,6 +777,10 @@ async function playCheck(browser, server, out, entry, manifest, { kit = true, hi
       if (placement && (Math.abs(placement.dx) > 2 || Math.abs(placement.dy) > 2)) {
         warnings.push(`at ${viewport.width}×${viewport.height} the canvas (${Math.round(placement.w)}×${Math.round(placement.h)}) isn't centred (off by ${Math.round(placement.dx)},${Math.round(placement.dy)}px). ${hints ? 'fitCanvas from fit.js letterboxes and centres it' : 'Scale the game to fill the window and centre it'}`)
       }
+      // A TV, a 16:9 monitor and a docked handheld are this shape: bars there are the first thing a player sees.
+      else if (placement && !manifest.phone && (placement.w < viewport.width - 4 || placement.h < viewport.height - 4)) {
+        warnings.push(`on a 16:9 screen (a TV, a monitor, a docked handheld) the game has bars at the sides: it draws ${Math.round(placement.w)}×${Math.round(placement.h)} of a ${viewport.width}×${viewport.height} window. ${hints ? 'fitCanvas(canvas, { w: 1280, h: 800, fill: true }) grows the space to the screen\'s shape; lay out from fit.w / fit.h and keep the game inside fit.minW × fit.minH' : "Let the game's view grow to the screen's shape instead of letterboxing (Godot: stretch aspect expand; Unity: a Canvas Scaler that matches height and a camera that widens)"}`)
+      }
     } finally {
       await context.close()
     }

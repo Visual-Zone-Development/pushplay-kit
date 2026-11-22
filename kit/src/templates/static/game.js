@@ -11,15 +11,22 @@ import { drawPrompts } from './prompts.js'
 import { createTouchControls } from './touch.js'
 
 const ID = '{{ID}}'
-// The drawing space: 1280×800 (a Deck's screen), or a phone's 720×1280 / 1280×720 for a phone game.
-const W = {{W}}
-const H = {{H}}
+// The drawing space is at least 1280×800 (a Deck's screen), or a phone's 720×1280 / 1280×720 for a
+// phone game. fill makes it grow to the screen's shape, so a TV, a tablet or a tall phone has no
+// bars: W and H follow the screen (layout() runs on every resize), and what decides the game stays
+// inside the MIN_W × MIN_H in the middle (field()), so a bigger screen never makes it easier.
+const MIN_W = {{W}}
+const MIN_H = {{H}}
 /** A phone game: thumbs on glass, a notch and a home bar (fit.safe), text that reads at arm's length. */
 const PHONE = {{PHONE}}
 const canvas = document.getElementById('game')
-const fit = fitCanvas(canvas, { w: W, h: H, letterbox: '#0d0f14'{{ORIENTATION}} })
+const fit = fitCanvas(canvas, { w: MIN_W, h: MIN_H, letterbox: '#0d0f14', fill: true{{ORIENTATION}} })
 const ctx = fit.ctx
-input.attach(canvas, W, H)
+input.attach(canvas, MIN_W, MIN_H)
+let W = fit.w
+let H = fit.h
+/** The MIN_W × MIN_H area in the middle of the screen, where orbs appear. */
+const field = () => ({ x: (W - MIN_W) / 2, y: (H - MIN_H) / 2, w: MIN_W, h: MIN_H })
 
 const settings = createSettings(ID) // <id>-settings-v1: volumes, reduced shake, text size
 const audio = createAudio({ settings })
@@ -32,7 +39,7 @@ const TUNING = { speed: 460, radius: 24, roundSeconds: 30, orbRadius: 18 }
 /** Text sizes: phone text stays at 32px or more (the check's phone pass measures every fillText). */
 const UI = PHONE ? 1.35 : 1
 const PROMPT_SIZE = PHONE ? 44 : 24
-const MENU_WIDTH = Math.min(PHONE ? 560 : 420, W - 120)
+const MENU_WIDTH = Math.min(PHONE ? 560 : 420, MIN_W - 120)
 
 const state = {
   screen: 'title', // title | playing | paused | settings | gameover
@@ -72,7 +79,25 @@ const overMenu = createMenu(
   ],
   { ...menuOptions, y: H / 2 + 40 }
 )
-const settingsScreen = createSettingsScreen({ settings, audio, x: W / 2, y: PHONE ? Math.max(190, fit.safe.top + 160) : 190, width: Math.min(680, W - 80) })
+const settingsScreen = createSettingsScreen({ settings, audio, x: W / 2, y: 190, width: Math.min(680, MIN_W - 80) })
+
+/** Centre the menus on the screen's current shape, and keep the player and orb where they were in the middle. */
+function layout() {
+  const before = field()
+  W = fit.w
+  H = fit.h
+  const after = field()
+  for (const p of [state.player, state.orb]) {
+    p.x += after.x - before.x
+    p.y += after.y - before.y
+  }
+  titleMenu.place({ x: W / 2, y: H / 2 + 20 })
+  pauseMenu.place({ x: W / 2, y: H / 2 - 60 })
+  overMenu.place({ x: W / 2, y: H / 2 + 40 })
+  settingsScreen.place({ x: W / 2, y: PHONE ? Math.max(190, fit.safe.top + 160) : Math.max(190, H / 2 - 210) })
+}
+layout()
+fit.onResize(layout)
 
 // On-screen pause button for mouse and touch players (a controller uses Start, a keyboard Esc).
 // Top-right, inside the safe area (a phone's notch and corners), ≥ 56×56.
@@ -99,9 +124,15 @@ function openSettings(from) {
   state.from = from
   state.screen = 'settings'
 }
+/** A new orb inside the middle area (and the phone's safe area), whatever the screen's shape. */
 function placeOrb() {
   const s = fit.safe
-  state.orb = { x: s.left + 80 + Math.random() * (W - s.left - s.right - 160), y: s.top + 120 + Math.random() * (H - s.top - s.bottom - 240) }
+  const f = field()
+  const x0 = Math.max(f.x, s.left) + 80
+  const x1 = Math.min(f.x + f.w, W - s.right) - 80
+  const y0 = Math.max(f.y, s.top) + 120
+  const y1 = Math.min(f.y + f.h, H - s.bottom) - 120
+  state.orb = { x: x0 + Math.random() * (x1 - x0), y: y0 + Math.random() * (y1 - y0) }
 }
 function endRound() {
   state.screen = 'gameover'

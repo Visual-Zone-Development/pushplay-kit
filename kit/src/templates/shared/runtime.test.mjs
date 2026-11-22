@@ -289,6 +289,18 @@ describe('menu', async () => {
     expect(menu.display(menu.items[2])).toBe('Large')
   })
 
+  it('moves with place() so it stays centred on a screen that changes shape, Quit to library included', () => {
+    globalThis[brand.slug] = { quit: () => {} }
+    const menu = createMenu([{ id: 'play', label: 'Play' }, { id: 'settings', label: 'Settings' }], { x: 640, y: 420 })
+    delete globalThis[brand.slug]
+    const top = menu.rect(0)
+    // A 1280×800 space grown to 1422×800 on a 16:9 TV: same rows, centred on the new middle.
+    menu.place({ x: 711, y: 420 })
+    expect(menu.rect(0)).toEqual({ ...top, x: top.x + 71 })
+    menu.place({ y: 460 })
+    expect(menu.rect(0).y).toBe(top.y + 40)
+  })
+
   it('tapping the left or right half of a value row changes it; tapping an action chooses it', () => {
     const menu = createMenu([
       { id: 'vol', label: 'Volume', type: 'range', value: 0.5, min: 0, max: 1, step: 0.1 },
