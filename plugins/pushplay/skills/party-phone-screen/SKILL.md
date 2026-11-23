@@ -5,7 +5,7 @@ description: Design and build the phone side of a party game — controller.html
 
 # Party phone screen
 
-Follow the `pushplay-rules` skill (*Party games*, in [online-and-party.md](../pushplay-rules/references/online-and-party.md)). `pushplay` is the command the `pushplay-rules` skill gives you. **Read [party.md](../pushplay-runtime/references/party.md) first**: it has the full `party` (TV) and `controller` (phone) APIs and recipes. Never edit `party.js`, `party-lobby.js`, `qr.js`, `controller.js` or `net.js`; `controller.html` and `game.js` are yours.
+Follow the `pushplay-rules` skill (*Party games*, in [online-and-party.md](../pushplay-rules/references/online-and-party.md)). `pushplay` is the command the `pushplay-rules` skill gives you. **Read [party.md](../pushplay-runtime/references/party.md) first**: it has the full `party` (TV) and `controller` (phone) APIs and recipes. Never edit `party.js`, `party-lobby.js`, `qr.js`, `controller.js`, `phone-menus.js` or `net.js`; `controller.html` and `game.js` are yours.
 
 ## 1. Map every phase to one phone screen
 For each phase of the game (lobby, prompt, answering, waiting, voting, reveal, results), write one row:
@@ -27,13 +27,14 @@ Drive the phone with a single `party.public.phase` value and switch the whole sc
 - **Text fields are fine on phones** (never on the TV game); limit length and trim.
 - **Drawing:** a `<canvas>` with pointer events, send compact strokes when done (numbers rounded, coordinates 0–1000); messages over ~12 KB are refused, so split long drawings.
 - **Reconnects:** the phone may reload (screen lock, Wi-Fi); always render from `controller.public` / `controller.mine` on `controller.on('update')`, never from local-only state.
-- Show `party.public.paused` as a "Paused" overlay.
+- Show `party.public.paused` as a "Paused" overlay, and give the phone a Pause button (`{ pause: true }`).
+- **Every TV menu works from the phone.** The pause menu (Settings, Quit to title, Quit to library), settings and results must be usable from any phone, so nobody has to get up and touch the TV or the tablet hosting. `controller.js` shows `party.public.menu` as buttons when the TV publishes it with `phone-menus.js` (party.md, *Screens and flow*); if you draw your own (`controller.menuScreen = false`), keep every item and value.
 
 ## 3. Technical rules for controller.html
 - **One file**: HTML, CSS and JS inline; images as `data:` URLs; no CDNs, no fetch (it runs sandboxed with no network).
 - Re-render on `controller.on('update', render)`; one-off messages from `party.send` on `controller.on('msg')`.
 - Held controls (if any) via `controller.input({...})`; choices via `controller.send(data)`.
-- The kit's lobby screen covers the phone until the game starts; set `controller.lobbyScreen = false` only if you draw your own.
+- The kit's lobby screen covers the phone until the game starts; set `controller.lobbyScreen = false` only if you draw your own. Its menu screen (`controller.menuScreen`) and safety card (`controller.safetyScreen`) work the same way.
 - Keep it light: a small DOM, CSS for layout, no frameworks.
 
 ## 4. Verify

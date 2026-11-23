@@ -545,6 +545,7 @@ pushplay new-game <id> --party [--controller pad|custom|motion] [--players 3-8]
 - **The phone screen is one file,** `controller.html`, with its styles, script and images inline. The TV sends it to each phone, where it runs with no network. Design it for a phone held in one hand: big tap targets, one decision per screen. Text fields are fine there.
 - **The lobby works with every input.** Players join from phones or with A on a plugged-in controller. The host starts with A, Space/Enter, the first phone's Start button, or by tapping or clicking the lobby's on-screen Start button (dimmed until enough players are in); B, Backspace, right-click or the on-screen Back button go back to the title. So a tablet with no controller can host.
 - **Pause freezes the game,** because the TV runs it. Phones that drop (a locked screen, Wi-Fi) keep their seat for two minutes; show those players dimmed and skip their turn.
+- **Every menu works from the phones.** Players are across the room with phones in hand; nobody should have to get up and touch the TV (or the tablet hosting the party) to resume, restart, change a setting or quit. Whatever menu the TV has open (pause with its Settings and Quit to library, settings, results) must also be workable from any phone. On the runtime files, `phone-menus.js` publishes the open menu and `controller.js` shows it on every phone as buttons, with each tap fed into the same menu as if pressed on the TV; the party starter wires it up.
 - **Delay.** A phone's input takes about 50–150 ms to reach the TV: fine for party, quiz, card and brawler games, wrong for precise aiming.
 - Set `"party": true` and the tag `"party"` (the scaffold does). `pushplay dev` lets phones on the same Wi-Fi join by scanning the lobby's QR code. The check brings headless phones that join, play, see only their own private view, and reconnect.
 
@@ -555,6 +556,8 @@ pushplay new-game <id> --party [--controller pad|custom|motion] [--players 3-8]
 | Tilt (a tray, a marble maze), a steering wheel, swings, flicks and shakes, grip-swing-release (bowling, throwing), timing ("hit it now") | Pointing at the screen like a light gun, tracking the phone's position, precise continuous aiming |
 
 Gestures are detected and timed on the phone, so timing games work despite the delay. iOS asks for motion permission only after a tap and only on an https page; the published build is https, while `pushplay dev` over Wi-Fi is plain http, so phones fall back to a touch pad there. Test motion on the published build. Every motion game must also play with a controller, a keyboard, a mouse and touch, and always offer a re-center button.
+
+**Safety first.** People swing, flick and shake their phones in a living room. Before the first motion of a party, a motion game shows a safety screen on the TV and the same card on every phone: give yourself room (keep clear of people, pets, the TV, lamps), hold on tight (a firm grip all the way through; a grippy case or a wrist strap helps; in a grip-and-release game you let go of the button, never the phone), and a smooth, controlled motion reads just as well as a wild one. The game waits until every phone has tapped I'm ready, or until the TV starts it anyway after a couple of seconds, so a phone that dropped out can't block everyone. Show it once per party, and to anyone who joins later before their first motion; play with a controller alone skips it. On the runtime files, `motion.safety` in the motion scaffold's `motion.js` holds the round and asks each phone, `controller.js` shows the card, and `drawSafety()` draws the TV screen.
 
 ## Generated art
 
@@ -618,6 +621,6 @@ It writes a working starter with title, pause and settings screens, the runtime 
 | `prompts.js` | Button-prompt icons for the device in use |
 | `touch.js` | An on-screen stick and buttons for touch play |
 | `net.js`, `lobby.js` | Online games (`--online`): rooms, synced state and a lobby through PushPlay's relay |
-| `party.js`, `party-lobby.js`, `qr.js`, `controller.js`, `net.js` | Party games (`--party`): phones as controllers, the lobby and its QR code |
+| `party.js`, `party-lobby.js`, `qr.js`, `controller.js`, `phone-menus.js`, `net.js` | Party games (`--party`): phones as controllers, the lobby and its QR code, the TV's menus and the safety card on the phones |
 
 Each starts with the header `pushplay runtime vN`. Don't edit them: `pushplay update-runtime` replaces them with the current versions (and adds missing ones, such as `touch.js`), leaving alone any file of the same name that you wrote yourself.

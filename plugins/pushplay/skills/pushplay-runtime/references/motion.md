@@ -60,6 +60,36 @@ the room, or where the TV is. Design around that.
   almost no acceleration for 1.5 s), slowly, and cap it. Learning it from "slow" movement erases a
   steady aim.
 
+## Safety first
+
+People swing, flick and shake their phones in a living room, near TVs, lamps, pets and each
+other. Before the first motion of a party, show a safety screen on the TV and the same card on
+every phone, and hold the round until each phone's player has tapped I'm ready:
+
+- **Give yourself room:** keep clear of people, pets, the TV and lamps.
+- **Hold on tight:** a firm grip all the way through; a grippy case or a wrist strap helps. In a
+  grip-and-release game (bowling, throwing) say it plainly: you let go of the button, never the phone.
+- **Smooth beats wild:** a controlled motion reads just as well as a wild one.
+
+Word the tips for the game's motion ("Before you swing", "Before you bowl"). Once per party; a
+phone that joins later gets the card before its first motion. The TV can start anyway after a
+couple of seconds (A, or a Start now button for touch), so a dropped phone never blocks the room;
+play with a controller alone skips it. The motion scaffold has it ready:
+
+```js
+// a round with phones is starting:
+if (motion.safety.hold(phoneIds)) state.phase = 'safety'   // asks the phones that haven't read it
+// each frame while state.phase === 'safety':
+if (motion.safety.update(dt, { skip: input.pressed('a') })) startRound()
+// draw over the game:
+drawSafety(ctx, { w: W, h: H, players: party.players, safety: motion.safety, startLabel: `${input.label('a')} to start now` })
+// a new party: motion.safety.reset()
+```
+
+`controller.js` shows the card on the phone (`party.view(id).safety`) and sends `{ safe: true }`;
+`createMotion(party, { safety: { title, tips } })` changes its words. Shots or swings that arrive
+while it's up are ignored.
+
 ## Calibration
 
 - **Centre during the countdown.** Each round's countdown says how to hold the phone ("Hold it

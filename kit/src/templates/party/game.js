@@ -2,6 +2,7 @@
 // (controller.html) or with controllers plugged into this machine. Replace startRound(),
 // playUpdate() and drawPlay() with the real game and keep the screens:
 // title (Start a party / Settings), lobby (party-lobby.js), pause (Resume / Settings / End party), settings.
+// The pause and settings menus also show on every phone (phone-menus.js), so nobody has to touch the TV.
 //
 // What each player sees:
 //   party.public       every phone (the prompt, the choices, whose turn it is)
@@ -16,6 +17,7 @@ import { createSettingsScreen } from './settings.js'
 import { drawPrompts } from './prompts.js'
 import { createParty } from './party.js'
 import { createPartyLobby, drawJoinBadge } from './party-lobby.js'
+import { createPhoneMenus } from './phone-menus.js'
 
 const ID = '{{ID}}'
 // A party game is on a TV: fill makes the drawing space grow from 1280×800 to the TV's shape
@@ -43,6 +45,8 @@ const SECRETS = ['banana', 'rocket', 'teapot', 'cactus', 'walrus', 'lantern', 'p
 
 const party = createParty({ input, minPlayers: {{MIN_PLAYERS}}, maxPlayers: {{MAX_PLAYERS}} })
 const lobby = createPartyLobby(party, input, { title: '{{NAME}}' })
+// Every menu the TV shows is on the phones too (as buttons), so nobody has to touch the TV.
+const phoneMenus = createPhoneMenus(party, input)
 
 const state = {
   screen: 'title', // title | lobby | playing | paused | settings
@@ -153,15 +157,17 @@ function update(dt) {
   party.update()
   switch (state.screen) {
     case 'title': {
+      phoneMenus.input(null) // no phones until the lobby
       const choice = titleMenu.update(input, dt)
       if (choice === 'play') openLobby()
       if (choice === 'settings') openSettings('title')
       break
     }
     case 'settings':
-      if (settingsScreen.update(input, dt) === 'back') state.screen = state.from
+      if (settingsScreen.update(phoneMenus.input(state.from === 'paused' ? settingsScreen.menu : null), dt) === 'back') state.screen = state.from
       break
     case 'lobby': {
+      phoneMenus.input(null) // phones have their own lobby screen
       if (input.pressed('menu')) {
         pause()
         break
@@ -175,16 +181,21 @@ function update(dt) {
       break
     }
     case 'paused': {
-      const choice = pauseMenu.update(input, dt)
+      const choice = pauseMenu.update(phoneMenus.input(pauseMenu), dt)
       if (choice === 'resume' || choice === 'back') resume()
       if (choice === 'settings') openSettings('paused')
       if (choice === 'title') endParty()
       break
     }
     case 'playing':
+      phoneMenus.input(null)
       playUpdate(dt)
       break
   }
+  // The menu on the TV, on every phone.
+  if (state.screen === 'paused') phoneMenus.publish(pauseMenu, 'Paused')
+  else if (state.screen === 'settings' && state.from === 'paused') phoneMenus.publish(settingsScreen.menu, 'Settings')
+  else phoneMenus.publish(null)
 }
 
 /** One frame of the game. Inputs look the same from a phone's pad and a local controller. */
