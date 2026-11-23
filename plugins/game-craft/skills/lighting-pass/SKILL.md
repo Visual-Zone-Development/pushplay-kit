@@ -22,7 +22,7 @@ Use the engine's own baker where it has one (Godot's LightmapGI, Unity's Progres
 - **Light only:** bake light without surface colour (in Blender, Cycles Diffuse with direct and indirect on and colour off), and tint surfaces at runtime.
 - **Range:** an 8-bit map clips every highlight. Store `(light / 4) ^ (1 / 2.2)` and decode it in the material, or use the engine's HDR lightmap format.
 - **Axes:** Blender is Z-up, and most game engines are Y-up. Write down the mapping once, in the script.
-- **Freshness:** store a hash of the source geometry next to the bake, and add a test that fails when the geometry changed without a rebake.
+- **Freshness:** store a hash of the source geometry next to the bake, and add a test that fails when the geometry changed without a rebake. Keep one source for the geometry (the plan the game itself reads). If the map must be mirror-symmetric for fair starts, have the plan builder refuse an asymmetric plan rather than bake one.
 
 ## 2. Materials
 
@@ -45,16 +45,17 @@ Software renderers, integrated GPUs and many headless build checks take seconds 
 - **Detect** a software renderer from the graphics adapter's name where the platform reports it.
 - **On either, drop to the low tier:** no post-processing, glow or reflections, and the 3D view at half resolution. Draw the HUD at full resolution on its own layer, so text stays crisp.
 - Put the detection and the frame-time rule in a pure module with tests, and show the tier in a debug overlay so a headless run can confirm it.
+- **Ease before you drop:** a High setting that can't hold a smooth frame rate should first ease to a Low look (no bloom, grain or extra passes) with its own, gentler watch. Only a much slower frame rate sends the game to the light tier. Choosing High again in Settings starts over.
 
 ## 6. Check it
 
 - **Before and after:** screenshots from the same fixed camera positions on each level, from the engine's own frame capture or headless mode, or ask the user for them.
 - **Frame time** on the weakest target and in a software renderer.
-- **The lightmap is fresh** (the freshness test passes), and the scene still reads in the low tier.
+- **The lightmap is fresh** (the freshness test passes), and the scene still reads in the low tier. Judge the look at the low tier too: that's what a software-renderer check and weak machines see, so a look that only works at High isn't finished.
 
 ## In a web game
 
-- **Babylon.js:** prefilter the HDRI to `.env` (Babylon's IBL tool or `EnvironmentTextureTools`) and set `scene.environmentTexture`. Use the `DefaultRenderingPipeline` for ACES, bloom, FXAA and vignette. Feed the lightmap into a custom or node material for the decode.
+- **Babylon.js:** use the `babylonjs-scenes` skill: a prefiltered `.env` as `scene.environmentTexture`, the `DefaultRenderingPipeline` for ACES, bloom, FXAA and vignette, the baked lightmap on a material's `lightmapTexture`, and the tiers in its section 6.
 - **three.js:** prefilter with `PMREMGenerator` and set `scene.environment`, set `renderer.toneMapping = ACESFilmicToneMapping`, and add bloom via `EffectComposer` and `UnrealBloomPass`. Decode the lightmap in `onBeforeCompile`, or store it linear and use `material.lightMap`.
 - **Detect a software renderer** with the `WEBGL_debug_renderer_info` extension, matching `/swiftshader|llvmpipe|software|softpipe/i` in the unmasked renderer string.
 - **Half resolution:** render the 3D canvas at a pixel ratio of 0.5 (Babylon `engine.setHardwareScalingLevel(2)`, three.js `renderer.setPixelRatio(0.5)`), and keep the HUD on a separate 2D canvas at the screen's pixel ratio.

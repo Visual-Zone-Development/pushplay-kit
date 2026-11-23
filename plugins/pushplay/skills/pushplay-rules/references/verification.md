@@ -42,3 +42,7 @@ The check covers these headlessly; cover them for real too. Run the `input-walkt
 The check can't play it the way a player does, so do it yourself: start it with only a controller and reach every screen, pause it, and get back out to the library (a web game: its own menu calling `window.pushplay?.quit()`, or the launcher's menu; a native game: its own quit). List in `inputs` only what you saw work.
 
 When a check fails and the cause isn't obvious, see [debugging.md](../../pushplay-runtime/references/debugging.md) and *When something is broken* in the `improve-game` skill.
+
+## Running the check without a browser download
+
+The check plays the game in a headless Chromium. Where one is already installed (a cloud session often has one), set `KIT_BROWSER` to its executable, for example `KIT_BROWSER=/path/to/chrome pushplay check`. Without a browser the check runs its static checks only and says so. A pass with that warning hasn't played the game.

@@ -37,12 +37,16 @@ Targets: a steady 16.7 ms frame; no hitch during play; no growth in memory over 
 ## 3. Verify and record
 1. Re-measure the same worst case on the same targets; report before → after numbers (1 s average and worst frame).
 2. Play 5 minutes: no stutter creeping in, memory steady.
-3. Gameplay must not change: the same seed gives the same run.
+3. Gameplay must not change: the same seed gives the same run. Pin that with a test: a seeded run must end with the same result before and after, so a speed-up can't change play without someone noticing (a golden result, checked in the test suite).
 4. Add a Changelog line to DESIGN.md with the numbers. Tell the user what to notice on the device ("the boss explosion should no longer hitch").
 5. Run the project's checks and finish the change the way its rules say.
 
 ## In a web game
 **Measuring:** drive the game with a short headless-browser script (Playwright) that presses the inputs and reads the timings, at the game's logical resolution at **device pixel ratio 1** and at **2** (a high-density handheld or phone screen). For the breakdown take a Chrome DevTools performance profile (Playwright's `page.context().tracing` or CDP `Profiler`). In three.js, read draw calls and triangles from `renderer.info.render.calls` and `.triangles`; its budgets are in [3d.md](../threejs-models/references/3d.md).
+
+**Several copies, one browser:** two game copies in one headless browser starve each other and skew the numbers. Give each online copy its own browser when you measure or play-test online.
+
+**Software renderers** (SwiftShader, llvmpipe) run many times slower than a GPU. Use them to compare before and after, never as the budget.
 
 | Cost | Fix |
 |---|---|

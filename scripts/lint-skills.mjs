@@ -33,7 +33,7 @@ const BANNED_IN_GENERAL = [
 // In a craft skill of game-craft: terms that only exist in a browser. They belong under a heading
 // that says the part is about the web (docs/writing-skills.md), so a reader with another engine
 // can stop before it. Stack skills are about one technology and may use them anywhere.
-const STACK_SKILLS = ['canvas2d-assets', 'threejs-models', 'character-models']
+const STACK_SKILLS = ['canvas2d-assets', 'threejs-models', 'character-models', 'babylonjs-scenes']
 const WEB_ONLY = [
   [/\bPlaywright\b/, 'Playwright'],
   [/\blocalStorage\b/, 'localStorage'],

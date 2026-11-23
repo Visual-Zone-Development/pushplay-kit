@@ -100,6 +100,8 @@ throw `t`, speed), freeze the simulation, hide the HUD and slow effects. Then
 capture a **pose sheet**: every gun at hip and zoomed, reload start, mid and
 end, throw cocked and released. Look at each frame, and zoom in on the hands.
 
+Tune hand and gun positions with a live inspector behind the debug flag: a function that places the gun for a given yaw, pitch and distance, and a switch that hides the arms, so a number changes without a reload. Keep the table the third-person model uses too, so the two views can't drift apart.
+
 Where a position can be computed two ways, compare them in code (for
 example, the predicted muzzle against the rendered muzzle node). A check that
 covers one gun of five covers one-fifth of the change.

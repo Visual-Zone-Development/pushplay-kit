@@ -24,6 +24,8 @@ Decide per asset type, and say why in one line:
 - **Make** when it has to match an exact style or is simple shapes; code and
   Blender scripts are good at simple shapes and bad at "realistic".
 
+Generated and processed files come from a script, never by hand. A model, a lightmap or a map is rebuilt by its script, so a re-export or rebake is one command, and a hand edit is lost the next time the pipeline runs. Keep the script and its inputs in the repo, record each paid generation's task id so a re-run never pays twice, and dry-run any spend first.
+
 ## 2. Check the licence per item
 
 Read [sources.md](references/sources.md) for each source's licence, price,
