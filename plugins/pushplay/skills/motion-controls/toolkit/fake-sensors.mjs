@@ -6,7 +6,8 @@
 //   (or public/controller.html in a --vite game). Edit the scenarios at the bottom for your gestures.
 //
 // A scenario is a function of time t (s) returning { a: [x, y, z] m/s² without gravity,
-// w: [alpha, beta, gamma] deg/s }, played at `rate` Hz with the phone held at `o` = [beta, gamma, alpha].
+// w: [alpha, beta, gamma] deg/s }: rotationRate, the turn about the phone's x, y and z in that order,
+// played at `rate` Hz with the phone held at `o` = [beta, gamma, alpha] (orientation angles).
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 
@@ -85,7 +86,7 @@ const report = async (label, start, want) => {
 }
 const flickRight = (t) => ({ a: [t < 0.2 ? 25 * Math.sin((2 * Math.PI * t) / 0.2) : 0, 0, 0], w: [0, 0, 0] })
 const lift = (t) => ({ a: [0, 0, t < 0.2 ? 25 * Math.sin((2 * Math.PI * t) / 0.2) : 0], w: [0, 0, 0] })
-const wristSwing = (t) => ({ a: [0.5, 0, 0], w: [0, t < 0.3 ? 700 * Math.sin((Math.PI * t) / 0.3) : 0, 0] })
+const wristSwing = (t) => ({ a: [0.5, 0, 0], w: [t < 0.3 ? 700 * Math.sin((Math.PI * t) / 0.3) : 0, 0, 0] }) // about the phone's x
 
 await report('flick right, peak timing', await play(flickRight, { cfg: { thr: 12 } }), 'right at ~50 ms')
 await report('flick right, bat timing', await play(flickRight, { cfg: { thr: 12, at: 'flip', cd: 600 } }), 'right at ~100 ms')
