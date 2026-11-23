@@ -70,8 +70,9 @@
        *   - learns the gyro's drift while the phone lies still and takes it off;
        *   - gives tilt as the direction of "up" (no gimbal flip near upright), gyro aiming as
        *     running totals (a lost message loses nothing), a live strength, and stillness;
-       *   - hands every sample to onSample({ t, dt, a, w, up }) in screen axes (a in m/s², w in
-       *     deg/s about x, y, z) for gestures of the game's own.
+       *   - hands every sample to onSample({ t, dt, a, w, up, wd, ud }) for gestures of the game's
+       *     own: a (m/s²), w (deg/s about x, y, z) and up in screen axes, and wd / ud the same turn and
+       *     up in the phone's own axes, which don't jump if the screen rotates mid-gesture.
        * Live tuning comes from cfg() (the TV's controller.public.cfg), so nothing here is fixed.
        */
       function createPhoneMotion({ cfg, onSwing, onChange, onSample = () => {} }) {
@@ -161,11 +162,13 @@
             a = g.map((v, i) => v - grav[i])
           }
           a ??= [0, 0, 0]
-          // Up, from the phone's own (sensor-fused) orientation, in screen axes.
+          // Up, from the phone's own (sensor-fused) orientation: in the phone's own axes (upDev)
+          // and in screen axes (pm.up).
           const rb = (pm.ori.b * Math.PI) / 180
           const rg = (pm.ori.g * Math.PI) / 180
-          const [ux, uy] = toScreen(-Math.sin(rg) * Math.cos(rb), Math.sin(rb))
-          pm.up = [ux, uy, Math.cos(rg) * Math.cos(rb)]
+          const upDev = [-Math.sin(rg) * Math.cos(rb), Math.sin(rb), Math.cos(rg) * Math.cos(rb)]
+          const [ux, uy] = toScreen(upDev[0], upDev[1])
+          pm.up = [ux, uy, upDev[2]]
           const [ax, ay] = toScreen(a[0], a[1])
           const az = a[2]
           const am = Math.hypot(ax, ay, az)
@@ -180,10 +183,17 @@
           const dx = (ax * rx + ay * ry + az * rz) / rl
           const dy = ax * qx + ay * qy + az * qz
 
-          // Gyro: rotation about the phone's z (alpha), x (beta) and y (gamma), in deg/s.
+          // Gyro: turning about the phone's own x, y and z, in deg/s. The browser names these rates
+
+          // alpha, beta, gamma, and (unlike the orientation angles of the same names) that is x, y, z
+
+          // in that order: the spec's getters, Chromium and WebKit all agree. Reading them as z, x, y
+
+          // scrambles every gyro feature (found on a real phone in Motion Lab 1.9.1).
           let wx = 0
           let wy = 0
           let wz = 0
+          let turnDev = [0, 0, 0]
           let wm = 0
           if (w) {
             const raw = Math.hypot(w[0] - bias[0], w[1] - bias[1], w[2] - bias[2])
@@ -195,8 +205,9 @@
             restFor = Math.hypot(...w) < 1.5 && am < 0.15 ? restFor + dt : 0
             if (restFor > 1.5) for (let i = 0; i < 3; i++) bias[i] = clamp(bias[i] + (w[i] - bias[i]) * Math.min(1, dt * 0.3), -1.5, 1.5)
             pm.bias = round(Math.hypot(...bias))
-            wz = w[0] - bias[0]
-            ;[wx, wy] = toScreen(w[1] - bias[1], w[2] - bias[2])
+            turnDev = [w[0] - bias[0], w[1] - bias[1], w[2] - bias[2]]
+            ;[wx, wy] = toScreen(turnDev[0], turnDev[1])
+            wz = turnDev[2]
             wm = Math.hypot(wx, wy, wz)
             gyroAim(wx, wy, wz, dt)
           } else stillFor = am < 0.35 ? stillFor + dt : 0
@@ -204,7 +215,7 @@
           const c = cfg()
           pm.m = Math.max(am, wm * (c.gk ?? 0))
           detect(t, pm.m, ax, ay, az, dx, dy, wm, c)
-          onSample({ t, dt, a: [ax, ay, az], w: [wx, wy, wz], up: pm.up })
+          onSample({ t, dt, a: [ax, ay, az], w: [wx, wy, wz], up: pm.up, wd: turnDev, ud: upDev })
         }
 
         /**

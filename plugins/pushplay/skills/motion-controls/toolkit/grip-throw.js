@@ -20,7 +20,8 @@
 const grip = { down: false, samples: [], live: 0 }
 function onSample(s) {
   if (!grip.down) return
-  grip.samples.push(s)
+  // The phone's own axes: they don't jump if the screen rotates in the middle of a throw.
+  grip.samples.push({ ...s, w: s.wd ?? s.w, up: s.ud ?? s.up })
   if (grip.samples.length > 400) grip.samples.shift()
   grip.live = Math.hypot(...s.w)
 }

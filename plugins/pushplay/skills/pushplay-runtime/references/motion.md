@@ -49,8 +49,12 @@ the room, or where the TV is. Design around that.
 - **Every event, with its own time.** 60–200 a second. Detect gestures on the phone from each
   event, not from one reading per network message (30 a second loses a swing's peak).
 - **Axes.** `acceleration` (m/s², no gravity), `accelerationIncludingGravity`, `rotationRate`
-  (deg/s about the phone's z, x, y as alpha, beta, gamma), orientation (alpha, beta, gamma in
-  degrees). Turn x/y with `screen.orientation.angle` so a landscape phone doesn't rotate swipes.
+  (deg/s about the phone's **x, y, z, in that order**, named alpha, beta, gamma), orientation
+  (alpha, beta, gamma in degrees: about z, x, y, the other way round). The shared names trip
+  people up: reading `rotationRate` as z, x, y scrambles every gyro feature. Turn x/y with
+  `screen.orientation.angle` so a landscape phone doesn't rotate swipes, but read a whole gesture
+  (a swing, a throw) in the phone's own axes (`onSample`'s `wd` and `ud`), which don't jump if the
+  screen rotates halfway through.
 - **Up, not Euler angles.** Raw gamma flips wildly when the phone stands upright. Compute the
   direction of "up" in the phone's frame (`upOf(beta, gamma)`) and measure tilt from that.
 - **Directions in the room.** People hold the phone upright *and* flat like a remote. Read a flick
