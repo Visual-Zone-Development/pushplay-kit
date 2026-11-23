@@ -22,7 +22,7 @@ Use the engine's own baker where it has one (Godot's LightmapGI, Unity's Progres
 - **Light only:** bake light without surface colour (in Blender, Cycles Diffuse with direct and indirect on and colour off), and tint surfaces at runtime.
 - **Range:** an 8-bit map clips every highlight. Store `(light / 4) ^ (1 / 2.2)` and decode it in the material, or use the engine's HDR lightmap format.
 - **Axes:** Blender is Z-up, and most game engines are Y-up. Write down the mapping once, in the script.
-- **Freshness:** store a hash of the source geometry next to the bake, and add a test that fails when the geometry changed without a rebake. Keep one source for the geometry (the plan the game itself reads). If the map must be mirror-symmetric for fair starts, have the plan builder refuse an asymmetric plan rather than bake one.
+- **Freshness:** store a hash of the source geometry next to the bake, and add a test that fails when the geometry changed without a rebake. Keep one source for the geometry (the plan the game itself reads). Only if the game's rules need a mirror-symmetric map (equal starts on opposite sides, say), have the plan builder refuse an asymmetric plan rather than bake one. Asymmetric maps are fine in other games: skip that check, and keep the freshness test.
 
 ## 2. Materials
 
