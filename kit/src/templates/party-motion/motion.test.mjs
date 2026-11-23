@@ -80,3 +80,63 @@ describe('createMotion', () => {
     expect(motion.of('p1').centering).toBe(0)
   })
 })
+
+describe('motion.safety', () => {
+  /** A party of phones with their own views, for the safety gate. */
+  function party(ids) {
+    const handlers = []
+    const views = {}
+    const p = {
+      players: ids.map((id) => ({ id, kind: 'phone', connected: true })),
+      inputs: {},
+      public: {},
+      view: (id) => (views[id] ??= {}),
+      player: (id) => p.players.find((x) => x.id === id),
+      pressed: () => false,
+      send: () => {},
+      on: (e, f) => handlers.push(f)
+    }
+    const motion = createMotion(p)
+    const say = (from, data) => handlers.forEach((h) => h({ from, data }))
+    return { p, views, motion, say }
+  }
+
+  it('holds the round and asks each phone for the card until every one has tapped I’m ready', () => {
+    const { views, motion, say } = party(['a', 'b'])
+    expect(motion.safety.hold(['a', 'b'])).toBe(true)
+    expect(views.a.safety.title).toBe('Before you move')
+    expect(views.a.safety.tips).toHaveLength(3)
+    say('a', { safe: true })
+    expect(views.a.safety).toBeUndefined()
+    expect(motion.safety.update(1 / 60)).toBe(false)
+    expect(motion.safety.waiting).toEqual(['b'])
+    say('b', { safe: true })
+    expect(motion.safety.update(1 / 60)).toBe(true)
+    expect(motion.safety.held).toBe(false)
+  })
+
+  it('asks each phone once per party, and again after reset()', () => {
+    const { motion, say } = party(['a'])
+    motion.safety.hold(['a'])
+    say('a', { safe: true })
+    expect(motion.safety.hold(['a'])).toBe(false)
+    motion.safety.reset()
+    expect(motion.safety.hold(['a'])).toBe(true)
+  })
+
+  it('lets this machine skip, but only after the card has been up long enough to read', () => {
+    const { motion } = party(['a'])
+    motion.safety.hold(['a'])
+    expect(motion.safety.update(1 / 60, { skip: true })).toBe(false)
+    for (let i = 0; i < 160; i++) motion.safety.update(1 / 60)
+    expect(motion.safety.canSkip).toBe(true)
+    expect(motion.safety.update(1 / 60, { skip: true })).toBe(true)
+  })
+
+  it('stops waiting for a phone that drops out', () => {
+    const { p, motion } = party(['a'])
+    motion.safety.hold(['a'])
+    p.players[0].connected = false
+    expect(motion.safety.update(1 / 60)).toBe(true)
+  })
+})

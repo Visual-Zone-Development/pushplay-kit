@@ -23,6 +23,8 @@ Write the motion pipeline into DESIGN.md: each verb, its signal, its settings, i
 - On the TV, every frame after `party.update()`: `motion.update(dt)`, then per player `const m = motion.of(id)` → `m.tilt`, `m.wheel`, `m.swings`, `m.button`/`m.pressed`, `m.still`. Set the phone's prompt and button with `party.public.prompt` / `.btn` (or `party.view(id)` for one phone), and swing detection with `motion.configure({ thr, cd, at, gk })`.
 - Throws: paste [toolkit/grip-throw.js](toolkit/grip-throw.js) into the phone screen (GRIP held, `readThrow()` on release → `{ peak, yaw, twist }`) and map those to speed, line and hook on the TV, with numbers in `TUNING`.
 
+- **Safety first** (motion.md, *Safety first*): before the first motion of a party, `motion.safety.hold(phoneIds)` asks each phone for the safety card (room to move, a firm grip, a controlled motion; `controller.js` shows it), and the round waits on `motion.safety.update(dt, { skip })` with `drawSafety()` over the TV until everyone has tapped I'm ready (or the TV skips it after a couple of seconds). Word the tips for the game's motion; once per party; controller-only play skips it.
+
 ## 3. Calibrate, time and assist
 - **Centre during each round's countdown**: show how to hold the phone, call `motion.center(id)`, which waits for a still phone. Don't reuse a pose saved for a different hold.
 - **Judge timing on `swing.t`** (TV clock, from the phone's clock and the fastest ping), never on arrival. Learn each player's steady timing bias and keep it per player name. Give late messages a moment before calling a miss.
@@ -34,10 +36,12 @@ Write the motion pipeline into DESIGN.md: each verb, its signal, its settings, i
 - Phone: the status chip (Motion on / Tap Allow / Motion paused: tap the screen / Needs https: touch pad), the strength meter with the threshold, a flash and `controller.vibrate()` on every gesture, and what was read ("← swing 72%").
 - TV: show which source is driving ("phone motion", "controller", "touch pad"), and draw the input (a tilt arrow, a steering wheel, a timing meter).
 - Every station also plays with stick, keyboard, mouse and touch (motion.md, *Fallbacks*); the title says "Phones join with the QR code; controllers and keyboards work too".
+- Every TV menu (pause, settings, results) also works from the phones (`phone-menus.js`, see party.md *Screens and flow*): a player holding a phone as a club or a wheel should never have to put it down and walk to the TV.
 
 ## 5. Test
 1. **Fake sensors**: `PW_MODULE="$(pushplay where)/node_modules/playwright" node <skill-dir>/toolkit/fake-sensors.mjs controller.html`. Add a scenario per gesture (a push-pull for a flick, a pendulum for a throw, a held turn for a wheel, a held phone with drift) and check direction, power and timing to within a sample (~5 ms).
 2. **Simulated players**: drive the TV side with a bot that reacts 150–250 ms late and wobbles, to tune assists, windows and medals (a casual bot should reach bronze, a good one gold).
 3. `pushplay check`: headless phones join, play and reconnect (they have no sensors, so the touch pad path runs). Every phone must always have its own `party.view(id)`, even one that joins mid-game.
+3. Test the safety screen: a round with phones holds until each has sent `{ safe: true }`, ignores motion meanwhile, can be skipped on the TV only after `safetyMin`, and doesn't come back for the next round.
 4. **Real phones**, an iPhone and an Android, on the **published https build** (`pushplay dev` over Wi-Fi is http: phones get the touch pad there). Ask the player: does it go where you expect? does it drift? is a quick motion ever missed? how far do you have to tilt or turn? Fix those before adding content.
 5. Bump `version`, update DESIGN.md's motion pipeline and Changelog, and add what you learned to motion.md if it's new.

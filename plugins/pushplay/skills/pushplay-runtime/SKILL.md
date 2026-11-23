@@ -1,6 +1,6 @@
 ---
 name: pushplay-runtime
-description: How to do things with PushPlay's runtime files in a game (input.js, menu.js, fit.js, audio.js, save.js, settings.js, prompts.js, touch.js, net.js, lobby.js, party.js, controller.js) and the PushPlay side of every craft skill. Use whenever a general skill says "the game's menu system", "its save data", "the input-prompt helper", "the audio layer", "the project's checks" or "a debug hook" and you need the actual PushPlay call, and for "how do I read the controller", "add a setting", "save progress", "play a sound", "show button prompts", "use the on-screen stick", "sync state online", "send something to a phone". Also refreshes those files to the kit's current ones, for "update the runtime files", "refresh input.js / menu.js", "get the latest runtime".
+description: How to do things with PushPlay's runtime files in a game (input.js, menu.js, fit.js, audio.js, save.js, settings.js, prompts.js, touch.js, net.js, lobby.js, party.js, controller.js, phone-menus.js) and the PushPlay side of every craft skill. Use whenever a general skill says "the game's menu system", "its save data", "the input-prompt helper", "the audio layer", "the project's checks" or "a debug hook" and you need the actual PushPlay call, and for "how do I read the controller", "add a setting", "save progress", "play a sound", "show button prompts", "use the on-screen stick", "sync state online", "send something to a phone". Also refreshes those files to the kit's current ones, for "update the runtime files", "refresh input.js / menu.js", "get the latest runtime".
 ---
 
 # The PushPlay runtime
@@ -76,7 +76,7 @@ When you use a craft skill in a PushPlay game, also read its page in `references
 **Only when the user asks** ("update the runtime files", "get the latest runtime"). It touches shared files in every game in the repo, so work on a branch and keep it apart from game changes.
 
 1. Start from a clean working tree (`git status`) and run `pushplay update-runtime`. In every game built on the runtime files it:
-   - **replaces** each file that carries the runtime header (`input.js`, `menu.js`, `fit.js`, `audio.js`, `save.js`, `settings.js`, `prompts.js`, `touch.js`, plus `net.js` and `lobby.js` in an online game and `party.js`, `party-lobby.js`, `qr.js`, `controller.js` and `net.js` in a party game);
+   - **replaces** each file that carries the runtime header (`input.js`, `menu.js`, `fit.js`, `audio.js`, `save.js`, `settings.js`, `prompts.js`, `touch.js`, plus `net.js` and `lobby.js` in an online game and `party.js`, `party-lobby.js`, `qr.js`, `controller.js`, `phone-menus.js` and `net.js` in a party game);
    - **adds** a runtime file the game doesn't have yet (`touch.js`, say), which does nothing until the game imports it;
    - leaves games that aren't on the runtime files alone. With none in the repo there is nothing to do: say so.
 2. Read its whole output. Two warnings need action:

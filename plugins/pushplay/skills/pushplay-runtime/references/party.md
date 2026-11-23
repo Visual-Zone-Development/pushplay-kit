@@ -54,6 +54,15 @@ which defines a global `controller`:
 While the TV's lobby is open, a built-in screen shows who's in and gives the first player a
 Start button. Set `controller.lobbyScreen = false` to draw your own.
 
+While the TV has a menu open (`party.public.menu`, from `phone-menus.js`), a built-in screen shows
+it as buttons (‹ › for values) and sends taps back. Set `controller.menuScreen = false` to draw
+your own: render `public.menu` (`{ title, sel, items: [{ id, label, value }] }`, `value` null for
+an action) and send `{ menu: { id } }`, `{ menu: { id, step: ±1 } }` or `{ menu: { back: true } }`.
+
+When the TV asks this phone for the safety card (`party.view(id).safety = { title, tips }`, which
+`motion.safety.hold()` sets in a motion game), a built-in card covers the screen until the player
+taps I'm ready, which sends `{ safe: true }`. Set `controller.safetyScreen = false` to draw your own.
+
 Design for a phone held in one hand on a couch: big tap targets (at least 56 px), one decision
 per screen, text people can read at arm's length, portrait for custom screens. Text fields are
 fine here (unlike in the TV game). Show the player's colour (`controller.me.color`) so they can
@@ -101,9 +110,31 @@ tap on them works: Start stays dimmed until `minPlayers` are in, Back leaves for
 game (the TV runs it): set `party.public.paused = true` so phones can say so. "End party" in the
 pause menu calls `party.close()`, which tells every phone the game ended.
 
+**Every TV menu works from the phones.** Nobody should have to get up and touch the TV, or the
+tablet hosting, to resume, restart, change a setting or quit. `phone-menus.js` does it for any
+`menu.js` menu (the party starter wires the pause and settings menus):
+
+```js
+const phoneMenus = createPhoneMenus(party, input)
+// each frame, for the menu on screen (its update() gets the phones' taps as presses):
+const choice = pauseMenu.update(phoneMenus.input(pauseMenu), dt)
+// screens with no menu: phoneMenus.input(null)
+// once per frame, what the phones show:
+if (state.screen === 'paused') phoneMenus.publish(pauseMenu, 'Paused')
+else if (state.screen === 'settings' && state.from === 'paused') phoneMenus.publish(settingsScreen.menu, 'Settings')
+else if (state.screen === 'gameover') phoneMenus.publish(overMenu, 'Game over')
+else phoneMenus.publish(null)
+```
+
+Taps go into the same menu, so Quit to library (inside the launcher), `onChange` and settings
+saving behave exactly as on the TV. Any phone can work them, not just whoever is playing. Give
+the phones a Pause button too (`controller.send({ pause: true })`).
+
 ## Testing
 
 - `pushplay dev`: the local relay listens on your Wi-Fi, so scan the lobby's QR code with a
   real phone. Open the join address in a few browser windows (one per player) to test alone.
 - `pushplay check`: headless phones join by code, send input, must each see exactly their
   own `party.view(id)`, and one reloads to check it gets its seat back.
+- Test menus from the phone side: a phone pauses, opens Settings, changes a value, goes Back
+  and resumes, all through `{ menu }` messages, without a key pressed on the TV.

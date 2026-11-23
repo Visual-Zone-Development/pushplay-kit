@@ -204,7 +204,7 @@ if (online) log(`     Online: the host runs the rules in hostUpdate() and writes
 if (phone) log(`     Phone: lay everything out in ${space.w}×${space.h}, inside fit.safe (notch and home bar); text ≥ 32px; touch.js gives the stick and buttons. See ${DOCS_URL}#phones`)
 if (party) {
   log(`     Party: the TV runs everything. party.public goes to every phone, party.view(id) to one phone only.`)
-  log(`     The phone screen is ${at}${vite ? 'public/' : ''}controller.html. Don't edit party.js, party-lobby.js, qr.js, controller.js or net.js.`)
+  log(`     The phone screen is ${at}${vite ? 'public/' : ''}controller.html. Don't edit party.js, party-lobby.js, qr.js, controller.js, phone-menus.js or net.js.`)
   if (controller === 'motion') log(`     Motion: const motion = createMotion(party) from motion.js; motion.update(dt) each frame, then motion.of(id).tilt / .wheel / .swings. See ${DOCS_URL}#party-games`)
 }
 const target = single ? '' : ` ${id}`
