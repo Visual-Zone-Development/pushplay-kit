@@ -62,7 +62,8 @@ The short version; [characters.md](references/characters.md), [rigging.md](refer
 
 1. **Draw the sheet for the generator:** front, side and back, straight-on, the same height, arms away from
    the body, legs apart, **empty hands**. Anything held melts into the hand and cannot be cut out again.
-2. **Generate,** with every view in the slot of the side it shows. Say what it will cost and get a yes before
+2. **Check that the views agree,** item by item, then **generate** with every view in the slot of the side it
+   shows. Say what it will cost and get a yes before
    any paid call (game-assets has the rules and the licences).
 3. **Clean the mesh before any bone:** `clean_mesh.py` turns and scales it, puts the feet on the floor, merges
    doubled vertices, reports holes and loose parts, and decimates to the budget with a crowd copy.
@@ -121,6 +122,7 @@ Rules that never change belong in the project, so they are not repeated in every
 | Black or flickering patches on a prop | Two parts share the same face plane | Move one 2 mm, or make it 2 mm bigger |
 | The session fills up while building one prop | One brief for the whole prop, big renders | One part per session, 768 px renders |
 | A second face on the back of the head | A view was sent in the wrong slot | Each view in the slot of the side it shows |
+| A mangled flap or loose cords where clothing should be | The views disagreed: the item was in one view and not in another | Compare the views item by item before generating; remove the item or redo the sheet |
 | An extra tail or limb | The generator only saw the front | Send the back view too |
 | A prop melted into the hand | The sheet showed the character holding it | Empty hands on the sheet; props on their own sheet |
 | Thin wires, text and logos are missing | Generators drop them | Build those parts in code and attach them |
@@ -133,6 +135,10 @@ Rules that never change belong in the project, so they are not repeated in every
 | Twisted knees in a clip | The clip was written for a rig with a different rest pose | Write clips on the rig they play on |
 | Feet slide | The clip's foot speed does not match the speed the game moves the character | `check_clips.py --speed`; build the walk from the planted foot, as `example_clips.py` does |
 | A foot dips through the floor mid-step | The knee is still bent when the leg is forward | Straighten the knee before the leg passes under the hips |
+| A lifted foot is reported as sliding | It clears the floor by less than a centimetre, usually on short legs | Build the walk from foot positions, as `example_clips.py` does, and give the swing more lift |
+| A leg walks through a skirt or tabard | The cloth no longer follows the legs and nothing else moves it | Swing the cloth bones with the thighs in each clip |
+| The exported file has one bone too many | Some vertices were on no bone, so the exporter invented one | `rig_rules.py` puts them on their nearest bone and prints how many |
+| Blender stops at once with "InitGoogleLogging twice" | A script in the working folder has the name of a standard Python module (`inspect.py`, `random.py`…) | Rename the script |
 | The model is tiny or huge in the engine | The importer changed the scale | Put a 1 m probe cube in the file and measure it after import |
 
 ## Finish
@@ -143,6 +149,7 @@ Rules that never change belong in the project, so they are not repeated in every
 - Run the project's checks and finish the change the way its rules say.
 
 Technique source: this pipeline follows Kensei's "Create 3D Game Models for Free" (15 steps),
-<https://x.com/0xKense1/status/2118717647357395170>, rewritten and with our own scripts. Three things here go
-beyond it and come from testing: limb `reach` when tagging, weight rules that fade in from a part's border, and
-the three-way pose comparison in the self-test.
+<https://x.com/0xKense1/status/2118717647357395170>, rewritten and with our own scripts. These go beyond it and come
+from testing, first on a figure built in Blender and then on a knight generated with Meshy: limb `reach` when
+tagging, weight rules that fade in from a part's border, a walk solved from foot positions, cloth bones that
+follow the thighs, a fix for vertices left on no bone, and the three-way pose comparison.

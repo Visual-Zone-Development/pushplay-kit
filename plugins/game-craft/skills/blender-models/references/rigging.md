@@ -56,6 +56,9 @@ Every vertex is tagged with the body part of the nearest bone. `regions.json` co
 Look at `parts_front.png` and `parts_back.png` before going on. Every stripe of the wrong colour is a tear
 later.
 
+A cut has no faces behind it. While the two parts stay close nobody sees it; when a leg swings far under a
+tabard, a gap can show at the cut. Cut only where cloth lies over something that moves on its own.
+
 ## 3. Bind, then set the weights by rules
 
 ```sh
@@ -82,6 +85,11 @@ voxel-remeshed copy and copies the weights back), then applies `rules.json`:
   nothing leaks across a cut.
 - **At most four bones per vertex** (`max_influences`), then the weights are scaled to add up to 1. Engines
   skin with four. Where five bones met, the cut can leave a small step.
+- **Rigid things get one bone.** A boot, a helmet or a shield should not bend: `{"part": "foot_L", "only":
+  ["LeftFoot"]}` keeps the sole from dipping through the floor when the shin tilts.
+- **No vertex is left on no bone.** Automatic weights miss a few vertices on most generated meshes (67 of
+  10,169 on the test knight). The script puts each on its nearest bone and prints the count. Left alone, an
+  exporter invents an extra bone for them, and the bone count read back after export is one too many.
 - Never smooth weights across two tagged parts afterwards: smoothing leaks the hand bone back into the coat
   and pulls a spike out of it. Smooth only inside one part, around shoulders, elbows and knees.
 
@@ -106,6 +114,19 @@ show the user the pictures and the numbers that are left. `rig_rules.py --no-rul
 to compare against.
 
 What rules cannot fix: a generated mesh has no spare geometry in the armpit, so large shoulder turns stretch
-the upper arm whatever the weights. Keep shoulder motion in clips near the rest pose, or accept it. On the
-self-test's model, the longest stretched edge with the arms straight up is about 6 times its rest length with
-or without rules; what the rules change is that the coat stops following the arms.
+the upper arm whatever the weights. Keep shoulder motion in clips near the rest pose, or accept it.
+
+What to expect, measured on a generated knight with a tabard and a belt with pouches (20,000 triangles):
+
+| Pose | As delivered | Cut apart | Cut apart, with rules |
+|---|---|---|---|
+| Step forward: how far the tabard and belt move | 2.6–2.9 cm | 1.8–2.2 cm | 0.35–0.5 cm |
+| Arms up 90°: longest stretched edge | 7.1× | 5.5× | 5.5× |
+| Step forward: longest stretched edge | 2.5–2.7× | 3.4–5.6× | 2.3–3.4× |
+
+Read it as: the rules stop the cloth following the legs; cutting helps the shoulders; and a cut can raise the
+worst edge in one pose, which the rules then pull most of the way back. The armpit stays the worst place.
+
+Cloth that no longer follows the legs hangs still, and a leg then walks through it. Give the cloth bones their
+own motion in each clip: `example_clips.py` swings `ClothFront` with the leading thigh and `ClothBack` with the
+trailing one.

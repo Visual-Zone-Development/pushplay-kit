@@ -17,6 +17,9 @@ the automatic weights are kept, so the mesh does not tear where two connected pa
 forbidden bones are gone. Parts cut apart by tag_parts.py share no border, so nothing leaks across a
 cut. Rerun this script after any change: it rebuilds the skeleton and the weights from the files.
 
+A vertex that automatic weights left on no bone at all is put on its nearest bone, and the count is
+reported: left alone, an exporter invents an extra bone for such vertices.
+
 Deny bones that have no business on a part (a hand on a coat). Do not deny the bone on the other side
 of a part's own joint (the upper arm on the torso): that joint needs both.
 """
@@ -105,16 +108,19 @@ def border_distance(mesh, parts, limit):
     return distance
 
 
-def apply_rules(mesh, rig, config):
+def apply_rules(mesh, rig, config, bones):
     rules, limit = config.get("rules", []), config.get("max_influences", 4)
     band = config.get("fade", 0.04)
     bone_names = {b.name for b in rig.data.bones}
     groups = {g.index: g for g in mesh.vertex_groups if g.name in bone_names}
     parts = read_parts(mesh)
     depth = border_distance(mesh, parts, band)
-    changed = 0
+    changed, orphans = 0, 0
     for vert in mesh.data.vertices:
-        current = {groups[g.group].name: g.weight for g in vert.groups if g.group in groups}
+        current = {groups[g.group].name: g.weight for g in vert.groups if g.group in groups and g.weight > 0}
+        if not current:  # automatic weights left it on no bone: an exporter would invent a bone for it
+            current = {skeleton.nearest_bone(mesh.matrix_world @ vert.co, bones): 1.0}
+            orphans += 1
         part = parts[vert.index]
         only = next((r["only"] for r in rules if r["part"] == part and "only" in r), [])
         fallback = next((name for name in only if name in bone_names), None)
@@ -127,9 +133,11 @@ def apply_rules(mesh, rig, config):
             elif group.name in current:
                 group.remove([vert.index])
         for name in wanted:
-            if name not in current and name not in {g.name for g in groups.values()}:
-                mesh.vertex_groups.new(name=name).add([vert.index], wanted[name], "REPLACE")
-    return changed
+            if name not in {g.name for g in groups.values()}:
+                group = mesh.vertex_groups.new(name=name)
+                groups[group.index] = group
+                group.add([vert.index], wanted[name], "REPLACE")
+    return changed, orphans
 
 
 def main(argv):
@@ -148,8 +156,9 @@ def main(argv):
     config = common.read_json(argv[2]) if len(argv) > 2 and not argv[2].startswith("--") else {}
     if "--no-rules" in argv:  # the bone limit still applies: engines need it, so compare like with like
         config = {"max_influences": config.get("max_influences", 4)}
+    changed, orphans = apply_rules(mesh, rig, config, bones)
     report = {"bones": len(bones), "bind": how, "vertices": len(mesh.data.vertices), "rules": len(config.get("rules", [])),
-              "vertices_changed": apply_rules(mesh, rig, config)}
+              "vertices_changed": changed, "unweighted_vertices_fixed": orphans}
     common.save(argv[0])
     print("rig:", report)
     return report

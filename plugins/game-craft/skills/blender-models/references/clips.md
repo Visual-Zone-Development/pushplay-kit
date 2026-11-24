@@ -22,12 +22,15 @@ own rest pose, as scripts:
 blender -b --python <skill-dir>/scripts/example_clips.py -- character.blend
 ```
 
-Its walk keeps the planted foot on the floor by construction, without IK: while a foot is down it travels
-straight back at a constant speed; the leg angle is worked out from that; the foot is turned back level; the
-hips drop by exactly what the slanted leg loses in height; and the knee folds early in the swing and is
-straight again before the leg comes forward, because a bent knee under a forward thigh pushes the foot through
-the floor. The script prints the speed the game must move the character at. With IK available in the engine,
-pin the feet there instead.
+Its walk is built from where the feet must be, not from joint angles. A planted foot travels straight back
+along the floor at a constant speed; a lifted foot follows an arc back to the front; the hips ride over the
+planted leg at the height an almost straight leg allows. The thigh and knee angles are then solved from the
+foot's position (two bones in a plane), and the foot is turned back level. Cloth bones swing with the thighs.
+The script prints the speed the game must move the character at.
+
+Build walks this way. A walk written as hand-tuned joint curves passed on a long-legged test figure and failed
+on a short, stocky knight: late in each swing his foot cleared the floor by under a centimetre, and the check
+rightly called it sliding. With IK available in the engine, pin the feet there as well.
 
 ## 2. Check every clip by numbers
 

@@ -7,11 +7,15 @@ Writes two looping actions on a biped with Mixamo bone names, at 30 frames a sec
   walk  1 s: exactly two footsteps, walking on the spot
 Every frame starts from the rest pose and the last frame repeats the first, so the loops close.
 
-The walk keeps its planted foot on the floor without IK, by construction: while a foot is down it
-travels back in a straight line at a constant speed, the leg angle is worked out from that, the foot is
-turned back level, and the hips drop by exactly what the slanted leg loses in height. The script prints
-the speed the game must move the character at for the feet not to slide. Copy the pattern for other
-clips: poses as moves from the rest pose, a limit on every joint, then check_clips.py for the numbers.
+The walk is built from where the feet must be, not from joint angles. A planted foot travels straight
+back along the floor at a constant speed; a lifted foot follows an arc back to the front; the hips ride
+over the planted leg at the height an almost straight leg allows. The thigh and knee angles are then
+solved from the foot's position (two bones in a plane, by the law of cosines) and the foot is turned back
+level. That holds for long legs and for short stocky ones, where a hand-tuned knee curve scuffs the
+floor. Cloth bones named ClothFront and ClothBack swing with the thighs so a skirt or tabard is pushed
+by the leg instead of being walked through. The script prints the speed the game must move the character
+at for the feet not to slide. Copy the pattern: decide where things must be, solve the joints, set a limit
+on every joint, then run check_clips.py for the numbers.
 """
 import math
 import os
@@ -25,7 +29,9 @@ from pose_test import BACK, UP, move, rest
 
 FPS = 30
 ACROSS = (1, 0, 0)        # turning a hanging leg about +x swings it backward
-STRIDE_ANGLE = 24.0       # degrees the leg reaches forward and back
+STRIDE_ANGLE = 22.0       # degrees the planted leg reaches forward and back
+STRAIGHT = 0.995          # how straight the planted leg is: 1 locks the knee
+LIFT = 0.13               # how high the swinging foot rises, as a share of the leg's length
 LIMITS = {"Head": 70, "Spine": 30, "Spine2": 30, "LeftLeg": 150, "RightLeg": 150}  # degrees a joint may turn in one move
 
 
@@ -34,37 +40,57 @@ def clamp(step):
     return {**step, "degrees": max(-limit, min(limit, step["degrees"]))}
 
 
-def leg_length(rig):
-    return (rig.pose.bones["LeftUpLeg"].head - rig.pose.bones["LeftFoot"].head).length
+def leg(rig):
+    """Thigh length, shin length and the hip's height above the ankle, at rest."""
+    hip, knee, ankle = (rig.pose.bones[name].head for name in ("LeftUpLeg", "LeftLeg", "LeftFoot"))
+    return (hip - knee).length, (knee - ankle).length, hip.z - ankle.z
+
+
+def solve_leg(thigh, shin, ahead, down):
+    """Angles that put the ankle `ahead` of and `down` from the hip: (thigh forward, knee bend), in degrees."""
+    reach = min(math.hypot(ahead, down), (thigh + shin) * 0.9995)
+    cosine = lambda value: math.acos(max(-1.0, min(1.0, value)))
+    bend = math.pi - cosine((thigh * thigh + shin * shin - reach * reach) / (2 * thigh * shin))
+    forward = math.atan2(ahead, down) + cosine((thigh * thigh + reach * reach - shin * shin) / (2 * thigh * reach))
+    return math.degrees(forward), math.degrees(bend)
 
 
 def walk_speed(rig):
     """Metres a second the game must move the character for this walk's feet to stay put."""
-    return 4 * leg_length(rig) * math.sin(math.radians(STRIDE_ANGLE))  # two strides of 2 x reach, in 1 s
+    thigh, shin, _ = leg(rig)
+    return 4 * (thigh + shin) * STRAIGHT * math.sin(math.radians(STRIDE_ANGLE))  # two strides of 2 x reach, in 1 s
 
 
 def walk_for(rig):
-    length = leg_length(rig)
+    thigh, shin, rest_height = leg(rig)
+    length = (thigh + shin) * STRAIGHT
     reach = length * math.sin(math.radians(STRIDE_ANGLE))
+    cloth = [name for name in ("ClothFront", "ClothBack") if name in rig.pose.bones]
 
     def walk(t):
-        moves, drop = [], 0.0
-        for side, offset in (("Left", 0.0), ("Right", 0.5)):
-            phase = (t + offset) % 1
-            if phase < 0.5:  # planted: the foot goes from `reach` ahead to `reach` behind at a constant speed
-                ahead, knee = reach * (1 - 4 * phase), 0.0
-                drop = length * (1 - math.cos(math.asin(ahead / length)))
-            else:            # in the air: it comes back to the front, eased. The knee folds early and is straight again
-                             # before the leg is forward: a bent knee under a forward thigh pushes the foot through the floor
+        phases = {"Left": t % 1, "Right": (t + 0.5) % 1}
+        planted_ahead = next(reach * (1 - 4 * phase) for phase in phases.values() if phase < 0.5)
+        hip_height = math.sqrt(length * length - planted_ahead * planted_ahead)  # the hips ride over the planted leg
+        moves, thighs = [], {}
+        for side, phase in phases.items():
+            if phase < 0.5:   # planted: from `reach` ahead to `reach` behind, at a constant speed, on the floor
+                ahead, down = reach * (1 - 4 * phase), hip_height
+            else:             # lifted: back to the front along an arc, eased at both ends
                 swing = (phase - 0.5) * 2
-                ahead, knee = reach * (-1 + 2 * (0.5 - 0.5 * math.cos(swing * math.pi))), math.sin(math.pi * min(1.0, swing / 0.7)) ** 0.5 * 44
-            thigh = math.degrees(math.asin(ahead / length))
-            moves += [{"bone": f"{side}UpLeg", "about": ACROSS, "degrees": -thigh}, {"bone": f"{side}Leg", "about": ACROSS, "degrees": knee},
-                      {"bone": f"{side}Foot", "about": ACROSS, "degrees": thigh - knee},  # turn the foot back level
-                      {"bone": f"{side}Arm", "about": ACROSS, "degrees": -thigh * 0.6}]
-        moves[3]["degrees"], moves[7]["degrees"] = moves[7]["degrees"], moves[3]["degrees"]  # arms swing against the legs
-        moves.append({"bone": "Spine", "about": UP, "degrees": math.sin(t * math.tau) * 4})
-        return moves, -drop
+                ahead = reach * (-1 + 2 * (0.5 - 0.5 * math.cos(swing * math.pi)))
+                down = hip_height - LIFT * length * math.sin(swing * math.pi) ** 0.6
+            forward, bend = solve_leg(thigh, shin, ahead, down)
+            thighs[side] = forward
+            moves += [{"bone": f"{side}UpLeg", "about": ACROSS, "degrees": -forward}, {"bone": f"{side}Leg", "about": ACROSS, "degrees": bend},
+                      {"bone": f"{side}Foot", "about": ACROSS, "degrees": forward - bend}]  # turn the foot back level
+        moves += [{"bone": "LeftArm", "about": ACROSS, "degrees": -thighs["Right"] * 0.6},   # arms swing against the legs
+                  {"bone": "RightArm", "about": ACROSS, "degrees": -thighs["Left"] * 0.6},
+                  {"bone": "Spine", "about": UP, "degrees": math.sin(t * math.tau) * 4}]
+        if "ClothFront" in cloth:  # the leading thigh pushes the front cloth, the trailing one the back
+            moves.append({"bone": "ClothFront", "about": ACROSS, "degrees": -max(0.0, *thighs.values()) * 0.85})
+        if "ClothBack" in cloth:
+            moves.append({"bone": "ClothBack", "about": ACROSS, "degrees": -min(0.0, *thighs.values()) * 0.85})
+        return moves, hip_height - rest_height
 
     return walk
 

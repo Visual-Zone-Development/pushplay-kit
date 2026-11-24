@@ -17,6 +17,13 @@ Ask the user (or an image tool, with their yes) for a turnaround made for a gene
 Image tools often draw the left view as a mirror of the right, so a strap or a weapon jumps sides. Send only
 true views; leave a slot empty before sending a mirrored one.
 
+**Check that the views agree before paying for the model.** Go through the sheet item by item (cape, straps,
+pouches, which hand has the glove) and compare every view. A cape that is in the front view and missing from
+the back view comes out as a mangled flap or as loose cords. Either regenerate the sheet, or remove the item
+from the views that have it: clearing its colour to transparent, then dropping anything left that is thinner
+than two pixels, is enough. Look at the edited views before sending them; a colour test that is too wide also
+eats the leather belt.
+
 ## 2. Generate
 
 Cut the sheet into one file per view, all the same height. A multiview generator takes up to four pictures in
@@ -40,6 +47,11 @@ background characters that will be painted flat in the engine.
 
 Generators drop thin wires, text and logos. Build those in code and attach them.
 
+What to expect back, from one run in November 2026 (a stylised knight on Meshy; prices and sizes change):
+a three-view sheet from the service's own image tool for 6 credits, and a textured multi-image model for 30.
+The model arrived as one mesh of 774,000 triangles in a 26 MB file with a single 2K texture, already facing
+-Y (so `--turn 0`), about 1.9 units tall. Specks left in the views became small cords on the model.
+
 ## 3. Clean the mesh before any bone
 
 ```sh
@@ -60,6 +72,9 @@ blender -b --python <skill-dir>/scripts/clean_mesh.py -- model.glb character.ble
 
 It keeps UVs but does not bake: if the model has a texture, bake its colour (and a normal map) from the
 original onto the decimated mesh as a separate step.
+
+On that knight the script merged 72,825 doubled vertices, found one connected part and nine open edges, and
+took 35 seconds to bring 774,000 triangles down to 20,000 with the texture intact.
 
 Look at the three grid renders it writes. Boots pointing backward and a head tilted off the grid are easier to
 fix now than after rigging.
