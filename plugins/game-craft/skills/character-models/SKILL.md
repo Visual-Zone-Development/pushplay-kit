@@ -27,7 +27,7 @@ You can't download from these sites yourself; guide the user, then they put the 
 | **Blender** (the user's own or a commissioned model) | any style, full control | Export **GLB**: apply transforms, +Y up, one armature, materials named by part (`Skin`, `Hair`, `Cape`), swappable parts as separate meshes named `Slot_Variant`. |
 | **CC0 packs** (Quaternius, Kenney, KayKit) | quick stylised characters with animations | CC0 or similar: free to ship. Restyle with `toon.js`. |
 | **Mixamo** (free with an Adobe account) | animations (walk, run, attack, idle) | Download FBX "without skin", convert to GLB in Blender, or retarget to VRM (see *Animation*). Usable in games under Adobe's terms; don't redistribute the raw files on their own. |
-| **AI image-to-3D** | rough props, background characters | Needs cleanup, retopology and a rig to be usable; check the service's licence. Rarely good enough for a hero yet. |
+| **AI image-to-3D** | characters and creatures from the user's own concept sheet | Usable for a hero after cleanup, part tagging and a rig with weight rules: the **blender-models** skill does those in Blender scripts. Soft in faces and hands; drops thin wires, text and logos. Check the service's licence and get the user's yes on the cost. |
 
 **Budget (a handheld-class integrated GPU):** hero ≤ ~15k triangles, others ≤ ~5k ([assets.md](../game-design/references/assets.md)), textures
 ≤ 1024, ≤ 8 materials, ≤ ~60 bones. VRoid exports are often 30–70k triangles with 2048 textures: re-export

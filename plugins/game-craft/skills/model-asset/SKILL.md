@@ -16,7 +16,7 @@ draw or build the thing, and what "render it" means, depends on where the asset 
 | Drawn in code (shapes, procedural sprites, shaders) | the game's own drawing conventions | a viewer scene or page that draws one asset by id, captured |
 | A sprite or sprite sheet made in an art tool (Aseprite, Krita…) | the art tool; the engine only imports it | export a PNG at ×1 and at a whole-number zoom, plus the frames laid out in a strip |
 | A scene or prefab in the engine's own format (Godot `.tscn`, Unity prefab…) | the engine's editor or its text format | a small viewer scene that instances it alone on a neutral background, captured |
-| A model file (GLB, FBX, `.blend`) | a modelling tool; code does shading, lighting and import settings | the modelling tool's render or the engine viewer scene, from the views below |
+| A model file (GLB, FBX, `.blend`) | a modelling tool; code does shading, lighting and import settings. Built or processed by Blender scripts (props from a parts list, a generated character cleaned and rigged): the **blender-models** skill | the modelling tool's render or the engine viewer scene, from the views below |
 | Vector art, key art (SVG or similar) | edit the file | rasterise it at the sizes it is shown at |
 | Canvas 2D or three.js (web) | the **canvas2d-assets** or **threejs-models** skill; model files in three.js: [3d.md](../threejs-models/references/3d.md) → *Models*, [assets.md](../game-design/references/assets.md) | their gallery and viewer pages, see *In a web game* |
 
@@ -35,6 +35,13 @@ section 0, then go to *Changing one existing asset*. **animate-asset** (motion) 
 
 ## 1. Get the reference (user-provided only)
 
+- **Pick the route by the object** before asking for anything: build what you could measure with a ruler
+  (props, vehicles, buildings) in code or a modelling script; start what you would sculpt (characters,
+  creatures with anatomy or cloth) from an artist's file or an image-to-3D generator; take what a pack already
+  has from the pack (**game-assets**). A sculpted character rebuilt from code comes out as a toy robot.
+- **For anything built to size, ask for a reference you can measure:** flat, straight-on views (side, front,
+  top) at one scale, with no perspective and no shadows. A perspective sheet can only be guessed at, and every
+  guessed number becomes a gap between parts.
 - Ask for screenshots, concept art or a sketch, ideally several angles/poses and one at play size. If there is
   none, describe the target in words and get a yes before building (or, if the user said to go ahead, state the
   description as an assumption and record it in STYLE.md).
@@ -48,7 +55,9 @@ section 0, then go to *Changing one existing asset*. **animate-asset** (motion) 
 2. **Proportions**: in a unit that fits the asset (head-heights for characters, body lengths for creatures and
    vehicles, tiles for buildings), checked against STYLE.md's table.
 3. **Pose / orientation**: how it sits in the game's camera (side-on, top-down, ¾ isometric, 3D).
-4. **Parts list** with materials or colours, mapped to STYLE.md's palette and shared parts.
+4. **Parts list** with materials or colours, mapped to STYLE.md's palette and shared parts. For anything built
+   to size, write the **numbers before any geometry**: each part's position, size and the part it attaches to,
+   and show the list to the user. A wrong number costs one line now and a rebuild later.
 5. **Detail split**: what is shape (geometry, outline) and what is painted/texture (lines, highlights, emblems).
 6. **Gameplay reads**: what it must communicate (team, danger, hitbox size, facing, state) and how.
 
@@ -99,7 +108,10 @@ still be recognisable and say what it is for).
 **Each round:**
 1. Capture the views above.
 2. Write down the **top 5 differences**, biggest first (silhouette > proportions > big parts > colours > detail).
-3. Fix them, re-capture, repeat until what's left is small detail (3–5 rounds is normal).
+3. Fix them, re-capture, repeat until what's left is small detail (3–5 rounds is normal). For one part of a
+   larger asset, stop after three rounds and show the user what is left. Build an asset with many parts one
+   part per session, with small captures: redoing every picture on every fix fills the context before the
+   asset is done.
 4. Show the user before/after (and the reference side by side) with the remaining gaps stated honestly.
 
 Captures go to the scratchpad or a temp folder, never into the repo.

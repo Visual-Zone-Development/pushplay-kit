@@ -79,6 +79,8 @@ Starting lists. Leave parts out when the size or the style cannot show them (see
 - A path has an edge and something on it (stones, ruts, planks). Grass is tufts placed in clumps, with bare
   areas between. Distant layers get a few small shapes on the horizon for depth.
 - Every mark needs a cause. Scattered noise is not detail.
+- Anything that comes in dozens (houses in a street, fence panels, crates) is one generator with parameters and
+  a seed, not dozens of models. Change a rule once and every copy follows.
 
 ## What to drop first
 
@@ -92,6 +94,8 @@ silhouette, the pose, the eyes and the accessory until last. A feature smaller t
 - Fill the object with one colour: does the silhouette still say what it is and what it is doing?
 - Name the primitives. If "an ellipse", "a box" or "a triangle" describes any whole part, shape that part.
 - Count the parts and find the trim and the accent.
+- Measure the joins: every part touches or passes into the part it is attached to. A gap of a few millimetres
+  reads as a floating part at play size. Where the tool can measure it, check it by number.
 - Look at it next to the reference and at play size, as *Render and compare* describes.
 
 ## In a web game
@@ -104,3 +108,8 @@ silhouette, the pose, the eyes and the accessory until last. A feature smaller t
   (tapered limb), `roundedBox` and `lumpy`, and [model3d.js](../../art-styles/toolkit/model3d.js) builds the
   same scene from about 200 parts. The threejs-models toolkit's `sculpt.js` adds plates, horns, shells and
   painted textures, and a rig for crowds.
+
+## In Blender
+
+The **blender-models** skill builds props from a parts list with sizes, checks every join by number, and has a
+worked building generator; it also cleans, rigs and exports characters that start from a generated mesh.
