@@ -65,9 +65,13 @@ whole library:
 - **Palette:** map each texture onto the game's palette (a colour bible),
   for example by re-tinting in Blender, so assets from different sources
   look like one game.
-- **Simple shapes** (houses, crates, level blocks) are often better written
-  as a Blender script than generated: when something's wrong, you fix one
-  line and run it again.
+- **Measured shapes** (houses, crates, level blocks, vehicles) are better
+  written as a Blender script than generated: when something's wrong, you fix
+  one line and run it again. A generator returns almost square footprints
+  and noisy textures for them.
+- **The full pipeline** for both routes (a parts list and an assembly check
+  for props; sheet, cleanup, part tagging, weight rules, pose tests, clips
+  and export for generated characters) is the **blender-models** skill.
 
 ## Textures and HDRIs
 

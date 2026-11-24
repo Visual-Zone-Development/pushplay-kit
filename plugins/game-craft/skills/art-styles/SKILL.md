@@ -94,6 +94,10 @@ work on. Before styling anything, build the subject properly, the way model-asse
 Each sheet's *Characters and props* then says how that style treats those forms: which details it keeps, which
 it drops, and what it exaggerates.
 
+Code suits what could be measured with a ruler and stylised figures made of simple forms, like the toolkit's
+frog. A character with anatomy or folds of cloth starts from an artist's file or a generated mesh instead: see
+**blender-models** and **character-models**.
+
 ## 4. Mixing, moods and new styles
 
 - **Mixing.** One base style, and at most one accent borrowed from another (a comic's speech balloons over a

@@ -18,11 +18,14 @@ Decide per asset type, and say why in one line:
 - **Find** when a good free or paid source exists: animations (Mixamo), sound
   effects (Sonniss, Kenney, freesound), HDRIs and textures (Poly Haven,
   ambientCG), low-poly packs.
-- **Generate** with AI for hero models in a specific style (Meshy, Tripo).
-  It costs credits and has its own licence (§2); get the owner's OK on the
-  amount first.
-- **Make** when it has to match an exact style or is simple shapes; code and
-  Blender scripts are good at simple shapes and bad at "realistic".
+- **Generate** with AI what you would sculpt: characters and creatures
+  (Meshy, Tripo, or a local model on the owner's graphics card). It costs
+  credits and has its own licence (§2); get the owner's OK on the amount
+  first. The mesh then needs cleanup and a rig: the **blender-models** skill.
+- **Make** what you could measure with a ruler (props, vehicles, buildings)
+  and anything that has to match an exact style. Code and Blender scripts
+  are good at measured shapes and bad at organic ones; never send a building
+  to a generator.
 
 Generated and processed files come from a script, never by hand. A model, a lightmap or a map is rebuilt by its script, so a re-export or rebake is one command, and a hand edit is lost the next time the pipeline runs. Keep the script and its inputs in the repo, record each paid generation's task id so a re-run never pays twice, and dry-run any spend first.
 

@@ -63,7 +63,9 @@ If animation and simulation disagree, change the animation (or ask), not the phy
    or a new action (new frames/curve, documented in STYLE.md).
 4. **Change one thing, re-capture the same strip, compare** frame by frame. Keep the before strip for the user.
 5. **Check transitions** (idle → move → act → move) and **check fairness**: wind-ups still match telegraphs, hitboxes
-   still match the visible strike.
+   still match the visible strike. Where the tool can measure, **check by numbers** too: a planted foot does not
+   travel (for a walk on the spot, it moves back at exactly the speed the game moves the character), nothing
+   dips below the floor, and the last frame of a loop equals the first.
 6. **Performance**: animation runs every frame for every instance; no allocations in the per-frame path, cap particle
    effects, and prefer shared curves over per-instance work.
 7. **Update STYLE.md** (timing table, rules) and the DESIGN.md changelog.
