@@ -59,6 +59,15 @@ These stay, because they are this plugin's own conventions and any project can u
 
 When a general skill has a recipe that only makes sense with PushPlay's runtime files, the recipe goes on that skill's page in the PushPlay plugin: `plugins/pushplay/skills/pushplay-runtime/references/craft/<skill>.md`. Every game-craft skill has a page there, even if it only says "nothing beyond AGENTS.md".
 
+## Catalogues of sheets
+
+A skill that is a catalogue (as `art-styles` is, with one style sheet per look) keeps `references/_sheet-template.md` and one file per entry next to it. The lint checks two things for every sheet: it has each `## ` section the template has, and `SKILL.md` links to it (its row in the picker table). Files starting with `_` and `external.md` are not sheets.
+
+- A sheet says what holds in any engine first. Code and browser names go under its last section, `## In a web game`.
+- A sheet is a starting point: it opens by saying the game's own references and `STYLE.md` win, and it gives rules with numbers, not a list of things the reader must do.
+- A sheet names where its techniques came from, with links. Take techniques from other people's skills and write-ups; copy no code or text without checking the licence.
+- `external.md` lists other people's skills as optional further reading. A skill may suggest one to the user; it never installs one unasked.
+
 ## Extra rules for `pushplay`
 
 - **The plugin is optional.** What PushPlay requires of a game is written in `docs/pushplay-build.md`, for people with no agent. A skill can explain more and do the work, but a requirement that exists only in a skill is a bug.

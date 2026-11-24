@@ -46,6 +46,7 @@ The **30-second fun test** decides the order of building: the core verb alone, i
 | How the core verb feels, juice and impact | `game-feel` |
 | HUD, menus, onboarding, results | `game-ui` |
 | Sound effects and music | `game-audio` |
+| A named art style (papercraft, toon, pixel art, comic…) and how things are built in it | `art-styles` |
 | The look of the whole screen, palette, fonts | `art-direction` |
 | Is it balanced, where do runs end | `playtest` |
 | Finding, licensing and crediting assets | `game-assets` |

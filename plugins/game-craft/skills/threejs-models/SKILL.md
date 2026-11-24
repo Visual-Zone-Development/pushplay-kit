@@ -34,6 +34,17 @@ In `toolkit/` next to this file. Copy what the game needs into its `src/` (a bun
 - Hide joints with overlap (spheres at elbows, cuffs, shoulder armour). Thin trims (rims, tubes) get a plain
   material: tube UVs stretch a banded texture.
 - Exaggerate for the game's camera (see the game's STYLE.md).
+- **Never ship a bare primitive.** An untouched `SphereGeometry`, `BoxGeometry` or `CylinderGeometry` reads as
+  a default object. Bodies are lofts, limbs taper, boxes get rounded or tapered, organic forms get lumps, and
+  every object is three or more overlapping parts with thickness, a darker trim and an accent. The rules and
+  recipes are in model-asset's [forms.md](../model-asset/references/forms.md).
+- The art-styles toolkit has more builders and a worked scene without a rig, for heroes, props and scenery:
+  [forms3d.js](../art-styles/toolkit/forms3d.js) (`loftGeo()` with smoothing between sections, `limbGeo()`
+  tapered limbs with rounded ends, `roundedBox()`, `lumpy()` noise displacement) and
+  [model3d.js](../art-styles/toolkit/model3d.js) (a character with layered eyes, padded fingers and a cap; a
+  tree with a flared trunk, branches and foliage lobes; a cottage with a slab roof, trims and framed windows).
+  [styles3d.js](../art-styles/toolkit/styles3d.js) renders that model six ways (low-poly, toon, clay,
+  papercraft, voxel, retro).
 
 ## Rig
 

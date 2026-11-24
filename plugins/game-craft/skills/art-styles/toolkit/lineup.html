@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- Style lineup (art-styles skill): one scene drawn in every style. Not part of a game build.
+     lineup.html                 every style
+     lineup.html?only=clay,pixel  some styles
+     lineup.html?one=toon         one style, full size (for a capture)
+     The 3D styles need three.js: the import map below expects it in node_modules next to this file. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Style lineup</title>
+    <script type="importmap">
+      { "imports": { "three": "./node_modules/three/build/three.module.js" } }
+    </script>
+    <style>
+      html, body { margin: 0; background: #1a1d22; color: #e8e8e8; font: 14px system-ui, sans-serif; }
+      main { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 12px; padding: 12px; }
+      figure { margin: 0; }
+      canvas { display: block; width: 100%; height: auto; }
+      figcaption { padding: 6px 2px; }
+      body.one main { display: block; padding: 0; }
+      body.one figcaption { display: none; }
+      p.note { padding: 0 12px; color: #f0b462; }
+    </style>
+  </head>
+  <body>
+    <main id="grid"></main>
+    <script type="module" src="./lineup.js"></script>
+  </body>
+</html>

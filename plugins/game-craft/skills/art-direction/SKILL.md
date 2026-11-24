@@ -1,6 +1,6 @@
 ---
 name: art-direction
-description: Give a game in any engine a cohesive, polished look across the whole screen, not one asset at a time, through a material vocabulary (paper and ink, painted gouache, neon glass…), value and palette structure, textured backgrounds, UI that looks like part of the world (parchment cards, brush-stroke headers, ink-blot prompts), a typography pairing, lighting and atmosphere, and one finishing pass that ties every layer together. Ships a JavaScript surface toolkit for canvas (texture.js), whose recipes are also described in words for other engines, and an OFL serif font. Use for "make it look like <screenshot>", "it looks flat / generic / like a tech demo", "make it prettier", "art pass", "polish the visuals", "the menus look plain", or the visual-polish milestone of a new game. Pairs with model-asset for individual assets.
+description: Give a game in any engine a cohesive, polished look across the whole screen, not one asset at a time, through a material vocabulary (paper and ink, painted gouache, neon glass…), value and palette structure, textured backgrounds, UI that looks like part of the world (parchment cards, brush-stroke headers, ink-blot prompts), a typography pairing, lighting and atmosphere, and one finishing pass that ties every layer together. Ships a JavaScript surface toolkit for canvas (texture.js), whose recipes are also described in words for other engines, and an OFL serif font. Use for "make it look like <screenshot>", "it looks flat / generic / like a tech demo", "make it prettier", "art pass", "polish the visuals", "the menus look plain", or the visual-polish milestone of a new game. Pairs with model-asset for individual assets and art-styles for a named style such as papercraft, toon or pixel art.
 ---
 
 # Art direction
@@ -36,7 +36,8 @@ Detail comes last; it never rescues a frame that fails these four.
 
 ## 1. Get a reference and break it down
 
-Ask the user for screenshots of the look they want (another game, a trailer frame, concept art). They're
+Ask the user for screenshots of the look they want (another game, a trailer frame, concept art), or agree a named
+style from **art-styles** and use its sheet as the reference. Screenshots are
 for looking at in the conversation only: **never commit them**, and never copy another game's art, logo or
 characters. Take its *principles*. Write a look breakdown:
 
@@ -130,21 +131,16 @@ closest one there for the title.
 
 ## Look recipes
 
-Starting points for any genre (fantasy, sci-fi, modern, abstract); the game's references always win. Record the one you pick in STYLE.md and adapt it. More presets (pixel art, neon, low-poly…)
-are in [art-directions.md](references/art-directions.md).
+Named looks live in the [art-styles](../art-styles/SKILL.md) skill, one style sheet each: what the look reads as,
+its materials, palette rules, light, finish, how characters and props are built in it, and what makes it look
+fake. There are twelve sheets (lit vector, storybook gouache, comic halftone, watercolour, neon, pixel art,
+low-poly, toon, claymation, papercraft, voxel, retro 3D), variants of them (ink wash, cozy hand-drawn, map
+paper, clean modern, vector CRT, felt, toy plastic) and moods such as grim or night that sit on top of any
+style. A style that is not listed gets its own sheet from the template there.
 
-| Look | Materials | Palette idea | Built from |
-|---|---|---|---|
-| **Storybook paper & ink** (fantasy RPG, adventure) | gouache wash, parchment, ink, cloth | teal or sage wash, one red/vermilion hero colour, ochre pattern, ink black | wash + stamped fret motif + paper card + brush stroke + ink blot, a literary serif, grain overlay |
-| **Painted gouache** (cozy, exploration) | thick paint, soft light | warm mid-tones, a saturated complementary accent | wash for sky and ground layers, soft dab-shaded assets, vignette |
-| **Ink wash / sumi-e** (action, samurai, mythic) | rice paper, black ink, one red seal | paper `#efe9dc`, ink, a single red | paper, brush strokes for terrain and slashes, red ink-blot seals for UI |
-| **Cartographer** (strategy, tactics, exploration) | map paper, ink lines, wax seals | parchment, faded blue water, red routes | paper full screen, brush-stroke routes, stamps for hatching or forests, paper-card panels |
-| **Neon / synthwave** (racers, shooters, rhythm) | glass, chrome, light | near-black, two hot complementary neons | city or grid backdrop layers (**environments**), glow drawn twice (wide translucent + thin bright), scanline or grain overlay |
-| **Lit vector** (arcade, space, shooters) | enamel shapes, ink edges, nebula or sky | dark cool backdrop, one saturated hero colour, one glowing accent | three-tone shading from one light, ink edge, baked additive glow, wash-style backdrop, vignette |
-| **Clean modern** (puzzle, sports, casual, UI-heavy) | flat surfaces, soft shadows | one brand colour + neutrals | flat fills, generous spacing, one soft drop shadow, a geometric sans |
-| **Grim / horror** (survival, roguelike, mystery) | stone, rust, fog | desaturated darks, one sickly or blood accent | heavy vignette, fog haze, grain overlay, light pools as the only bright areas |
-| **Pixel art** (RPG, action, tactics, platformers) | pixels on a fixed grid, hue-shifted ramps | per the game's pixel spec | the **pixel-art** skill (characters, animations, tiles, UI) |
-| **Anime toon 3D** (character-led 3D games) | cel-shaded skin and cloth, painted sky | soft sky, coloured shadows, one hero colour | stepped shading with coloured shadows, rim light and outlines, a wash or painted-sky backdrop, the storybook UI above |
+Pick the sheet with the user, write its block into `STYLE.md`, then run this skill's method with the sheet as
+the brief. The game's references always win over a sheet. The surface recipes in section 3 are what the paper,
+paint and ink looks are built from.
 
 ## 4. Render and compare, in rounds
 

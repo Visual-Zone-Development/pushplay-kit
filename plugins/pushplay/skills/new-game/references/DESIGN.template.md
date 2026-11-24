@@ -70,7 +70,7 @@ Keyboard, mouse and touch equivalents come from `input.js` (see the controls tab
 | | | |
 
 ## Art direction
-- **Style:** <preset from art-directions.md, or custom>
+- **Style:** <a sheet from the `art-styles` skill, a variant of one, or the game's own>
 - **Palette:** `#……` background, `#……` hero, `#……` accent, `#……` danger, `#……` text
 - **Font:** <bundled font for art, and in-game>
 - **Rendering:** 2D canvas / three.js (`--vite`)

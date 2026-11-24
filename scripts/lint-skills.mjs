@@ -120,6 +120,31 @@ function checkLinks(file, text, skillsDir, problems, where) {
   }
 }
 
+/**
+ * A skill that keeps a catalogue of sheets (references/_sheet-template.md plus one file per entry, as art-styles
+ * does): every sheet must have each `## ` section of the template and be linked from the skill's SKILL.md.
+ * Files starting with `_` and external.md are not sheets.
+ */
+export function sheetProblems(skillDir, id) {
+  const refs = join(skillDir, 'references')
+  const template = join(refs, '_sheet-template.md')
+  if (!existsSync(template)) return []
+  // headings inside fenced code (the STYLE.md block a sheet shows) are not sections
+  const headings = (text) => [...text.replace(/```[\s\S]*?```/g, '').matchAll(/^## (.+?)\s*$/gm)].map((m) => m[1])
+  const wanted = headings(readFileSync(template, 'utf8'))
+  const skillText = existsSync(join(skillDir, 'SKILL.md')) ? readFileSync(join(skillDir, 'SKILL.md'), 'utf8') : ''
+  const problems = []
+  for (const file of readdirSync(refs).sort()) {
+    if (!file.endsWith('.md') || file.startsWith('_') || file === 'external.md') continue
+    const have = headings(readFileSync(join(refs, file), 'utf8'))
+    for (const heading of wanted) {
+      if (!have.includes(heading)) problems.push(`${id}/references/${file}: sheet has no "## ${heading}" section (the sheet template lists the sections)`)
+    }
+    if (!skillText.includes(`](references/${file})`)) problems.push(`${id}/references/${file}: sheet is not linked from SKILL.md (add it to the table)`)
+  }
+  return problems
+}
+
 export function lint(root) {
   const problems = []
   const seen = new Map()
@@ -141,6 +166,8 @@ export function lint(root) {
         if (!FRONTMATTER_KEYS.includes(key)) problems.push(`${id}: frontmatter key "${key}" is not portable`)
       }
     }
+
+    problems.push(...sheetProblems(skill.dir, id))
 
     for (const file of walk(skill.dir)) {
       // A skill's own tests aren't shipped to game repos and name the layouts they test.

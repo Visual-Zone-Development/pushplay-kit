@@ -71,7 +71,7 @@ List the game's actions by input. Keyboard, mouse and touch equivalents follow t
 | | | |
 
 ## Art direction
-- **Style:** <preset from art-directions.md, or custom>
+- **Style:** <a sheet from the art-styles skill, a variant of one, or the game's own>
 - **Palette:** `#……` background, `#……` hero, `#……` accent, `#……` danger, `#……` text
 - **Font:** <bundled font for art, and in-game>
 - **Rendering:** <2D or 3D, and the engine or library that draws it>

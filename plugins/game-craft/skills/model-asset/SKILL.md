@@ -58,6 +58,21 @@ Build only the big shapes, at the size the game shows them, and render them **at
 reference and next to the assets it will appear with. Fix proportions and readability now; detail never rescues a
 wrong silhouette or an asset that's the wrong size for its hitbox.
 
+**Build forms, not primitives.** A body is not an ellipse, a tree is not a blob on a stick and a house is not a
+box with a triangle on it: a style can only work on the shapes it is given. Block out with shaped parts from the
+start, following [forms.md](references/forms.md):
+
+- **No bare primitive:** taper, flare, round or lump every circle, box, sphere and cylinder.
+- **Three or more overlapping parts** per object, with **thickness** wherever something would be a flat sheet
+  (a roof that overhangs, a brim, a frame).
+- **A darker trim and one accent** on every object.
+- **Characters** get a shaped body, tapered limbs with hands and feet, a pose, eyes in layers (white, iris,
+  pupil, catchlight, lid) and one accessory. **Trees** get a flared trunk, branches and foliage in clusters.
+  **Buildings** get a base, an overhanging roof with rows, trims, framed windows and a framed door with a step.
+
+At small sizes and in coarse styles, drop markings and detail lines first and keep the silhouette, the pose,
+the eyes and the accessory. The game's art style decides how those forms are then drawn: see **art-styles**.
+
 ## 4. Detail
 
 - Exaggerate per STYLE.md: what's small vanishes at play size, so make key features bigger than feels right.
