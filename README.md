@@ -84,17 +84,17 @@ Two plugins of [Agent Skills](https://agentskills.io):
 
 | Plugin | What it is |
 |---|---|
-| **game-craft** | 33 skills of game-making craft: design briefs and full design docs, building in checked pieces, game feel, physics, camera, enemy AI, levels, bosses, progression, story and dialogue, art direction, pixel art, 2D and 3D assets, finding and licensing assets, lighting, first-person viewmodels, environments, audio, UI, touch controls, multiplayer, playtesting, performance, accessibility, localization. It never mentions PushPlay. |
+| **game-craft** | 35 skills of game-making craft: design briefs and full design docs, building in checked pieces, game feel, physics, camera, enemy AI, levels, bosses, progression, story and dialogue, art direction, twelve art styles (papercraft, claymation, toon, voxel, comic, watercolour and more), pixel art, 2D and 3D assets, finding and licensing assets, lighting, first-person viewmodels, environments, audio, UI, touch controls, multiplayer, playtesting, performance, accessibility, localization. It never mentions PushPlay. |
 | **pushplay** | 11 skills for the PushPlay side: the rules every PushPlay game follows, starting a game from one request, setting up an existing game in any engine, the manifest, library art, checking every input, phone and party play. It uses game-craft for the craft. |
 
-The game-craft skills work for a game built with anything (Godot, Unity, Rust, Love2D, plain JavaScript): each leads with what holds in any engine, and keeps browser-only code and tools under an "In a web game" heading. Three are about one technology and say so: `canvas2d-assets`, `threejs-models`, `character-models`.
+The game-craft skills work for a game built with anything (Godot, Unity, Rust, Love2D, plain JavaScript): each leads with what holds in any engine, and keeps browser-only code and tools under an "In a web game" heading. Four are about one technology and say so: `canvas2d-assets`, `threejs-models`, `character-models`, `babylonjs-scenes`.
 
 | | game-craft |
 |---|---|
 | Design | `game-design`, `design-doc`, `prototype-sprint`, `piecewise`, `playtest` |
 | How it plays | `game-feel`, `physics-feel`, `camera`, `enemy-ai`, `fps-viewmodel` |
 | Content | `level-design`, `boss-design`, `progression`, `dialogue` |
-| Art and assets | `art-direction`, `model-asset`, `animate-asset`, `pixel-art`, `environments`, `canvas2d-assets`, `threejs-models`, `character-models`, `game-assets`, `lighting-pass` |
+| Art and assets | `art-direction`, `art-styles`, `model-asset`, `animate-asset`, `pixel-art`, `environments`, `canvas2d-assets`, `threejs-models`, `character-models`, `babylonjs-scenes`, `game-assets`, `lighting-pass` |
 | Sound and interface | `game-audio`, `game-ui`, `touch-controls`, `accessibility-audit`, `localization` |
 | Multiplayer | `local-multiplayer`, `online-netcode` |
 | Shipping | `performance-pass`, `release-notes` |

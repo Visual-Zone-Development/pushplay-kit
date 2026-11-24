@@ -95,7 +95,7 @@ Run `pushplay check` after each milestone and fix every ✗.
 - **Art** (use the `cover-art` skill):
   - `art/cover.svg`: 720×500, big title, bottom 110px clear.
   - `art/hero.svg`: 1920×450, no text, key visual on the right.
-  - Both use DESIGN.md's palette, font and hero object; see art-directions.md.
+  - Both use DESIGN.md's palette, font and hero object; see the style's sheet in the `art-styles` skill.
 - **Check and review:** run `pushplay check`, then **open the three PNGs it lists** (if the screenshot doesn't show real gameplay, see *The library screenshot* in the `cover-art` skill):
   - Does the cover read at thumbnail size?
   - Is the title legible?

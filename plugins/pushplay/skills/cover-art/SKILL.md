@@ -5,7 +5,7 @@ description: Make or improve how the game in this repo looks in the PushPlay lib
 
 # Cover art and the library screenshot
 
-Follow the `pushplay-rules` skill and art-directions.md (in the `art-direction` skill's `references/`). `pushplay` is the command the `pushplay-rules` skill gives you. Read the game's `DESIGN.md` (*Art direction*: palette, font, hero object, cover and hero ideas). If the repo has `model-asset` or `canvas2d-assets` skills, use them to draw the hero object the same way as in game.
+Follow the `pushplay-rules` skill and the game's style sheet (the `art-styles` skill; the style is named in `DESIGN.md` and written out in `STYLE.md`). `pushplay` is the command the `pushplay-rules` skill gives you. Read the game's `DESIGN.md` (*Art direction*: palette, font, hero object, cover and hero ideas). If the repo has `model-asset` or `canvas2d-assets` skills, use them to draw the hero object the same way as in game.
 
 ## 1. The rules (the check enforces some)
 | | Cover `art/cover.svg` | Hero `art/hero.svg` |

@@ -6,6 +6,7 @@ before any change and update it after. Change a rule here first, then bring asse
 one asset quietly drift. Keep only the sections that apply to this game.
 
 ## Look
+- **Art style:** <a sheet from the art-styles skill (lit vector, toon, papercraft…), a variant of one, or the game's own>
 - **Rendering:** <shapes drawn in code / pixel-art sprites / vector art / 3D models / engine scenes / user-supplied files, and the engine>
 - **Reference style:** <e.g. "Celeste-like pixel art", "Warcraft III: chunky, saturated, hand-painted",
   "flat vector, thick outlines">. Reference images are provided by the user in conversation and never

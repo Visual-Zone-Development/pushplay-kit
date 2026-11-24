@@ -22,6 +22,23 @@ a bundled game); if the game already has its own versions, extend those instead 
 | `gallery.html`, `gallery.js` | Asset gallery: `?asset=<id>&scales=1,3`, `&anim=<a>&frames=<n>` (cycle strip), `&facings=<n>` (directional/top-down), `&compare=<id2>,<id3>`, `&hitbox=1`, `&bg=game|light|dark|checker|#hex`, `&t=`, `&team=`, `?list`. Sets `document.title = 'ready'` for model-asset's `scripts/shot.mjs`. Not part of the build: keep it out of what the game ships. |
 | `assets2d.js` | The asset registry the gallery reads, with five worked examples: a vector side-view hero (idle/run/jump/attack), a pixel-art slime (held frames, outline, whole-number scale), a top-down tank (any facing, tread roll, recoil), a coin pickup (squash spin, sparkle) and a UI card (flip, hover). Replace them with the game's assets. |
 
+## Building subjects
+
+Draw shaped parts, not bare `arc()` and `rect()` calls: an ellipse for a body and a rectangle for a house is
+what makes canvas art look cheap. model-asset's [forms.md](../model-asset/references/forms.md) has the rules and
+recipes (shaped bodies, tapered limbs, hands, clustered foliage, roofs with overhang, framed openings). The
+art-styles toolkit has them as code, to copy next to `sprite.js`:
+
+| File | Gives you |
+|---|---|
+| [forms2d.js](../art-styles/toolkit/forms2d.js) | Outline builders that return point lists: `capsule()` (tapered limb), `paw()` (hand or foot with fingers), `unionOutline()` (foliage, clouds), `blob()`, `band()` (straps, trims), `archRect()`, `roundRect()`, `curve()`. Turn an outline into a `Path2D` and pass it to `shape()`. |
+| [scene2d.js](../art-styles/toolkit/scene2d.js) | A worked example: a character, a tree, a cottage and a mailbox as about 150 shapes and detail lines |
+| [styles2d.js](../art-styles/toolkit/styles2d.js) | The same shapes drawn six ways (lit vector, gouache, comic, watercolour, neon, pixel): how a style treats built forms |
+
+Because the builders return points and not drawing calls, one outline can be filled, outlined at two weights,
+wobbled, deformed for a wash or rasterised to pixels. Draw the silhouette line of the whole object first and the
+parts on top, so the outer line is heavier than the inner ones.
+
 ## Asset contract
 
 Every asset is a **pure draw function plus a little data**, so the game, the gallery and its key art can all draw

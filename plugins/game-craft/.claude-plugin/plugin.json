@@ -1,6 +1,6 @@
 {
   "name": "game-craft",
-  "description": "Game-making skills for any game: design briefs and design docs, building in checked pieces, game feel, levels, enemy AI, art direction, pixel art, 3D models, assets and licences, lighting, first-person viewmodels, audio, UI, playtesting and performance.",
+  "description": "Game-making skills for any game: design briefs and design docs, building in checked pieces, game feel, levels, enemy AI, art direction, art styles (papercraft, claymation, toon, voxel and more), pixel art, 3D models, assets and licences, lighting, first-person viewmodels, audio, UI, playtesting and performance.",
   "author": { "name": "Visual Zone Development" },
   "homepage": "https://github.com/Visual-Zone-Development/pushplay-kit",
   "repository": "https://github.com/Visual-Zone-Development/pushplay-kit",

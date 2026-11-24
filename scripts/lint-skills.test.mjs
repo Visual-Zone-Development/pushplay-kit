@@ -114,3 +114,27 @@ test('a craft skill keeps browser-only parts under a heading that names the web,
     'game-craft/playtest/SKILL.md: localStorage outside a web section (put browser-only parts under a heading that names the web)'
   ])
 })
+
+const sheet = (sections) => '# A style\n\n' + sections.map((name) => `## ${name}\n\nText.\n`).join('\n')
+const catalogue = (links, sheets) => ({
+  'plugins/game-craft/skills/art-styles/SKILL.md': skill('art-styles', links.map((f) => `[${f}](references/${f})`).join(' ')),
+  // the fenced block is an example a sheet shows, not a section every sheet must have
+  'plugins/game-craft/skills/art-styles/references/_sheet-template.md': sheet(['Reads as', 'Palette', 'Pitfalls']) + '\n```md\n## Scene look\n```\n',
+  'plugins/game-craft/skills/art-styles/references/external.md': 'Other skills. Not a sheet.',
+  ...Object.fromEntries(Object.entries(sheets).map(([file, sections]) => [`plugins/game-craft/skills/art-styles/references/${file}`, sheet(sections)]))
+})
+
+test('a style sheet that follows the template and is in the picker passes', () => {
+  const root = fixture(catalogue(['toon.md', 'voxel.md'], { 'toon.md': ['Reads as', 'Palette', 'Pitfalls'], 'voxel.md': ['Reads as', 'Palette', 'Pitfalls', 'Extra'] }))
+  assert.deepEqual(lint(root), [])
+})
+
+test('fails when a style sheet is missing from the art-styles picker', () => {
+  const root = fixture(catalogue(['toon.md'], { 'toon.md': ['Reads as', 'Palette', 'Pitfalls'], 'voxel.md': ['Reads as', 'Palette', 'Pitfalls'] }))
+  assert.deepEqual(lint(root), ['game-craft/art-styles/references/voxel.md: sheet is not linked from SKILL.md (add it to the table)'])
+})
+
+test('fails when a style sheet lacks a section from the sheet template', () => {
+  const root = fixture(catalogue(['toon.md'], { 'toon.md': ['Reads as', 'Pitfalls'] }))
+  assert.deepEqual(lint(root), ['game-craft/art-styles/references/toon.md: sheet has no "## Palette" section (the sheet template lists the sections)'])
+})
