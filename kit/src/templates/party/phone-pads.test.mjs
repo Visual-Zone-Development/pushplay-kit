@@ -4,7 +4,7 @@
 // stand-in socket; input.js and party.js are the real ones.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { brand } from '../../config.mjs'
 
 const dir = join(import.meta.dirname, '../../../dist/phone-pads-test')
@@ -117,5 +117,56 @@ describe('connectPhones', () => {
     relay.deliver({ t: 'peer-leave', id: 'p1' })
     input.update(1 / 60)
     expect(input.pads).not.toContain(gone)
+  })
+})
+
+describe('in the launcher', () => {
+  afterEach(() => {
+    delete window[brand.slug]
+    vi.restoreAllMocks()
+  })
+  /** The launcher's game API, as its preload gives it: remote phones connected, and where to send them. */
+  const launcher = (phonesWaiting = 0) => (window[brand.slug] = { phonesWaiting, rooms: [], phoneRoom: (r) => window[brand.slug].rooms.push(r) })
+
+  it('tells the launcher the room when it opens and when it closes, so its remote phones come in', async () => {
+    const api = launcher()
+    const { phones } = await gameWithPhone()
+    expect(api.rooms).toEqual([{ code: 'WXYZ' }])
+    phones.close()
+    expect(api.rooms).toEqual([{ code: 'WXYZ' }, null])
+  })
+
+  it('works the same outside the launcher, telling nobody', async () => {
+    const { phones } = await gameWithPhone()
+    expect(() => phones.close()).not.toThrow()
+  })
+
+  it('opens the room at the start when the launcher has remote phones waiting', async () => {
+    launcher(1)
+    const before = sockets.length
+    const phones = connectPhones(input)
+    await settle()
+    expect(sockets.length).toBe(before + 1)
+    expect(phones.party.phonesWaiting).toBe(1)
+  })
+
+  it('lets new phones in while the card shows and for 30 seconds after, then locks the room', async () => {
+    const { phones, relay } = await gameWithPhone()
+    const now = Date.now()
+    const locks = () => relay.sent.filter((m) => m.t === 'lock' || m.t === 'unlock').map((m) => m.t)
+    input.update(1 / 60)
+    expect(locks()).toEqual([])
+    vi.spyOn(Date, 'now').mockReturnValue(now + 29_000)
+    input.update(1 / 60)
+    expect(locks()).toEqual([])
+    vi.spyOn(Date, 'now').mockReturnValue(now + 31_000)
+    input.update(1 / 60)
+    input.update(1 / 60)
+    expect(locks()).toEqual(['lock'])
+    expect(phones.party.locked).toBe(true)
+    // The card again (another player wants in): open while it shows.
+    phones.drawCard(ctx, 0, 0)
+    input.update(1 / 60)
+    expect(locks()).toEqual(['lock', 'unlock'])
   })
 })

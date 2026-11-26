@@ -38,7 +38,8 @@ export async function startLocalRelay(port = 0, { lan = false } = {}) {
   const wss = new WebSocketServer({ server })
   wss.on('connection', (ws, req) => {
     const phone = new URL(req.url, 'http://relay').searchParams.has('party')
-    const client = relay.connect({ send: (t) => ws.send(t), close: (code, reason) => ws.close(code, reason) }, phone ? { phone } : { game: 'local' })
+    const ip = req.socket.remoteAddress ?? ''
+    const client = relay.connect({ send: (t) => ws.send(t), close: (code, reason) => ws.close(code, reason) }, phone ? { phone, ip } : { game: 'local' })
     ws.on('message', (data) => client.receive(data.toString('utf8')))
     ws.on('close', () => client.disconnect())
   })

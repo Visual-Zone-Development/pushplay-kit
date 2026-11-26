@@ -1,4 +1,4 @@
-// {{SLUG}} runtime v23 — shared runtime file, replaced by update-runtime; don't edit
+// {{SLUG}} runtime v24 — shared runtime file, replaced by update-runtime; don't edit
 // Phones as controllers in any game, single-player included. Show the card (a QR code and a room
 // code); each phone that joins shows one of the shared layouts (controller-layouts.js) and becomes a
 // controller in input.pads, so the game reads it like a pad plugged into this machine: input.x,
@@ -13,11 +13,18 @@
 //   who's connected:                phones.count, phones.players
 //
 // Nothing else changes: input.update(dt) drives it. The room only opens when the card is drawn (or
-// phones.open() is called), so nobody who plays with a controller ever touches the network. Phones
+// phones.open() is called), so nobody who plays with a controller ever touches the network; in the
+// launcher, it also opens at the start when the launcher has remote phones connected, and they come
+// in by themselves. New phones get in only while the card is showing and for 30 seconds after (or
+// after that start): then the room locks, so nobody who learns the code later can join, while phones
+// already in can still come back. Phones
 // reach the game through the relay; a phone that drops (locked screen, Wi-Fi change) keeps its seat
 // for two minutes, its pad reads as disconnected meanwhile, and input.onPause fires when it drops.
 import { createParty } from './party.js'
 import { drawQr, makeQr } from './qr.js'
+
+/** How long the room stays open to new phones after the card was last shown, or after it opened for the launcher's phones. */
+const JOIN_WINDOW_MS = 30_000
 
 const BUTTONS = ['a', 'b', 'x', 'y', 'lb', 'rb', 'lt', 'rt', 'select', 'start', 'up', 'down', 'left', 'right', 'menu']
 
@@ -28,6 +35,9 @@ export function connectPhones(input, { layout = 'classic', labels, hide, theme, 
   const pads = new Map()
   let qr = null
   let qrFor = ''
+  /** New phones may join until then (see the top of this file). */
+  let joinUntil = 0
+  const letIn = () => (joinUntil = Date.now() + JOIN_WINDOW_MS)
 
   function read(id) {
     const pad = party.pad(id)
@@ -53,6 +63,11 @@ export function connectPhones(input, { layout = 'classic', labels, hide, theme, 
   party.on('away', (p) => p.kind === 'phone' && input.padLost())
   input.onUpdate(() => {
     party.update()
+    if (party.status === 'open') {
+      const open = Date.now() < joinUntil
+      if (open && party.locked) party.unlock()
+      else if (!open && !party.locked) party.lock()
+    }
     if (party.players.length !== pads.size) sync()
   })
 
@@ -78,7 +93,10 @@ export function connectPhones(input, { layout = 'classic', labels, hide, theme, 
     },
     /** The input.pads entry of a phone, by player id. */
     padOf: (id) => pads.get(id) ?? null,
-    open: () => party.open(),
+    open() {
+      letIn()
+      party.open()
+    },
     close() {
       party.close()
       sync()
@@ -91,6 +109,7 @@ export function connectPhones(input, { layout = 'classic', labels, hide, theme, 
      * and who's connected. Draws at (x, y), size × 1 is 420×540; opens the room the first time.
      */
     drawCard(ctx, x, y, { size = 1, font = 'system-ui, sans-serif', ink = '#eef0f5', quiet = '#9aa3b5', accent = '#ffb547', panel = 'rgba(13,15,20,0.86)', title = 'Play with your phone' } = {}) {
+      letIn()
       if (party.status === 'idle') party.open()
       const W = 420
       const H = 540
@@ -135,6 +154,8 @@ export function connectPhones(input, { layout = 'classic', labels, hide, theme, 
       ctx.restore()
     }
   }
+  // The launcher's remote phones are waiting: open now, so they're pads the moment the game starts.
+  if (party.phonesWaiting > 0) phones.open()
   if (typeof window !== 'undefined') window.__kitPhones = { phones, input } // the build check reads this
   return phones
 }

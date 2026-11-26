@@ -144,7 +144,11 @@ const phones = connectPhones(input, { layout: 'pad', labels: { a: 'Jump' }, max:
 // nothing per frame: input.update(dt) drives it
 ```
 
-- The room opens the first time the card is drawn (or `phones.open()`), never at start-up.
+- The room opens the first time the card is drawn (or `phones.open()`), never at start-up, except
+  in the launcher when it has remote phones connected (`party.phonesWaiting > 0`): then it opens
+  at once and the launcher sends those phones in (see below).
+- New phones can join while the card is showing and for 30 seconds after (or after that start);
+  then the room locks. Phones already in still come back after a drop. Drawing the card unlocks it.
 - Each phone is a pad in `input.pads` (`pad.virtual` is true), in the merged `input.x` and
   `input.held()` too. A one-player game needs nothing else; a local multiplayer game gets one
   more player per phone.
@@ -154,6 +158,19 @@ const phones = connectPhones(input, { layout: 'pad', labels: { a: 'Jump' }, max:
   `phones.status`, `phones.close()`, `phones.on('join' | 'leave' | 'away' | 'back', fn)`.
 - `pushplay new-game <id> --phones` starts a game with it wired up. An existing game imports
   `./phone-pads.js` and runs `pushplay update-runtime` to get the files.
+
+## Phones that are the launcher's remote
+
+In the launcher, a phone can already be connected as its remote. `party.js` tells the launcher its
+room code when the room opens and `null` when it closes (`window.<slug>.phoneRoom`), and the
+launcher sends its remote phones in: they join with the same name, on the same page, and go back
+to being the remote when the room closes or the game ends. While the launcher's pause menu is open
+they show the remote over the game's controller, to work the menu. Outside the launcher nothing
+happens. A game on the runtime files needs no code for this; `party.phonesWaiting` says how many
+phones were connected when the game started.
+
+What phones send is untrusted: `party.pad(id)` clamps it, but `party.on('msg')` data and
+`party.inputs[id]` are as sent, so check their type and range.
 
 ## Testing
 
