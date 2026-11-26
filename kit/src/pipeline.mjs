@@ -7,7 +7,7 @@ import { chromium } from 'playwright'
 import { ART, ART_FONTS, brand, CHECK_RUN_MS, CMD, CHECK_FIRST_PICTURE_MS, MANIFEST_FILE, NET_MEET_MS, NET_PLAY_MS, NET_WARN_BYTES_PER_SEC, ONLINE_RUNTIME_FILES, PARTY_RUNTIME_FILES, PHONE_MIN_TEXT_PX, RUNTIME_FILES, RUNTIME_HEADER_RE, VIEWPORT, VIEWPORT_DENSE, VIEWPORT_PHONE } from './config.mjs'
 import { startLocalRelay } from './local-relay.mjs'
 import { PLATFORMS, releaseFolder } from './release-files.mjs'
-import { buildMode, display, distDir, GameError, ignored, ignorePatterns, inside, npmSpawn, outDir, quote, readManifest, ROOT, validateManifest, WORK_DIR } from './repo.mjs'
+import { buildMode, display, distDir, GameError, ignored, ignorePatterns, inside, npmSpawn, outDir, quote, readManifest, ROOT, usesPhonePads, validateManifest, WORK_DIR } from './repo.mjs'
 import { serve } from './server.mjs'
 
 /** Generated art lives here inside each build, away from the game's own asset folders. */
@@ -145,13 +145,19 @@ export async function buildGame(game, browser, { pack = true, beforePack } = {})
   }
   const net = webEntry && manifest.online ? netLibrary(game.dir) : null
   if (net) warnings.push(...net.warnings)
-  const relay = webEntry && (net || manifest.party) ? await startLocalRelay() : null
+  const phonePads = Boolean(webEntry && !manifest.party && usesPhonePads(game.dir))
+  const relay = webEntry && (net || manifest.party || phonePads) ? await startLocalRelay() : null
   const server = await serve({ '/': out, '/__src/': game.dir, '/__fonts/': FONTSOURCE }, relay ? { '/__net.json': JSON.stringify({ url: relay.url }) } : {}, { isolated: manifest.web?.isolated })
   try {
     if (webEntry) {
       const play = await playCheck(browser, server, out, webEntry, manifest, { kit, hints: kit || !prebuilt })
       if (manifest.party && !play.errors.length) {
         const phones = await partyCheck(browser, server, webEntry, relay, manifest)
+        play.errors.push(...phones.errors)
+        play.warnings.push(...phones.warnings)
+      }
+      if (phonePads && !play.errors.length) {
+        const phones = await phonePadCheck(browser, server, webEntry, relay)
         play.errors.push(...phones.errors)
         play.warnings.push(...phones.warnings)
       }
@@ -177,7 +183,7 @@ export async function buildGame(game, browser, { pack = true, beforePack } = {})
   const shipped = shippedFor(webEntry ? { web: webEntry } : Object.fromEntries(Object.entries(natives).map(([p, n]) => [p, n.entry])), art)
   if (webEntry) {
     writeFileSync(join(out, MANIFEST_FILE), JSON.stringify(shipped, null, 2) + '\n')
-    if (beforePack) warnings.push(...((await beforePack(out, shipped)) ?? []))
+    if (beforePack) warnings.push(...((await beforePack(out, shipped, game)) ?? []))
   }
 
   return { id, manifest: shipped, out, platforms, files: pack ? packageGame(id, out, { web: Boolean(webEntry), natives, shippedFor, art }) : {}, warnings, share }
@@ -1071,13 +1077,30 @@ async function partyCheck(browser, server, entry, relay, manifest) {
       const id = await until(() => ctl(page, () => window.controller?.me?.id))
       if (!id) {
         const notice = await page.textContent('#notice-text').catch(() => '')
-        errors.push(`phone ${i + 1} joined but never got the game's controller ("${notice}"). Party games need a controller.html next to index.html (${CMD} new-game --party makes one)`)
+        errors.push(`phone ${i + 1} joined but never got the game's controller ("${notice}"). Party games pass controls to createParty for a shared layout, or keep their own controller.html next to index.html`)
         return { errors, warnings }
       }
       ids.push(id)
     }
     const started = await until(async () => (await party(tv))?.started, NET_MEET_MS)
     if (!started) errors.push(`with ${count} phones in, the party lobby never started the game. Keep lobby.update() from party-lobby.js and start when it returns "start"`)
+
+    // Shared layouts: the phone shows the game's layout, and pressing one of its buttons reaches
+    // party.pad(id) on the TV.
+    const shared = await tv.evaluate(() => Boolean(window.__kitParty.public.controls)).catch(() => false)
+    if (shared) {
+      const layout = await until(() => ctl(phones[0], () => document.querySelector('#pp')?.dataset.layout), 3000)
+      if (!layout) errors.push(`the phones never showed a shared layout. Keep controller-layouts.js next to party.js (${CMD} update-runtime puts it back)`)
+      const button = layout && (await ctl(phones[0], () => document.querySelector('#pp .pp-btn[data-b]')?.dataset.b ?? null))
+      if (button) {
+        // Runs in the phone's frame, so it gets everything as its argument.
+        const pointer = ([type, b]) => document.querySelector(`#pp .pp-btn[data-b="${b}"]`)?.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 9 }))
+        await ctl(phones[0], pointer, ['pointerdown', button])
+        const held = await until(() => tv.evaluate(([id, b]) => window.__kitParty.pad(id).held(b), [ids[0], button]), 3000)
+        if (!held) errors.push(`pressing ${button.toUpperCase()} on a phone's ${layout} layout never showed up in party.pad(id) on the TV. Call party.update() every frame`)
+        await ctl(phones[0], pointer, ['pointerup', button])
+      }
+    }
 
     // Controls: a phone's input reaches the TV.
     await ctl(phones[0], () => window.controller.input({ x: 1, y: 0, a: true }))
@@ -1130,6 +1153,65 @@ async function partyCheck(browser, server, entry, relay, manifest) {
     }
   } catch (err) {
     errors.push(`the party check failed: ${err.message}`)
+  } finally {
+    await Promise.all(contexts.map((c) => c.close()))
+  }
+  return { errors, warnings }
+}
+
+/**
+ * Games with phone-pads.js: the room opens, a phone joins through the real join page and gets a
+ * shared layout, and moving its stick moves the game's input like a controller would.
+ */
+async function phonePadCheck(browser, server, entry, relay) {
+  const errors = []
+  const warnings = []
+  const contexts = []
+  const until = async (fn, ms = NET_MEET_MS) => {
+    const deadline = Date.now() + ms
+    while (Date.now() < deadline) {
+      const v = await fn().catch(() => null)
+      if (v) return v
+      await new Promise((r) => setTimeout(r, 200))
+    }
+    return null
+  }
+  try {
+    const tvContext = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 })
+    contexts.push(tvContext)
+    const tv = await tvContext.newPage()
+    tv.on('pageerror', (err) => errors.push(`the game crashed during the phone check: ${err.message}`))
+    await tv.goto(`${server.url}/${entry}`, { waitUntil: 'load', timeout: 20_000 })
+    const made = await until(() => tv.evaluate(() => Boolean(window.__kitPhones)), 5000)
+    if (!made) {
+      errors.push('this game has phone-pads.js but never called connectPhones(input, …) at start-up')
+      return { errors, warnings }
+    }
+    await tv.evaluate(() => window.__kitPhones.phones.open())
+    const code = await until(() => tv.evaluate(() => window.__kitPhones.phones.code))
+    if (!code) {
+      const s = await tv.evaluate(() => window.__kitPhones.phones.party.error).catch(() => '')
+      errors.push(`the phone room never opened${s ? ` ("${s}")` : ''}`)
+      return { errors, warnings }
+    }
+    const context = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })
+    contexts.push(context)
+    const phone = await context.newPage()
+    phone.on('pageerror', (err) => errors.push(`the phone controller crashed: ${err.message}`))
+    await phone.goto(`${relay.joinBase}/j/${code}`, { waitUntil: 'load', timeout: 20_000 })
+    await phone.fill('#name', 'Phone')
+    await phone.click('#go')
+    const frame = () => phone.frames().find((f) => f.url().endsWith('/frame.html'))
+    const layout = await until(async () => frame()?.evaluate(() => document.querySelector('#pp')?.dataset.layout))
+    if (!layout) {
+      errors.push(`a phone joined but never showed a shared layout. Keep controller-layouts.js and controller.js next to phone-pads.js (${CMD} update-runtime puts them back)`)
+      return { errors, warnings }
+    }
+    await frame().evaluate(() => window.controller.input({ n: 'check', x: 1, y: 0 }))
+    const moved = await until(() => tv.evaluate(() => window.__kitPhones.input.pads.some((p) => p.virtual && p.connected && p.x === 1)), 3000)
+    if (!moved) errors.push("a phone's stick never reached input.pads on the game. Keep input.update(dt) running every frame, on every screen")
+  } catch (err) {
+    errors.push(`the phone check failed: ${err.message}`)
   } finally {
     await Promise.all(contexts.map((c) => c.close()))
   }

@@ -38,6 +38,7 @@ Below, `pushplay` stands for `npx github:Visual-Zone-Development/pushplay-kit`: 
 | `pushplay check [id ...]` | Build and play the games headlessly; prints ✗ problems, ⚠ notes, and the full paths of the rendered cover, banner and screenshot PNGs (in a scratch folder outside the repo) |
 | `pushplay setup` | Install the headless browser the check uses (the first `check` tries by itself) |
 | `pushplay dev [id] [--host]` | Play a web game in a browser with live reload, at http://localhost:5173 |
+| `pushplay controllers [--host]` | Try every shared phone layout and see what a game reads from it (see [Party games](#party-games)) |
 | `pushplay art-shots [id]` | Render the game's art to PNG and print the paths |
 | `pushplay art [id] [--dry] [--approve <$>]` | Optional painted art from your own image API key (see [Generated art](#generated-art)) |
 | `pushplay new-game <id> …` | Start a new JavaScript game (see [The runtime files](#the-runtime-files-optional-javascript-only)) |
@@ -536,17 +537,34 @@ A party game runs on the handheld or PC plugged into a TV, and everyone plays fr
 Party games are JavaScript games built on PushPlay's runtime files, which carry the connection, the lobby and the QR code:
 
 ```sh
-pushplay new-game <id> --party [--controller pad|custom|motion] [--players 3-8]
+pushplay new-game <id> --party [--controller <layout>|custom] [--players 3-8]
 ```
 
-- `pad` (the default) gives every phone a stick and A/B buttons. `custom` starts a phone screen of your own (answers, votes, a hand of cards, a drawing pad). `motion` makes the phone a motion controller. Up to 16 players.
+- **Phones show a shared layout,** the same tested controller in every game, or a phone screen of your own. Up to 16 players. Try them all with `pushplay controllers`, which shows what the game reads as you press (`--host` opens it on a phone on your Wi-Fi):
+
+  | Layout | The phone shows | The game reads | Made for |
+  |---|---|---|---|
+  | `classic` (default) | a floating stick, A B X Y, pause | `x`, `y`, buttons `a` `b` `x` `y` | most action games |
+  | `pad` | `classic` with only A and B | `x`, `y`, `a`, `b` | the simplest gamepad |
+  | `twin` | two sticks, LT and RT along the top | `x`, `y`, `aimX`, `aimY`, `lt`, `rt` | twin-stick shooters |
+  | `dpad` | an 8-way d-pad, A and B | `up` `down` `left` `right`, `x` and `y` in steps | retro, puzzle, grid games |
+  | `tap` | the whole screen is one button | `a`; every finger is a press | rhythm, one-button, reaction |
+  | `swipe` | swipe in four directions, tap | one press of `up`/`down`/`left`/`right` per swipe; a tap is `a` | snake, sliding blocks, lanes |
+  | `slider` | one slider (or upright, or springing back), A | `value` 0..1 and `x` -1..1 | paddles, steering, aiming |
+  | `trackpad` | a laptop-style trackpad, A, B | a pointer on the TV (`pointer.x`, `.y`, `.dx`, `.dy`); tap is `a`, two-finger tap `b` | point-and-click, cards, strategy |
+  | `choices` | a prompt, a private card, answer buttons | `{ pick: i }` messages | quizzes, votes, hidden roles |
+  | `motion` | tilt, steering and swings (see *Motion controls* below) | `motion.js` | swinging, steering, motion games |
+
+  `--controller custom` starts a phone screen of your own instead (`controller.html`, for a hand of cards, a drawing pad, anything no layout covers).
+- **Change the layout any time,** for everyone or one player: `party.controls({ layout: 'choices', prompt, choices })` for a vote, then back to `party.controls('classic')`. The game sets labels (`labels: { a: 'Jump' }`), hides buttons (`hide: ['y']`), drops the pause button (`pause: false`) and themes it (`theme: { accent, bg, fg, button, font, radius, icons }`: `font` is `system`, `rounded`, `serif`, `mono` or `condensed`, since phones get no web fonts, and icons are small inline SVGs). A layout itself is never edited: the kit keeps it up to date in every game, and a phone that has played one game already has it. Anything a layout can't do is a custom phone screen.
+- **Read every player the same way.** `party.pad(id)` is a gamepad for any player, whether they hold a phone (on a layout) or a controller plugged into the machine: `x`, `y`, `aimX`, `aimY`, `value`, `pointer`, `held(b)`, `pressed(b)`, `released(b)`. A press lasts one frame even if the network squeezes it between two messages. Every layout has a pause button that reads as `pressed('menu')`: pause the game on it.
 - **The TV runs the whole game.** Phones only show what they are sent and send back taps. Each frame the game reads every player's input the same way, whether it comes from a phone or a plugged-in controller.
 - **Who sees what.** `party.public` goes to every phone (the prompt, the choices, whose turn). `party.view(id)` goes to one player's phone only (their hand, their secret role). Everything else stays on the TV. Never put a secret in `party.public`.
-- **The phone screen is one file,** `controller.html`, with its styles, script and images inline. The TV sends it to each phone, where it runs with no network. Design it for a phone held in one hand: big tap targets, one decision per screen. Text fields are fine there.
+- **A custom phone screen is one file,** `controller.html`, with its styles, script and images inline. The TV sends it to each phone, where it runs with no network. Design it for a phone held in one hand: big tap targets, one decision per screen. Text fields are fine there.
 - **The lobby works with every input.** Players join from phones or with A on a plugged-in controller. The host starts with A, Space/Enter, the first phone's Start button, or by tapping or clicking the lobby's on-screen Start button (dimmed until enough players are in); B, Backspace, right-click or the on-screen Back button go back to the title. So a tablet with no controller can host.
 - **Pause freezes the game,** because the TV runs it. Phones that drop (a locked screen, Wi-Fi) keep their seat for two minutes; show those players dimmed and skip their turn.
 - **Every menu works from the phones.** Players are across the room with phones in hand; nobody should have to get up and touch the TV (or the tablet hosting the party) to resume, restart, change a setting or quit. Whatever menu the TV has open (pause with its Settings and Quit to library, settings, results) must also be workable from any phone. On the runtime files, `phone-menus.js` publishes the open menu and `controller.js` shows it on every phone as buttons, with each tap fed into the same menu as if pressed on the TV; the party starter wires it up.
-- **Delay.** A phone's input takes about 50–150 ms to reach the TV: fine for party, quiz, card and brawler games, wrong for precise aiming.
+- **Delay.** Phones reach the game through PushPlay's relay: about 50–150 ms, fine for party, quiz, card and brawler games. Where the phone and the game can, a phone's input also takes a direct link (WebRTC, introduced through the relay): about 5–20 ms when both are on the same Wi-Fi, which makes the gamepad layouts fit action games. Input goes both ways and the first copy wins, so a direct link that can't open or drops costs nothing. On the runtime files it is on by default (`createParty({ direct: false })` turns it off; `stun: ['stun:…']` lets it try across networks too, through a STUN server you name), and `party.players[i].link` says which way a phone's input comes. Precise aiming still wants a real controller.
 - Set `"party": true` and the tag `"party"` (the scaffold does). `pushplay dev` lets phones on the same Wi-Fi join by scanning the lobby's QR code. The check brings headless phones that join, play, see only their own private view, and reconnect.
 
 **Motion controls** (`--controller motion`). Phones know which way gravity points and how fast they are turning. They don't know where they are in the room or where the TV is.
@@ -557,7 +575,18 @@ pushplay new-game <id> --party [--controller pad|custom|motion] [--players 3-8]
 
 Gestures are detected and timed on the phone, so timing games work despite the delay. iOS asks for motion permission only after a tap and only on an https page; the published build is https, while `pushplay dev` over Wi-Fi is plain http, so phones fall back to a touch pad there. Test motion on the published build. Every motion game must also play with a controller, a keyboard, a mouse and touch, and always offer a re-center button.
 
-**Safety first.** People swing, flick and shake their phones in a living room. Before the first motion of a party, a motion game shows a safety screen on the TV and the same card on every phone: give yourself room (keep clear of people, pets, the TV, lamps), hold on tight (a firm grip all the way through; a grippy case or a wrist strap helps; in a grip-and-release game you let go of the button, never the phone), and a smooth, controlled motion reads just as well as a wild one. The game waits until every phone has tapped I'm ready, or until the TV starts it anyway after a couple of seconds, so a phone that dropped out can't block everyone. Show it once per party, and to anyone who joins later before their first motion; play with a controller alone skips it. On the runtime files, `motion.safety` in the motion scaffold's `motion.js` holds the round and asks each phone, `controller.js` shows the card, and `drawSafety()` draws the TV screen.
+**Safety first.** People swing, flick and shake their phones in a living room. Before the first motion of a party, a motion game shows a safety screen on the TV and the same card on every phone: give yourself room (keep clear of people, pets, the TV, lamps), hold on tight (a firm grip all the way through; a grippy case or a wrist strap helps; in a grip-and-release game you let go of the button, never the phone), and a smooth, controlled motion reads just as well as a wild one. The game waits until every phone has tapped I'm ready, or until the TV starts it anyway after a couple of seconds, so a phone that dropped out can't block everyone. Show it once per party, and to anyone who joins later before their first motion; play with a controller alone skips it. On the runtime files, `motion.safety` in `motion.js` (added by `--controller motion`) holds the round and asks each phone, `controller.js` shows the card, and `drawSafety()` draws the TV screen.
+
+## Phones as controllers (any game)
+
+A game that isn't a party game can take phones as controllers too, single-player included: someone without a controller picks up their phone and plays. Everything about joining and the layouts is as for party games above; what differs is that the game doesn't change. Each phone that joins is one more controller.
+
+- **Show how to connect** on a screen of its own, reached from the title and pause menus ("Connect a phone"): a QR code, the address to open and the room code, and who is connected. Open the room only when that screen is first shown, so someone playing with a controller never touches the network.
+- **A phone is a controller.** Read it exactly as a plugged-in controller: the same stick and buttons, pausing on its pause button. In a local multiplayer game each phone is one more player.
+- **Pause when a phone drops** (its screen locks, the Wi-Fi changes), as when a controller is unplugged. It keeps its place for two minutes and carries on when it's back.
+- Pick the layout that fits, and change it when the game needs (`classic` for most games, `dpad` for a puzzle game, `tap` for a one-button game). The game must still play with a controller, a keyboard, a mouse and touch alone.
+
+On the runtime files, `phone-pads.js` does all of it: `connectPhones(input, { layout: 'pad', labels: { a: 'Jump' } })` once, `phones.drawCard(ctx, x, y)` on the connect screen and `phones.menuItem` in the menus. Each phone is a pad in `input.pads`, so `input.x`, `input.held('a')` and `input.pressed('menu')` include it, and `input.onPause` fires when one drops. `pushplay new-game <id> --phones` starts a game with it wired up; an existing game imports `./phone-pads.js` and runs `pushplay update-runtime`, which adds the files. The check opens the room, joins a headless phone and moves its stick.
 
 ## Generated art
 
@@ -605,7 +634,7 @@ Each run saves the raw images to `art/raw/` (added to `.pushplayignore`, so they
 If you are starting a JavaScript game from nothing, PushPlay has a small set of plain ES modules that do the parts every launcher game needs: controller, keyboard, mouse and touch as one input, menus that work with all four, scaling, saves, settings, sound and on-screen touch controls. They are optional. A game that uses them is held to more by the check (every input alone, pausing, scaling), and in return gets "Quit to library", auto-pause and the launcher's hooks without writing them.
 
 ```sh
-pushplay new-game <id> [--workshop] [--vite] [--online --players 2-4 | --party [--controller pad|custom|motion]] [--phone portrait|landscape] [--name "Title"]
+pushplay new-game <id> [--workshop] [--vite] [--online --players 2-4 | --party [--controller <layout>|custom] | --phones] [--phone portrait|landscape] [--name "Title"]
 ```
 
 It writes a working starter with title, pause and settings screens, the runtime files, `pushplay.json`, placeholder art (the check notes it until you replace it), and the workflow file if the repo has none. `--workshop` puts the game in `games/<id>/` so one repo can hold many; `--vite` adds a bundler for npm packages such as three.js.
@@ -621,6 +650,8 @@ It writes a working starter with title, pause and settings screens, the runtime 
 | `prompts.js` | Button-prompt icons for the device in use |
 | `touch.js` | An on-screen stick and buttons for touch play |
 | `net.js`, `lobby.js` | Online games (`--online`): rooms, synced state and a lobby through PushPlay's relay |
-| `party.js`, `party-lobby.js`, `qr.js`, `controller.js`, `phone-menus.js`, `net.js` | Party games (`--party`): phones as controllers, the lobby and its QR code, the TV's menus and the safety card on the phones |
+| `party.js`, `party-lobby.js`, `qr.js`, `controller.js`, `controller-layouts.js`, `phone-menus.js`, `net.js` | Party games (`--party`): phones as controllers and their shared layouts, the lobby and its QR code, the TV's menus and the safety card on the phones |
+| `motion.js` | Motion party games (`--controller motion`): tilt, steering and swings from the phones |
+| `phone-pads.js` (with `party.js`, `qr.js`, `controller.js`, `controller-layouts.js`, `net.js`) | Phones as controllers in any game (`--phones`) |
 
 Each starts with the header `pushplay runtime vN`. Don't edit them: `pushplay update-runtime` replaces them with the current versions (and adds missing ones, such as `touch.js`), leaving alone any file of the same name that you wrote yourself.

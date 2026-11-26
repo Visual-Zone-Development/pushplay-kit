@@ -146,6 +146,11 @@ export function channelBranches(root = ROOT) {
 /** Path relative to the repo root, for messages. */
 export const display = (path) => relative(ROOT, path) || '.'
 
+/** A game that takes phones as controllers (phone-pads.js): it needs the relay, like a party game. */
+export function usesPhonePads(dir) {
+  return ['', 'src'].some((sub) => existsSync(join(dir, sub, 'phone-pads.js')))
+}
+
 /** Path inside root, or null if it escapes. */
 export function inside(root, rel) {
   const target = resolve(root, rel)

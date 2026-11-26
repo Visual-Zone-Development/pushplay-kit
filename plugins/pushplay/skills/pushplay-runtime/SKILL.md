@@ -59,7 +59,8 @@ When you use a craft skill in a PushPlay game, also read its page in `references
 | [assets.md](references/assets.md) | Bundled sprites, audio, models and fonts: where they go, sizes, licences and `assets/CREDITS.md` |
 | [generated-art.md](references/generated-art.md) | `pushplay art`: painted art from the user's own image API key, and never spending their money without a yes |
 | [multiplayer.md](references/multiplayer.md) | Online games: the whole `net.js` and `lobby.js` API, the host loop, private views, reconnects |
-| [party.md](references/party.md) | Party games: `party.js`, `party.public` and `party.view(id)`, `controller.html`, the lobby and join badge |
+| [party.md](references/party.md) | Party games: `party.js`, `party.public` and `party.view(id)`, a custom `controller.html`, the lobby and join badge |
+| [controllers.md](references/controllers.md) | The shared phone layouts (`classic`, `twin`, `dpad`, `tap`, `swipe`, `slider`, `trackpad`, `choices`, `motion`), `party.controls`, `party.pad(id)`, and phones as controllers in any game (`phone-pads.js`) |
 | [motion.md](references/motion.md) | Phone motion controls in a party game: what sensors can and can't do, `motion.js` |
 | [debugging.md](references/debugging.md) | Symptom → cause → fix for input, pause, touch, screen, sound and save bugs; the debug hooks and the repro script |
 

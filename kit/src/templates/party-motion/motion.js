@@ -1,6 +1,8 @@
-// Phone motion on the TV, for party games made with --controller motion. The phone screen
-// (controller.html) reads the sensors and detects swings; this turns what it sends into what a
-// game needs, one tracker per phone. Yours to change (it isn't a runtime file).
+// {{SLUG}} runtime v23 — shared runtime file, replaced by update-runtime; don't edit
+// Phone motion on the TV, for party games on the motion layout (--controller motion). The phone
+// (the motion layout in controller-layouts.js) reads the sensors and detects swings; this turns
+// what it sends into what a game needs, one tracker per phone. Tune it with options and
+// motion.configure() from game.js rather than editing it, so update-runtime keeps it in step.
 //
 //   const motion = createMotion(party, { tiltRange: 25 })   // options: see DEFAULTS
 //   each frame, after party.update():  motion.update(dt)

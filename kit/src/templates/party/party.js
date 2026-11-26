@@ -1,15 +1,22 @@
-// {{SLUG}} runtime v10 — shared runtime file, replaced by update-runtime; don't edit
+// {{SLUG}} runtime v23 — shared runtime file, replaced by update-runtime; don't edit
 // Party games: the game runs on the TV (a handheld or PC plugged into it), and players join from
 // their phones or any browser: scan the QR code or type the room code on the join page. Local
 // controllers can join too, so a party game works with phones, pads, or both.
 //
-// The TV runs everything. Phones run the game's controller.html (see controller.js), which shows
-// what the TV sends it and sends back controls and choices.
+// The TV runs everything. Phones show a controller: one of the shared layouts (controller-layouts.js,
+// the same in every game) when the game passes `controls`, or else the game's own controller.html.
+// Either way it shows what the TV sends it and sends back controls and choices.
 //
-//   const party = createParty({ input, minPlayers: 3, maxPlayers: 8 })
+//   const party = createParty({ input, minPlayers: 3, maxPlayers: 8, controls: 'classic' })
 //   each frame, after input.update(dt):  party.update()
 //   players:   party.players → [{ id, name, color, kind: 'phone' | 'local', connected }]
-//   controls:  party.inputs[id] → { x, y, a, b }   party.pressed(id, 'a')
+//   layout:    party.controls({ layout: 'twin', labels: { rt: 'Fire' } })   every phone
+//              party.controls({ layout: 'choices', choices: [...] }, id)    one phone
+//              classic | twin | dpad | tap | swipe | slider | trackpad | choices | motion (pad = classic, A and B)
+//   controls:  party.pad(id) → { x, y, aimX, aimY, value, pointer, held(b), pressed(b), released(b) }
+//              the same for a phone and a controller plugged into the TV: read players through it
+//              party.inputs[id] → { x, y, a, b, … } (what a custom controller.html sent, as sent)
+//              party.pressed(id, 'a')
 //   phones see:
 //     party.public.round = 2            everyone's phone (never put secrets here)
 //     party.view(id).hand = ['A♠']      only that player's phone
@@ -20,6 +27,12 @@
 // public and views are sent as changes only, a few times a second: write them freely. A phone
 // that drops (locked screen, Wi-Fi change) keeps its seat for two minutes and gets everything
 // again when it's back; party.inputs[id] is cleared meanwhile, so it stands still.
+//
+// Phones reach the TV through the relay. Where both sides can, a phone's input also takes a direct
+// link (WebRTC, introduced through the relay): about 5-20 ms on the same Wi-Fi instead of 50-150.
+// Input goes both ways and the first copy wins, so nothing is lost if the direct link drops;
+// party.players[i].link says which way it's coming ('direct' | 'relay'). Turn it off with
+// createParty({ direct: false }); give stun: ['stun:…'] to try a direct link across networks too.
 import { diff, snapshot } from './net.js'
 
 export const PARTY_VERSION = 1
@@ -32,7 +45,13 @@ const CHUNK_CHARS = 12_000
 const CONTROLLER_BYTES_PER_SEC = 96 * 1024
 const LOCAL_RELAY_PORT = 5174
 const COLORS = ['#ffb547', '#ff6b6b', '#4dd8a8', '#5aa9ff', '#c38bff', '#ff8fd0', '#f5e663', '#8ce05a']
-const PAD_BUTTONS = ['a', 'b']
+/** A local controller's buttons in party.inputs (x and y are the stick there; party.pad(id).held('x') has the button). */
+const PAD_BUTTONS = ['a', 'b', 'lb', 'rb', 'lt', 'rt', 'select', 'start', 'up', 'down', 'left', 'right', 'menu']
+/** Keys of the shared layouts' message that aren't buttons. */
+const WIRE_KEYS = new Set(['n', 'x', 'y', 'ax', 'ay', 'h', 'c', 'p', 'v'])
+/** A direct link not open by then isn't coming (the relay carries input meanwhile anyway). */
+const DIRECT_WAIT_MS = 8000
+const LAYOUT_NAMES = ['classic', 'pad', 'twin', 'dpad', 'tap', 'swipe', 'slider', 'trackpad', 'choices', 'motion']
 
 const CLOSE_REASONS = {
   4003: "This build can't go online. Rebuild it to get a fresh online pass.",
@@ -41,7 +60,7 @@ const CLOSE_REASONS = {
   4029: 'The game sent too much data.'
 }
 
-export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, localPlayers = true } = {}) {
+export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, localPlayers = true, controls = null, direct = true, stun = [] } = {}) {
   let ws = null
   let closing = false
   let resume = session('get')
@@ -58,6 +77,16 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
   let lastUpdate = 0
   let incoming = {} // phone id → buttons pressed since the last update
   let taps = {}
+  /** Phones' controls as the shared layouts send them, by id: what party.pad(id) reads. */
+  const phonePads = {}
+  const pads = {}
+  /** Shared layouts (controls given) or the game's own controller.html. */
+  const shared = Boolean(controls)
+  /** Direct links to phones, by id: { pc, dc, ready, early } (see the top of this file). */
+  const links = {}
+  /** The newest input message number taken from each phone (either way it came). */
+  const lastSeq = {}
+  const stunServers = (Array.isArray(stun) ? stun : []).filter((u) => typeof u === 'string' && /^stuns?:/.test(u))
   const listeners = {}
 
   const party = {
@@ -90,6 +119,33 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
       return Boolean(taps[id]?.has(button))
     },
 
+    /**
+     * Which shared layout the phones show, and how: party.controls('twin'), or
+     * party.controls({ layout: 'classic', labels: { a: 'Jump' }, hide: ['y'], theme: { accent: '#4dd8a8' } }).
+     * With an id, only that player's phone (their settings win over everyone's; null clears them).
+     */
+    controls(settings, id = null) {
+      const value = typeof settings === 'string' ? { layout: settings } : settings
+      if (value?.layout && !LAYOUT_NAMES.includes(value.layout)) console.warn(`party.controls: no layout called "${value.layout}" (${LAYOUT_NAMES.join(', ')})`)
+      if (id) {
+        if (value) party.view(id).controls = value
+        else delete party.view(id).controls
+      } else if (value) party.public.controls = value
+      else delete party.public.controls
+    },
+
+    /**
+     * A player's controls as a gamepad, whether they hold a phone or a controller plugged into the
+     * TV: x, y (left stick or d-pad), aimX, aimY (right stick), value (slider, 0..1, or null),
+     * pointer ({ x, y, dx, dy, down } from the trackpad, x and y 0..1 across the screen, or null),
+     * held(b), pressed(b), released(b). Buttons: a b x y lb rb lt rt up down left right menu.
+     */
+    pad(id) {
+      const p = party.player(id)
+      if (!p) return EMPTY_PAD
+      return (pads[id] ??= p.kind === 'local' ? localPad(p) : phonePad(id))
+    },
+
     on(type, fn) {
       ;(listeners[type] ??= []).push(fn)
       return () => (listeners[type] = listeners[type].filter((f) => f !== fn))
@@ -99,7 +155,7 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
     open() {
       if (ws || party.status === 'open') return
       closing = false
-      controllerLoad ??= loadController()
+      controllerLoad ??= loadController(shared)
       connect()
     },
     /** End the party: phones are told the game ended. */
@@ -113,6 +169,7 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
       session('set', null)
       party.status = 'idle'
       party.code = null
+      for (const id of Object.keys(links)) closeLink(id)
       party.players = party.players.filter((p) => p.kind === 'local')
     },
 
@@ -154,10 +211,11 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
         if (p.kind !== 'local') continue
         const pad = input?.pads[p.pad]
         if (!pad) continue
-        const v = { x: pad.x, y: pad.y }
+        const v = { x: pad.x, y: pad.y, aimX: pad.aimX, aimY: pad.aimY }
         for (const b of PAD_BUTTONS) v[b] = pad.held(b)
         party.inputs[p.id] = v
       }
+      for (const ps of Object.values(phonePads)) frame(ps)
 
       // Controller pages, paced.
       const dt = lastUpdate ? Math.min(0.25, (now - lastUpdate) / 1000) : 0
@@ -267,6 +325,7 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
         if (!p) return
         p.connected = msg.t === 'peer-back'
         party.inputs[p.id] = {}
+        if (phonePads[p.id]) phonePads[p.id].held = new Set()
         if (!p.connected) delete lastViews[p.id]
         return emit(p.connected ? 'back' : 'away', p)
       }
@@ -289,17 +348,128 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
   function addPhone({ id, name, color }, connected) {
     // Everyone gets their own colour: a phone whose pick is taken gets a free one.
     const taken = !color || party.players.some((p) => p.color === color)
-    const p = { id, name, color: taken ? freeColor() : color, kind: 'phone', connected }
+    const p = { id, name, color: taken ? freeColor() : color, kind: 'phone', connected, link: 'relay' }
     party.players.push(p)
     party.inputs[id] = {}
     return p
+  }
+
+  function phoneState(id) {
+    return (phonePads[id] ??= { n: null, counts: {}, held: new Set(), now: new Set(), before: new Set(), x: 0, y: 0, ax: 0, ay: 0, v: null, total: null, move: [0, 0], pointer: null })
+  }
+
+  /** Once per update: this frame's held buttons, and the trackpad's movement since the last frame. */
+  function frame(ps) {
+    ps.before = ps.now
+    ps.now = new Set(ps.held)
+    if (ps.pointer) {
+      const [dx, dy] = ps.move
+      ps.move = [0, 0]
+      // The trackpad sends movement in its own widths; on screen, the same distance up and across.
+      const aspect = typeof innerWidth === 'number' && innerHeight ? innerWidth / innerHeight : 16 / 9
+      ps.pointer.dx = dx
+      ps.pointer.dy = dy * aspect
+      ps.pointer.x = Math.max(0, Math.min(1, ps.pointer.x + ps.pointer.dx))
+      ps.pointer.y = Math.max(0, Math.min(1, ps.pointer.y + ps.pointer.dy))
+    }
+  }
+
+  function phonePad(id) {
+    const ps = phoneState(id)
+    return {
+      kind: 'phone',
+      get connected() {
+        return Boolean(party.player(id)?.connected)
+      },
+      get x() { return ps.x },
+      get y() { return ps.y },
+      get aimX() { return ps.ax },
+      get aimY() { return ps.ay },
+      get value() { return ps.v },
+      get pointer() { return ps.pointer },
+      held: (b) => ps.now.has(b),
+      pressed: (b) => Boolean(taps[id]?.has(b)),
+      released: (b) => ps.before.has(b) && !ps.now.has(b)
+    }
+  }
+
+  function localPad(p) {
+    const pad = () => input?.pads[p.pad]
+    return {
+      kind: 'local',
+      get connected() { return Boolean(pad()?.connected) },
+      get x() { return pad()?.x ?? 0 },
+      get y() { return pad()?.y ?? 0 },
+      get aimX() { return pad()?.aimX ?? 0 },
+      get aimY() { return pad()?.aimY ?? 0 },
+      value: null,
+      pointer: null,
+      held: (b) => Boolean(pad()?.held(b)),
+      pressed: (b) => Boolean(pad()?.pressed(b)),
+      released: (b) => Boolean(pad()?.released?.(b))
+    }
+  }
+
+  /**
+   * A shared layout's message: { n, x, y, ax, ay, h: [held], c: { button: presses so far }, p, v }.
+   * Presses are counted on the phone, so one the network squeezed between two messages still
+   * shows as pressed for a frame; n changes when the phone reloads, and counting starts again.
+   */
+  function readPad(from, w) {
+    const ps = phoneState(from)
+    const tap = (b) => (incoming[from] ??= new Set()).add(b)
+    if (w.n !== ps.n) {
+      ps.n = w.n
+      ps.counts = {}
+      ps.total = null
+    }
+    if (w.c && typeof w.c === 'object') {
+      for (const [b, n] of Object.entries(w.c)) {
+        if (typeof n !== 'number') continue
+        if (n > (ps.counts[b] ?? 0)) tap(b)
+        ps.counts[b] = n
+      }
+    }
+    const shared = Array.isArray(w.h)
+    const held = shared ? w.h.filter((b) => typeof b === 'string') : Object.keys(w).filter((k) => w[k] === true)
+    ps.held = new Set(held)
+    const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(-1, Math.min(1, v)) : 0)
+    ps.x = num(w.x)
+    ps.y = num(w.y)
+    ps.ax = num(w.ax)
+    ps.ay = num(w.ay)
+    ps.v = typeof w.v === 'number' ? Math.max(0, Math.min(1, w.v)) : null
+    if (w.p && typeof w.p === 'object') {
+      ps.pointer ??= { x: 0.5, y: 0.5, dx: 0, dy: 0, down: false }
+      const x = Number(w.p.x) || 0
+      const y = Number(w.p.y) || 0
+      // Totals: the movement is the difference, so a lost message loses nothing.
+      if (ps.total) ps.move = [ps.move[0] + x - ps.total[0], ps.move[1] + y - ps.total[1]]
+      ps.total = [x, y]
+      ps.pointer.down = Boolean(w.p.d)
+    } else ps.total = null
+    if (!shared && !('c' in w)) return w
+    // What party.inputs shows for it: the old { x, y, a, b } shape plus the rest by name.
+    const out = {}
+    for (const [k, v] of Object.entries(w)) if (!WIRE_KEYS.has(k)) out[k] = v
+    Object.assign(out, { x: ps.x, y: ps.y })
+    if (shared) {
+      Object.assign(out, { aimX: ps.ax, aimY: ps.ay })
+      if (ps.v !== null) out.value = ps.v
+      for (const b of held) if (b !== 'x' && b !== 'y') out[b] = true
+    }
+    return out
   }
 
   function removePlayer(id) {
     const p = party.player(id)
     if (!p) return
     party.players = party.players.filter((x) => x !== p)
+    closeLink(id)
+    delete lastSeq[id]
     delete party.inputs[id]
+    delete phonePads[id]
+    delete pads[id]
     delete party.views[id]
     delete lastViews[id]
     emit('leave', p)
@@ -309,13 +479,23 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
     const p = party.player(from)
     if (!p || !d || typeof d !== 'object') return
     if (d.k === 'i') {
+      // Numbered input comes twice (direct and relay): take the first copy, drop the late one.
+      if (typeof d.q === 'number') {
+        if (d.q <= (lastSeq[from] ?? -1)) return
+        lastSeq[from] = d.q
+      }
       const next = d.i && typeof d.i === 'object' ? d.i : {}
       const before = party.inputs[from] ?? {}
-      for (const [b, v] of Object.entries(next)) if (v === true && !before[b]) (incoming[from] ??= new Set()).add(b)
-      party.inputs[from] = next
+      const shown = readPad(from, next)
+      for (const [b, v] of Object.entries(shown)) if (v === true && !before[b]) (incoming[from] ??= new Set()).add(b)
+      party.inputs[from] = shown
     } else if (d.k === 'm') emit('msg', { from, data: d.d })
+    else if (d.k === 'rtc') fromPhoneRtc(from, d)
     else if (d.k === 'hi') {
       p.connected = true
+      // A fresh page (or the same one back): its numbers start again, and so does its direct link.
+      lastSeq[from] = -1
+      if (d.rtc) openLink(from)
       await sendController(from, d.h)
       // Everything, once; after that, the same changes as everyone else.
       send({ t: 'send', to: from, d: { k: 'P', s: lastPublic } })
@@ -323,6 +503,74 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
       send({ t: 'send', to: from, d: { k: 'V', s: lastViews[from] } })
       send({ t: 'send', to: from, d: { k: 'pl', players: JSON.parse(playerList()) } })
     }
+  }
+
+  // ---- the direct link (WebRTC) to each phone, for input only ----------------------------------
+
+  function setLink(id, way) {
+    const p = party.player(id)
+    if (p?.kind === 'phone') p.link = way
+  }
+
+  /** Offer a phone a data channel; the join page answers through the relay. */
+  function openLink(id) {
+    closeLink(id)
+    if (!direct || typeof RTCPeerConnection !== 'function') return
+    try {
+      const pc = new RTCPeerConnection({ iceServers: stunServers.map((urls) => ({ urls })) })
+      const dc = pc.createDataChannel('input', { ordered: false, maxRetransmits: 0 })
+      const link = { pc, dc, ready: false, early: [], timer: null }
+      links[id] = link
+      dc.onopen = () => {
+        clearTimeout(link.timer)
+        if (links[id] === link) setLink(id, 'direct')
+      }
+      dc.onclose = () => links[id] === link && closeLink(id)
+      dc.onmessage = (e) => {
+        if (links[id] !== link || typeof e.data !== 'string' || e.data.length > 4096) return
+        try {
+          const d = JSON.parse(e.data)
+          if (d?.k === 'i') fromPhone(id, d)
+        } catch {}
+      }
+      pc.onicecandidate = (e) => e.candidate && links[id] === link && send({ t: 'send', to: id, d: { k: 'rtc', c: e.candidate.toJSON() } })
+      pc.onconnectionstatechange = () => ['failed', 'closed'].includes(pc.connectionState) && links[id] === link && closeLink(id)
+      link.timer = setTimeout(() => links[id] === link && dc.readyState !== 'open' && closeLink(id), DIRECT_WAIT_MS)
+      pc.createOffer()
+        .then((offer) => pc.setLocalDescription(offer))
+        .then(() => links[id] === link && send({ t: 'send', to: id, d: { k: 'rtc', sdp: pc.localDescription.toJSON(), s: stunServers } }))
+        .catch(() => closeLink(id))
+    } catch {
+      closeLink(id)
+    }
+  }
+
+  function fromPhoneRtc(id, d) {
+    const link = links[id]
+    if (!link) return
+    if (d.sdp) {
+      link.pc
+        .setRemoteDescription(d.sdp)
+        .then(() => {
+          link.ready = true
+          for (const c of link.early.splice(0)) link.pc.addIceCandidate(c).catch(() => {})
+        })
+        .catch(() => closeLink(id))
+    } else if (d.c) {
+      if (link.ready) link.pc.addIceCandidate(d.c).catch(() => {})
+      else link.early.push(d.c)
+    }
+  }
+
+  function closeLink(id) {
+    const link = links[id]
+    if (!link) return
+    delete links[id]
+    clearTimeout(link.timer)
+    try {
+      link.pc.close()
+    } catch {}
+    setLink(id, 'relay')
   }
 
   async function sendController(to, have) {
@@ -335,19 +583,31 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
     for (let i = 0; i < n; i++) outbox.push([to, { k: 'cb', h: hash, i, n, s: html.slice(i * CHUNK_CHARS, (i + 1) * CHUNK_CHARS) }])
   }
 
+  if (controls) party.controls(controls)
   if (typeof window !== 'undefined') window.__kitParty = party // the build check reads this
   return party
 }
 
-/** The game's controller.html with the controller runtime at the top. */
-async function loadController() {
+const EMPTY_PAD = Object.freeze({ kind: 'none', connected: false, x: 0, y: 0, aimX: 0, aimY: 0, value: null, pointer: null, held: () => false, pressed: () => false, released: () => false })
+
+/**
+ * The page phones get: the shared layouts (the same page in every game on this kit, so a phone
+ * that has played one already has it), or the game's controller.html; the controller runtime first.
+ */
+async function loadController(shared) {
+  const inline = (js) => `<script>${js.replace(/<\/script/gi, '<\\/script')}</script>`
   try {
+    if (shared) {
+      const [runtime, layouts] = await Promise.all([text(new URL('./controller.js', import.meta.url)), text(new URL('./controller-layouts.js', import.meta.url))])
+      const html = `<!doctype html><html><head><meta charset="utf-8">${inline(runtime)}</head><body>${inline(layouts)}</body></html>`
+      return { html, hash: hash(html) }
+    }
     const [page, runtime] = await Promise.all([text(new URL('controller.html', document.baseURI)), text(new URL('./controller.js', import.meta.url))])
-    const script = `<script>${runtime.replace(/<\/script/gi, '<\\/script')}</script>`
+    const script = inline(runtime)
     const html = /<head[^>]*>/i.test(page) ? page.replace(/<head[^>]*>/i, (m) => m + script) : script + page
     return { html, hash: hash(html) }
   } catch (err) {
-    console.warn('party: no controller.html, so phones have nothing to show', err)
+    console.warn(shared ? 'party: controller-layouts.js is missing (run update-runtime), so phones have nothing to show' : 'party: no controller.html, so phones have nothing to show (or pass controls to createParty for a shared layout)', err)
     return null
   }
 }

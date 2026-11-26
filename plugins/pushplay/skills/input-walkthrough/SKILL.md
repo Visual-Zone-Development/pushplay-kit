@@ -45,7 +45,7 @@ For an engine export or a game on its own engine, the contract is only what `pus
 Read every file in [setups/](setups/README.md) except the README, then the project's own `input-setups/` folder if it has one (same `id` replaces, new `id` adds, `disabled: true` removes).
 
 - Use the setups the user named, or all of them.
-- Otherwise run every setup without `optional: true`. Add the optional ones when they apply: `phone-game` for a game with `phone` in its manifest, `party-phone` for a party game, `phone-touch` when the user asks.
+- Otherwise run every setup without `optional: true`. Add the optional ones when they apply: `phone-game` for a game with `phone` in its manifest, `party-phone` for a party game, `phone-pads` for a game with `phone-pads.js`, `phone-touch` when the user asks.
 - A setup is skipped only when the contract rules it out (a mouse-only pass for a game whose `inputs` has no `"mouse"` still checks the menus), and the report says why.
 
 ## 4. Check the browser

@@ -1,4 +1,4 @@
-// <kit> new-game <game-id> [--workshop] [--vite] [--phone [portrait|landscape]] [--online | --party [--controller pad|custom|motion]] [--players 2-4] [--name "Display Name"]
+// <kit> new-game <game-id> [--workshop] [--vite] [--phone [portrait|landscape]] [--online | --party [--controller <layout>|custom]] [--players 2-4] [--name "Display Name"]
 // Creates a game from the starter template: title, pause and settings screens that work with a
 // controller, a keyboard, a mouse and touch, a manifest, and placeholder art.
 //   Where: a repo with a games/ folder is a workshop (a collection of games), so the game goes in
@@ -10,11 +10,16 @@
 //   --online:  online multiplayer through the shared relay: net.js, a controller lobby, and a
 //              starter where the host runs the game. --players sets how many (default 2).
 //   --party:   a party game: it runs on the TV and players join from their phones (QR code or
-//              room code) or with local controllers. --controller pad (default) gives phones a
-//              stick and A/B; --controller custom starts a phone screen of the game's own;
-//              --controller motion makes the phone a motion controller (tilt, steering wheel,
-//              swings) and adds motion.js, which reads it on the TV.
+//              room code) or with local controllers. Phones show one of the kit's shared layouts
+//              (--controller classic, the default: a stick and A B X Y; pad, twin, dpad, tap,
+//              swipe, slider, trackpad, choices, motion; see controller-layouts.js), which the
+//              kit keeps up to date, or with --controller custom a phone screen of the game's own
+//              (controller.html). motion also adds motion.js, which reads the phone on the TV.
 //              --players sets how many (default 2-8, up to 16).
+//   --phones:  phones as controllers, in a game that isn't a party game (single-player too): a
+//              "Connect a phone" screen with a QR code, and every phone that joins shows a shared
+//              layout and is a controller in input.pads (phone-pads.js). Not with --party, which
+//              has phones already.
 //   --phone:   a phone game: the 720×1280 portrait or 1280×720 landscape space, the
 //              "phone" manifest field, on-screen touch controls (touch.js), a layout inside the
 //              safe area and text at the phone minimum. Works with --online; not with --party
@@ -22,7 +27,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
-import { brand, CMD, DOCS_URL, GAMES_DIR, MANIFEST_FILE, MANIFEST_SCHEMA_URL, PARTY_RUNTIME_FILES, RUNTIME_FILES, WORKFLOW_FILE } from './config.mjs'
+import { brand, CMD, CONTROLLER_LAYOUTS, DOCS_URL, GAMES_DIR, MANIFEST_FILE, MANIFEST_SCHEMA_URL, PARTY_RUNTIME_FILES, PHONE_RUNTIME_FILES, RUNTIME_FILES, WORKFLOW_FILE } from './config.mjs'
 import { callerWorkflow } from './workflow.mjs'
 import { layout, log, npmSpawn, ROOT } from './repo.mjs'
 
@@ -33,9 +38,10 @@ const vite = args.includes('--vite')
 const workshop = args.includes('--workshop')
 const online = args.includes('--online')
 const party = args.includes('--party')
+const phones = args.includes('--phones')
 const valueOf = (flag) => (args.indexOf(flag) >= 0 ? args[args.indexOf(flag) + 1] : undefined)
 const name = valueOf('--name')
-const controller = valueOf('--controller') ?? 'pad'
+const controller = valueOf('--controller') ?? 'classic'
 const players = valueOf('--players') ?? (party ? '2-8' : online ? '2' : '1')
 const ORIENTATIONS = ['portrait', 'landscape']
 const phoneValue = valueOf('--phone')
@@ -44,7 +50,7 @@ const id = args.find((a, i) => !a.startsWith('--') && !['--name', '--players', '
 const [minPlayers, maxPlayers = minPlayers] = players.split('-').map(Number)
 
 if (!id || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(id)) {
-  log('Usage: ' + CMD + ' new-game <game-id> [--workshop] [--vite] [--phone portrait|landscape] [--online | --party [--controller pad|custom|motion]] [--players 2-4] [--name "Display Name"]')
+  log('Usage: ' + CMD + ' new-game <game-id> [--workshop] [--vite] [--phone portrait|landscape] [--online | --party [--controller <layout>|custom]] [--players 2-4] [--name "Display Name"]')
   log('  game-id: lowercase letters, digits and dashes, e.g. tower-panic')
   process.exit(1)
 }
@@ -60,12 +66,20 @@ if (args.includes('--phone') && !phone) {
   log('--phone needs how the phone is held: --phone portrait (720×1280) or --phone landscape (1280×720)')
   process.exit(1)
 }
+if (phones && party) {
+  log('A party game takes phones already: drop --phones (--controller picks their layout)')
+  process.exit(1)
+}
+if (phones && online) {
+  log("--phones is for games played on one screen; an online game's players each have their own")
+  process.exit(1)
+}
 if (phone && party) {
   log("A party game runs on the TV, so it isn't a phone game: drop --phone (phones join it as controllers)")
   process.exit(1)
 }
-if (!['pad', 'custom', 'motion'].includes(controller)) {
-  log('--controller is pad (a stick and A/B on the phone), custom (the game draws its own phone screen) or motion (the phone is a motion controller)')
+if (![...CONTROLLER_LAYOUTS, 'custom'].includes(controller)) {
+  log(`--controller is a shared phone layout (${CONTROLLER_LAYOUTS.join(', ')}; try them all with ${CMD} controllers) or custom (the game draws its own phone screen, controller.html)`)
   process.exit(1)
 }
 if (layout() === 'single') {
@@ -95,8 +109,15 @@ const title = name ?? id.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCas
 const templates = join(import.meta.dirname, 'templates')
 /** The drawing space: the Deck's 1280×800, or the phone space for the chosen orientation. */
 const space = phone === 'portrait' ? { w: 720, h: 1280 } : phone === 'landscape' ? { w: 1280, h: 720 } : { w: 1280, h: 800 }
-const fill = (text) =>
+/** Lines marked // {{PHONES}} are the phone-controller parts of the starter: kept with --phones. */
+const phoneLines = (text) =>
   text
+    .split('\n')
+    .filter((line) => phones || !line.endsWith(' // {{PHONES}}'))
+    .map((line) => line.replace(/ \/\/ \{\{PHONES\}\}$/, ''))
+    .join('\n')
+const fill = (text) =>
+  phoneLines(text)
     .replaceAll('{{NAME}}', title)
     .replaceAll('{{ID}}', id)
     .replaceAll('{{W}}', String(space.w))
@@ -107,6 +128,7 @@ const fill = (text) =>
     .replaceAll('{{BRAND}}', brand.name)
     .replaceAll('{{MIN_PLAYERS}}', String(minPlayers))
     .replaceAll('{{MAX_PLAYERS}}', String(maxPlayers))
+    .replaceAll('{{CONTROLS}}', controller === 'custom' ? 'null' : `'${controller}'`)
 
 /** Copy a template folder, filling placeholders in text files. */
 function copyTemplate(from, to) {
@@ -126,12 +148,20 @@ if (party) {
   // party.js uses net.js's change tracking; the rest of net.js goes unused.
   writeFileSync(join(codeDir, 'net.js'), fill(readFileSync(join(templates, 'online/net.js'), 'utf8')))
   for (const file of [...PARTY_RUNTIME_FILES, 'game.js']) writeFileSync(join(codeDir, file), fill(readFileSync(join(templates, 'party', file), 'utf8')))
-  // The phone screen sits next to index.html (in public/ for Vite, so it's copied as is).
-  const page = fill(readFileSync(join(templates, 'party-controllers', `${controller}.html`), 'utf8'))
-  mkdirSync(vite ? join(dir, 'public') : dir, { recursive: true })
-  writeFileSync(join(vite ? join(dir, 'public') : dir, 'controller.html'), page)
-  // Motion: the TV side that reads it (the game's own code, not a runtime file).
+  // A phone screen of the game's own sits next to index.html (in public/ for Vite, so it's copied
+  // as is). Shared layouts need nothing: party.js sends phones the kit's page.
+  if (controller === 'custom') {
+    const page = fill(readFileSync(join(templates, 'party-controllers', 'custom.html'), 'utf8'))
+    mkdirSync(vite ? join(dir, 'public') : dir, { recursive: true })
+    writeFileSync(join(vite ? join(dir, 'public') : dir, 'controller.html'), page)
+  }
+  // Motion: the TV side that reads it (a runtime file, so it stays in step with the phone's layout).
   if (controller === 'motion') writeFileSync(join(codeDir, 'motion.js'), fill(readFileSync(join(templates, 'party-motion/motion.js'), 'utf8')))
+}
+// Phones as controllers (--phones): phone-pads.js and the party files under it.
+if (phones) {
+  writeFileSync(join(codeDir, 'net.js'), fill(readFileSync(join(templates, 'online/net.js'), 'utf8')))
+  for (const file of PHONE_RUNTIME_FILES) writeFileSync(join(codeDir, file), fill(readFileSync(join(templates, 'party', file), 'utf8')))
 }
 // The runtime modules; the kit's update-runtime replaces them later, so extend them from game.js.
 for (const file of RUNTIME_FILES) writeFileSync(join(codeDir, file), fill(readFileSync(join(templates, 'shared', file), 'utf8')))
@@ -195,16 +225,18 @@ if (!existsSync(join(ROOT, WORKFLOW_FILE))) {
   log(`Added ${WORKFLOW_FILE}: pushing this repo to GitHub builds, checks and publishes its games.`)
 }
 
-const kind = `${vite ? 'Vite' : 'plain HTML'}${phone ? `, ${phone} phone game (${space.w}×${space.h})` : ''}${online ? ', online' : ''}${party ? `, party with a ${controller} phone controller` : ''}`
+const kind = `${vite ? 'Vite' : 'plain HTML'}${phone ? `, ${phone} phone game (${space.w}×${space.h})` : ''}${online ? ', online' : ''}${phones ? ', phones as controllers' : ''}${party ? `, party with ${controller === 'custom' ? 'its own phone screen' : `the ${controller} phone layout`}` : ''}`
 log(single ? `Created ${title} at the root of this repo (${kind}). This repo is now that one game.` : `Created games/${id}/ (${kind}).${workshop ? ' This repo is a workshop: make more games with new-game, and move finished ones into their own repos with ' + CMD + ' promote.' : ''}`)
 log('Next:')
 log(`  1. Write the game in ${at}${vite ? 'src/' : ''}game.js. Keep its title, pause and settings screens:`)
 log(`     input.js, menu.js, fit.js, audio.js, save.js, settings.js and prompts.js make them work with every input.`)
 if (online) log(`     Online: the host runs the rules in hostUpdate() and writes net.state; everyone draws net.view. Don't edit net.js or lobby.js.`)
+if (phones) log(`     Phones: the title's "Connect a phone" shows a QR code; each phone that joins is a controller in input.pads. Change its layout with phones.controls(…) (${CMD} controllers shows them all).`)
 if (phone) log(`     Phone: lay everything out in ${space.w}×${space.h}, inside fit.safe (notch and home bar); text ≥ 32px; touch.js gives the stick and buttons. See ${DOCS_URL}#phones`)
 if (party) {
   log(`     Party: the TV runs everything. party.public goes to every phone, party.view(id) to one phone only.`)
-  log(`     The phone screen is ${at}${vite ? 'public/' : ''}controller.html. Don't edit party.js, party-lobby.js, qr.js, controller.js, phone-menus.js or net.js.`)
+  if (controller === 'custom') log(`     The phone screen is ${at}${vite ? 'public/' : ''}controller.html. Don't edit party.js, party-lobby.js, qr.js, controller.js, controller-layouts.js, phone-menus.js or net.js.`)
+  else log(`     Phones show the shared ${controller} layout: change it with party.controls(…) (${CMD} controllers shows them all). Read players with party.pad(id). Don't edit the party runtime files or net.js.`)
   if (controller === 'motion') log(`     Motion: const motion = createMotion(party) from motion.js; motion.update(dt) each frame, then motion.of(id).tilt / .wheel / .swings. See ${DOCS_URL}#party-games`)
 }
 const target = single ? '' : ` ${id}`

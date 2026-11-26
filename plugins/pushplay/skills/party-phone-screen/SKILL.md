@@ -1,11 +1,14 @@
 ---
 name: party-phone-screen
-description: Design and build the phone side of a party game — controller.html, the one-file screen each phone runs (voting, answering, drawing, hidden hands, custom buttons) — plus what the TV shares with party.public and party.view(id). Big tap targets, one decision per screen, readable at arm's length, works with no network. Use for "design the phone screen", "phones need to vote / draw / see their cards", "the phone UI is confusing", "make a custom controller", or building a --party --controller custom game.
+description: Design the phone side of a party game — first by picking and adjusting one of the kit's shared phone layouts (classic, twin, dpad, tap, swipe, slider, trackpad, choices, motion) with party.controls, and only when none fits by building controller.html, the one-file custom screen each phone runs (drawing, hidden hands, typed answers) — plus what the TV shares with party.public and party.view(id). Big tap targets, one decision per screen, readable at arm's length, works with no network. Use for "design the phone screen", "phones need to vote / draw / see their cards", "which phone controller should I use", "the phone UI is confusing", "make a custom controller", or building a --party --controller custom game.
 ---
 
 # Party phone screen
 
-Follow the `pushplay-rules` skill (*Party games*, in [online-and-party.md](../pushplay-rules/references/online-and-party.md)). `pushplay` is the command the `pushplay-rules` skill gives you. **Read [party.md](../pushplay-runtime/references/party.md) first**: it has the full `party` (TV) and `controller` (phone) APIs and recipes. Never edit `party.js`, `party-lobby.js`, `qr.js`, `controller.js`, `phone-menus.js` or `net.js`; `controller.html` and `game.js` are yours.
+Follow the `pushplay-rules` skill (*Party games*, in [online-and-party.md](../pushplay-rules/references/online-and-party.md)). `pushplay` is the command the `pushplay-rules` skill gives you. **Read [party.md](../pushplay-runtime/references/party.md) and [controllers.md](../pushplay-runtime/references/controllers.md) first**: they have the full `party` (TV) and `controller` (phone) APIs, the shared layouts and recipes. Never edit `party.js`, `party-lobby.js`, `qr.js`, `controller.js`, `controller-layouts.js`, `phone-menus.js`, `motion.js` or `net.js`; `controller.html` (if any) and `game.js` are yours.
+
+## 0. A shared layout first
+Most phases need no custom screen. For each phase, pick the shared layout that fits (controllers.md has the table; `pushplay controllers` shows them) and switch to it from the TV with `party.controls(...)`: `classic`/`twin`/`dpad` for action, `tap` or `swipe` for one-thumb games, `slider` for paddles and steering, `trackpad` to point at things on the TV, `choices` for any vote or multiple-choice answer (with `card` for a player's secret), `motion` for swings and tilt. Adjust with `labels`, `hide` and `theme` (the game's accent, a font from the list, small SVG icons). Write a custom `controller.html` (steps 1–4) only for what no layout does: drawing, a hand of cards to play from, a typed answer, a layout unique to the game. A game is all shared layouts or has its own `controller.html`; it can't mix them on one phone.
 
 ## 1. Map every phase to one phone screen
 For each phase of the game (lobby, prompt, answering, waiting, voting, reveal, results), write one row:
@@ -14,6 +17,7 @@ For each phase of the game (lobby, prompt, answering, waiting, voting, reveal, r
 |---|---|---|---|---|
 | answer | the prompt, who's done | text field + Send | `controller.send({ answer })` | `party.view(id).prompt` |
 | vote | the anonymous answers | 2–4 big buttons | `controller.send({ vote: i })` | `party.public.choices` |
+| (shared layout) | the round | `choices` layout | `{ pick: i }` | `party.controls({ layout: 'choices', prompt, choices })` |
 | waiting | — | "Waiting for others…" + your colour | — | `party.public.phase` |
 
 Drive the phone with a single `party.public.phase` value and switch the whole screen on it. **Secrets** (hands, roles, own prompt) only ever go in `party.view(id)`; check every play on the TV (is that card really in their hand?).
@@ -41,5 +45,5 @@ Drive the phone with a single `party.public.phase` value and switch the whole sc
 1. `pushplay dev`: open the join address in 3–4 browser windows sized like phones (DevTools device mode) and play a full round; scan the QR code with a real phone if possible.
 2. Reload one phone mid-round: it gets its seat and screen back.
 3. Every phase has a phone screen; no phone ever shows another player's secret.
-4. `pushplay check` (headless phones join, play and reconnect), fix every ✗.
+4. `pushplay check` (headless phones join, press a button on the shared layout if the game uses one, play and reconnect), fix every ✗.
 5. Bump `version`, update DESIGN.md (phase table, Changelog), commit (`<Name>: phone screen`) and push.

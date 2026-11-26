@@ -30,7 +30,8 @@ Rules:
 
 Follow-ups that replace a round-2 slot when they apply:
 - **Online:** how many players (`--players 2-4`), co-op or versus, quick match or friends only.
-- **Party:** phones as plain gamepads, a custom phone screen, or motion controllers that you tilt, turn or swing (`--controller pad|custom|motion`, see [motion.md](../../pushplay-runtime/references/motion.md)), player count.
+- **Party:** which phone controller: a shared layout (a gamepad: `classic`, `pad`, `twin` or `dpad`; one thumb: `tap`, `swipe` or `slider`; pointing: `trackpad`; answers and votes: `choices`; tilt, turn or swing: `motion`; see [controllers.md](../../pushplay-runtime/references/controllers.md) and [motion.md](../../pushplay-runtime/references/motion.md)), or a custom phone screen (`--controller custom`) only for drawing, card hands or typed answers; player count.
+- **Every other game:** "Should people be able to play with their phone as the controller?" Yes adds `--phones` (a "Connect a phone" screen; each phone is one more controller) and the layout that fits.
 - **Local multiplayer:** co-op or versus, shared camera or one screen arena.
 - **Phone:** one thumb or two (that mostly decides portrait vs landscape), stick and buttons or tap / swipe (`touch-controls` skill), and whether it should also play on the Deck (it must: ask what the controller form of each touch verb is).
 

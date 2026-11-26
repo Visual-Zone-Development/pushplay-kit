@@ -16,9 +16,17 @@
 // o:[b,g,a]} (age in ms before the message was posted, a without gravity, g with it, w the rotation
 // rate in deg/s, o the latest orientation), so a controller can detect gestures at the full sensor rate.
 // phone → host:
-//   {k:'hi', h}            "I'm (back) here; I have controller h": the host replies with the
-//                          controller if needed, then everything the controller should show
+//   {k:'hi', h, rtc}       "I'm (back) here; I have controller h": the host replies with the
+//                          controller if needed, then everything the controller should show.
+//                          rtc: 1 when this phone can take a direct link (below)
+//   {k:'i', i, q}          the controller's held input, numbered (q) so the host can drop a stale copy
 //   anything else          from the controller
+//
+// The direct link: a host that wants one answers hi with {k:'rtc', sdp, s} (a WebRTC offer, s its
+// STUN servers); this page answers {k:'rtc', sdp} and both trade {k:'rtc', c} (ICE candidates),
+// all inside the relay's send. Once the data channel is open, each input goes on it as well as
+// through the relay: the channel is quicker on the same Wi-Fi, the relay copy always arrives, and
+// the host keeps whichever comes first (q). Nothing else uses the channel. ?rtc=0 turns it off.
 
 const COLORS = ['#ffb547', '#ff6b6b', '#4dd8a8', '#5aa9ff', '#c38bff', '#ff8fd0', '#f5e663', '#8ce05a']
 const store = {
@@ -72,6 +80,8 @@ let frameReady = false
 let pending = [] // messages for the controller until it's ready
 let chunks = null
 let wakeLock = null
+let rtc = null // { pc, dc, ready, early: [] }: the direct link, while there is one
+let seq = 0 // numbers this page's input messages
 
 // ---- join form ---------------------------------------------------------------------------
 
@@ -206,11 +216,12 @@ function receive(msg) {
 /** Tell the host we're here, and which controller we already have. */
 function hello() {
   notice('Getting the game ready…')
-  send({ t: 'send', d: { k: 'hi', h: store.get('party:controller-hash') } })
+  send({ t: 'send', d: { k: 'hi', h: store.get('party:controller-hash'), ...(canDirect() ? { rtc: 1 } : {}) } })
 }
 
 function fromHost(d) {
   if (!d || typeof d !== 'object') return
+  if (d.k === 'rtc') return fromHostRtc(d)
   if (d.k !== 'cb') return toController(d)
   if (d.n === 0) {
     const html = store.get('party:controller-hash') === d.h ? store.get('party:controller') : null
@@ -244,6 +255,7 @@ function mount(html) {
 }
 
 function unmount() {
+  closeDirect()
   motionOff()
   frame?.remove()
   frame = null
@@ -265,10 +277,69 @@ addEventListener('message', (e) => {
     frame.contentWindow.postMessage({ type: 'me', me: { ...me, room: code } }, '*')
     for (const d of pending.splice(0)) toController(d)
     notice(null)
-  } else if (m.type === 'send') send({ t: 'send', d: m.d })
+  } else if (m.type === 'send') sendFromController(m.d)
   else if (m.type === 'vibrate') navigator.vibrate?.(Math.min(1000, Number(m.ms) || 0))
   else if (m.type === 'motion') m.on ? motionOn() : motionOff()
 })
+
+// ---- the direct link --------------------------------------------------------------------
+
+const canDirect = () => typeof RTCPeerConnection === 'function' && new URLSearchParams(location.search).get('rtc') !== '0'
+
+/** The controller's messages: input is numbered, and goes on the direct link too when it's open. */
+function sendFromController(d) {
+  if (d?.k !== 'i') return send({ t: 'send', d })
+  const numbered = { ...d, q: ++seq }
+  if (rtc?.dc?.readyState === 'open') {
+    try {
+      rtc.dc.send(JSON.stringify(numbered))
+    } catch {}
+  }
+  send({ t: 'send', d: numbered })
+}
+
+/** The host's offer and candidates: answer, and keep candidates until the offer is in. */
+async function fromHostRtc(d) {
+  if (!canDirect()) return
+  try {
+    if (d.sdp) {
+      closeDirect()
+      const servers = Array.isArray(d.s) ? d.s.filter((u) => typeof u === 'string' && /^stuns?:/.test(u)) : []
+      const pc = new RTCPeerConnection({ iceServers: servers.map((urls) => ({ urls })) })
+      const link = { pc, dc: null, ready: false, early: [] }
+      rtc = link
+      pc.onicecandidate = (e) => e.candidate && rtc === link && send({ t: 'send', d: { k: 'rtc', c: e.candidate.toJSON() } })
+      pc.ondatachannel = (e) => {
+        if (rtc !== link) return
+        link.dc = e.channel
+        e.channel.onclose = () => rtc === link && (link.dc = null)
+      }
+      pc.onconnectionstatechange = () => ['failed', 'closed'].includes(pc.connectionState) && rtc === link && closeDirect()
+      await pc.setRemoteDescription(d.sdp)
+      await pc.setLocalDescription(await pc.createAnswer())
+      if (rtc !== link) return
+      send({ t: 'send', d: { k: 'rtc', sdp: pc.localDescription.toJSON() } })
+      link.ready = true
+      for (const c of link.early.splice(0)) await pc.addIceCandidate(c).catch(() => {})
+    } else if (d.c && rtc) {
+      if (rtc.ready) await rtc.pc.addIceCandidate(d.c).catch(() => {})
+      else rtc.early.push(d.c)
+    }
+  } catch {
+    closeDirect()
+  }
+}
+
+function closeDirect() {
+  const link = rtc
+  rtc = null
+  try {
+    link?.pc.close()
+  } catch {}
+}
+
+/** For tests and troubleshooting: which way input goes now, and a way to drop the direct link. */
+window.partyLink = { get state() { return rtc?.dc?.readyState === 'open' ? 'direct' : 'relay' }, drop: closeDirect }
 
 // ---- motion sensors, only for controllers that ask ----------------------------------------
 
