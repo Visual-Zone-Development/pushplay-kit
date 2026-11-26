@@ -9,6 +9,7 @@ import { createSave, createSettings } from './save.js'
 import { createSettingsScreen } from './settings.js'
 import { drawPrompts } from './prompts.js'
 import { createTouchControls } from './touch.js'
+import { connectPhones } from './phone-pads.js' // {{PHONES}}
 
 const ID = '{{ID}}'
 // The drawing space is at least 1280×800 (a Deck's screen), or a phone's 720×1280 / 1280×720 for a
@@ -55,10 +56,14 @@ const state = {
 window.__game = { state, TUNING, save, settings, get titleMenu() { return titleMenu }, get pauseMenu() { return pauseMenu }, get pauseButton() { return pauseButton() } }
 const debug = new URLSearchParams(location.search).has('debug')
 
+// Phones as controllers: each phone that joins is a pad in input.pads, so input.x and // {{PHONES}}
+// input.held('a') read it like any controller. The room opens when the card is first shown. // {{PHONES}}
+const phones = connectPhones(input, { layout: 'pad', labels: { a: 'Boost' } }) // {{PHONES}}
 const menuOptions = { x: W / 2, width: MENU_WIDTH, height: PHONE ? 80 : 64, gap: PHONE ? 18 : 14 }
 const titleMenu = createMenu(
   [
     { id: 'play', label: 'Play' },
+    phones.menuItem, // {{PHONES}}
     { id: 'settings', label: 'Settings' }
   ],
   { ...menuOptions, y: H / 2 + 20 }
@@ -150,9 +155,14 @@ function update(dt) {
     case 'title': {
       const choice = titleMenu.update(input, dt)
       if (choice === 'play') startRound()
+      if (choice === 'phones') state.screen = 'phones' // {{PHONES}}
       if (choice === 'settings') openSettings('title')
       return
     }
+    case 'phones': // {{PHONES}}
+      // A, B or a tap goes back: a phone that just joined can press A to start playing. // {{PHONES}}
+      if (input.pressed('a') || input.pressed('b') || input.pressed('menu') || input.pointer.pressed) state.screen = 'title' // {{PHONES}}
+      return // {{PHONES}}
     case 'settings':
       if (settingsScreen.update(input, dt) === 'back') state.screen = state.from
       return
@@ -231,6 +241,9 @@ function draw() {
     ctx.fillText(`Collect orbs for ${TUNING.roundSeconds} seconds${save.data.best ? ` · Best ${save.data.best}` : ''}`, W / 2, H / 2 - 70)
     titleMenu.draw(ctx, font(600, 30))
     drawPrompts(ctx, input, [['a', 'Choose'], ['menu', 'Pause in game']], { x: W / 2, y: H - safe.bottom - 40, size: promptSize() })
+  } else if (state.screen === 'phones') { // {{PHONES}}
+    phones.drawCard(ctx, W / 2 - 210 * UI, Math.max(safe.top + 16, H / 2 - 290 * UI), { size: UI }) // {{PHONES}}
+    drawPrompts(ctx, input, [['a', 'Done'], ['b', 'Back']], { x: W / 2, y: H - safe.bottom - 40, size: promptSize() }) // {{PHONES}}
   } else if (state.screen === 'settings') {
     settingsScreen.draw(ctx, { font: font(600, 28) })
     drawPrompts(ctx, input, [['left', 'Change'], ['b', 'Back']], { x: W / 2, y: H - safe.bottom - 40, size: promptSize() })

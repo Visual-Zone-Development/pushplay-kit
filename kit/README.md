@@ -1,6 +1,6 @@
 # Build kit
 
-The tools that build, check and publish games: `check.mjs` (validate, build, play headlessly, render art), `ci.mjs` (the same on GitHub Actions, then publish), `new-game.mjs`, `dev.mjs`, `promote.mjs`, `update-runtime.mjs` and the art tools, plus the runtime files a JavaScript game imports (`src/templates/shared/`: `input.js`, `menu.js`, `fit.js`, `audio.js`, `save.js`, `settings.js`, `prompts.js`, `touch.js`; `src/templates/online/`: `net.js`, `lobby.js`; `src/templates/party/`). This folder is its source.
+The tools that build, check and publish games: `check.mjs` (validate, build, play headlessly, render art), `ci.mjs` (the same on GitHub Actions, then publish), `new-game.mjs`, `dev.mjs`, `promote.mjs`, `update-runtime.mjs` and the art tools, plus the runtime files a JavaScript game imports (`src/templates/shared/`: `input.js`, `menu.js`, `fit.js`, `audio.js`, `save.js`, `settings.js`, `prompts.js`, `touch.js`; `src/templates/online/`: `net.js`, `lobby.js`; `src/templates/party/`, including the shared phone layouts and `phone-pads.js`), and `controllers.mjs`, the gallery of phone layouts. This folder is its source.
 
 **The kit is never copied into a game repo.** A game repo keeps one small workflow file (`src/workflow.yml`) that calls the shared build (`src/build.yml`), and the kit runs against the repo from outside it: `KIT_REPO_ROOT` (or the working directory) is the repo, and its scratch files go to `KIT_WORK_DIR` (by default a folder under the system's temp folder), so nothing it does leaves a file in the repo.
 
@@ -48,6 +48,18 @@ The kit builds a JavaScript project itself (`npm run build`, or the folder as it
 ## Headless browser
 
 The play passes need Playwright's Chromium (`npm run setup` in a game repo installs it). Where that download is blocked, set `KIT_BROWSER=/path/to/chrome` to use an installed Chrome or Chromium; with no browser at all, `check.mjs` runs the static checks and says what it skipped.
+
+## v23: shared phone controllers, and phones in any game
+
+- `templates/party/controller-layouts.js` (new runtime file): ten shared phone layouts (`classic`, `pad`, `twin`, `dpad`, `tap`, `swipe`, `slider`, `trackpad`, `choices`, `motion`), with labels, hidden buttons and a theme set from the TV. A party game that passes `controls` to `createParty` sends phones this page instead of its own `controller.html`; it is the same in every game, so phones cache it once.
+- Layouts: on sideways layouts the pause button floats in a spot each keeps clear instead of taking a bar, so the controls get the whole height. `knocks: true` turns a knock on the phone's edge into a press (LT/RT on `twin`, LB/RB elsewhere), from the motion sensors, ignoring the jolt of screen taps.
+- `party.js`: `party.controls(settings, id?)` picks and adjusts the layout; `party.pad(id)` reads any player (a phone on a layout or a local controller) as one gamepad, with presses counted on the phone so none is lost or doubled. Local controllers now report every button in `party.inputs`. Games with their own `controller.html` are unchanged.
+- `templates/party/phone-pads.js` (new runtime file): `connectPhones(input, …)` lets any game take phones as controllers; each phone is a pad in `input.pads`. `input.js` gains `addPad(read)`, `removePad`, `onUpdate` and `padLost()`.
+- `motion.js` is now a runtime file, refreshed by `update-runtime` where a game has the kit's copy. `party-controllers/pad.html` and `motion.html` are gone: they are the `pad` and `motion` layouts.
+- `new-game`: `--controller <layout>|custom` (default `classic`; only `custom` writes a `controller.html`), and `--phones` for a plain game with a "Connect a phone" screen. `update-runtime` adds the phone files to a game that imports `./phone-pads.js`.
+- `controllers.mjs` (`pushplay controllers`): a gallery of every layout, running the real phone page, with what the game reads.
+- `party.js` and the join page (`relay-public/shell.js`, copied from the launcher repo's relay): the **direct link**. A phone's input also takes a WebRTC data channel to the game where both can open one, numbered so the first copy wins and the relay copy is a free fallback. `createParty({ direct, stun })`, `party.players[i].link`. Tested with two real browsers in `direct-link.test.mjs`.
+- `check.mjs`: a party game on a layout must get a phone's button press into `party.pad(id)`; a `phone-pads.js` game must let a headless phone join and move `input.pads`. Such games get a relay pass like party games.
 
 ## v20: every game fills a TV
 

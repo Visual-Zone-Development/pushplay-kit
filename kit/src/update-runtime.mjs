@@ -4,7 +4,7 @@
 // itself under the same name is left alone (with a note).
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { brand, CMD, KIT_VERSION, ONLINE_RUNTIME_FILES, PARTY_RUNTIME_FILES, RUNTIME_FILES, RUNTIME_HEADER_RE } from './config.mjs'
+import { brand, CMD, KIT_VERSION, ONLINE_RUNTIME_FILES, PARTY_OPTIONAL_FILES, PARTY_RUNTIME_FILES, PHONE_RUNTIME_FILES, RUNTIME_FILES, RUNTIME_HEADER_RE } from './config.mjs'
 import { listGames, log } from './repo.mjs'
 
 /** Runtime files that old kits shipped without a header; games forked them, so they're replaced anyway. */
@@ -22,10 +22,17 @@ for (const game of listGames()) {
   if (!RUNTIME_FILES.some((f) => existsSync(join(codeDir, f)))) continue // not built on the runtime: leave it alone
   // Party games (they have party.js) get the party modules too; online games (net.js) the online ones
   // (a party game's net.js as well: party.js builds on it; its lobby is party-lobby.js).
-  const party = existsSync(join(codeDir, 'party.js'))
-  const online = existsSync(join(codeDir, 'net.js'))
+  // Phones as controllers: the game has phone-pads.js, or imports it (adding the import and running
+  // update-runtime is how a game takes phones).
+  const has = (f) => existsSync(join(codeDir, f))
+  const phones = has('phone-pads.js') || /from\s+['"]\.\/phone-pads\.js['"]/.test(has('game.js') ? readFileSync(join(codeDir, 'game.js'), 'utf8') : '')
+  const party = has('party-lobby.js') || (has('party.js') && !phones)
+  const online = has('net.js') || phones
   const onlineFiles = online ? ONLINE_RUNTIME_FILES.filter((f) => f === 'net.js' || existsSync(join(codeDir, f))) : []
-  const files = [...RUNTIME_FILES.map((f) => ['shared', f]), ...(party ? PARTY_RUNTIME_FILES.map((f) => ['party', f]) : []), ...onlineFiles.map((f) => ['online', f])]
+  // Optional party files (motion.js) are refreshed when the game has them and they carry the header.
+  const optional = party ? PARTY_OPTIONAL_FILES.filter((f) => existsSync(join(codeDir, f)) && RUNTIME_HEADER_RE.test(readFileSync(join(codeDir, f), 'utf8'))) : []
+  const partyFiles = [...new Set([...(party ? PARTY_RUNTIME_FILES : []), ...(phones ? PHONE_RUNTIME_FILES : [])])]
+  const files = [...RUNTIME_FILES.map((f) => ['shared', f]), ...partyFiles.map((f) => ['party', f]), ...optional.map((f) => ['party-motion', f]), ...onlineFiles.map((f) => ['online', f])]
   for (const [group, file] of files) {
     const dest = join(codeDir, file)
     const text = fresh(group, file)

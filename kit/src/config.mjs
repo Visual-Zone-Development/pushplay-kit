@@ -8,7 +8,7 @@ export const brand = JSON.parse(readFileSync(join(import.meta.dirname, 'brand.js
  * Bumped whenever the kit's files change (kit-lock.json holds their hash; a test enforces the bump).
  * ci.mjs writes it into the release index, so the launcher can tell a repo its kit is outdated.
  */
-export const KIT_VERSION = 22
+export const KIT_VERSION = 23
 /**
  * Runtime modules copied into every game; `update-runtime` replaces them by this header. The number
  * after `v` is the KIT_VERSION that shipped the file, so a game folder says which kit it carries.
@@ -18,7 +18,16 @@ export const RUNTIME_HEADER = `// ${brand.slug} runtime v`
 export const RUNTIME_HEADER_RE = /^\/\/ \S+ runtime v/
 export const RUNTIME_FILES = ['input.js', 'menu.js', 'fit.js', 'audio.js', 'save.js', 'settings.js', 'prompts.js', 'touch.js']
 /** Party games' runtime modules (templates/party), refreshed the same way in games that have party.js. */
-export const PARTY_RUNTIME_FILES = ['party.js', 'party-lobby.js', 'qr.js', 'controller.js', 'phone-menus.js']
+export const PARTY_RUNTIME_FILES = ['party.js', 'party-lobby.js', 'qr.js', 'controller.js', 'controller-layouts.js', 'phone-menus.js']
+/** Party runtime modules only some games have (templates/party-motion): refreshed where present, never added. */
+export const PARTY_OPTIONAL_FILES = ['motion.js']
+/**
+ * The phone layouts a game can give its players (controller-layouts.js), for new-game --controller.
+ * custom: the game's own controller.html instead.
+ */
+export const CONTROLLER_LAYOUTS = ['classic', 'pad', 'twin', 'dpad', 'tap', 'swipe', 'slider', 'trackpad', 'choices', 'motion']
+/** Phones as controllers in any game (templates/party): phone-pads.js and what it builds on (net.js too). */
+export const PHONE_RUNTIME_FILES = ['phone-pads.js', 'party.js', 'qr.js', 'controller.js', 'controller-layouts.js']
 /** Online games' runtime modules (templates/online), refreshed in games that have net.js (party games too: party.js builds on net.js). */
 export const ONLINE_RUNTIME_FILES = ['net.js', 'lobby.js']
 /** Per-game ignore list (one glob per line) for files that are never shipped. */

@@ -5,17 +5,20 @@ their phone: they scan the QR code on the lobby screen, or open the address show
 browser and type the four-letter room code. Controllers plugged into the machine can join too,
 so the same game plays with phones, pads, or a mix.
 
-Scaffold one with `pushplay new-game <id> --party`, adding `--controller custom` when phones need
-a screen of their own (a quiz answer, a hand of cards, a drawing pad), or `--controller motion`
-when the phone's motion sensors are the controller (tilt, a steering wheel, swings; see
-[motion.md](../../pushplay-runtime/references/motion.md)).
+Scaffold one with `pushplay new-game <id> --party`. Phones show one of the kit's shared layouts
+(`--controller classic`, the default, or `pad`, `twin`, `dpad`, `tap`, `swipe`, `slider`,
+`trackpad`, `choices`, `motion`): see [controllers.md](controllers.md), and try them with
+`pushplay controllers`. Use `--controller custom` only when phones need a screen no layout gives
+(a hand of cards, a drawing pad, a typed answer). `motion` is for when the phone's motion sensors
+are the controller (tilt, a steering wheel, swings; see [motion.md](motion.md)).
 
 ## How it works
 
 ```
-TV (game.js)                                     each phone (controller.html)
+TV (game.js)                                     each phone (a shared layout, or controller.html)
   party.update() every frame
-  reads party.inputs[id], party.pressed(id,'a') ←─ controller.input({ x, y, a, b })
+  reads party.pad(id), party.pressed(id,'a')    ←─ controller.input({...})
+  party.controls({ layout, … }, id?) ───────────→  which layout, its labels and theme
   party.on('msg', ({ from, data }))             ←─ controller.send({ pick: 2 })
   writes party.public  ─────────────────────────→  controller.public   (every phone)
   writes party.view(id) ────────────────────────→  controller.mine     (that phone only)
@@ -30,12 +33,14 @@ TV (game.js)                                     each phone (controller.html)
   so nobody can peek. **Never put a secret in `party.public`.**
 - **Changes only.** About 20 times a second the TV sends each phone what changed in `public` and
   its view. Write them freely; keep them to what phones show.
-- **Inputs look the same from every player.** A phone using the stock pad sends `{ x, y, a, b }`,
-  and a local controller reads the same way, so `party.inputs[id].x` works for both.
+- **Inputs look the same from every player.** `party.pad(id)` is a gamepad for a phone on a
+  shared layout and for a local controller alike (`x`, `y`, `aimX`, `aimY`, `value`, `pointer`,
+  `held(b)`, `pressed(b)`, `released(b)`). `party.inputs[id]` is what a custom `controller.html`
+  sent, as sent.
 
-## The phone screen
+## A custom phone screen
 
-`controller.html` sits next to `index.html` (in `public/` for a Vite game). It's one file with
+Only when no shared layout fits ([controllers.md](controllers.md)). `controller.html` sits next to `index.html` (in `public/` for a Vite game). It's one file with
 its styles and script inline. The TV sends it to each phone, where it runs sandboxed with no
 network: no CDNs, no fetch, images as `data:` URLs. The kit adds `controller.js` to the top,
 which defines a global `controller`:
@@ -83,10 +88,14 @@ sends `{ play: cardId }`; check it's really in their hand on the TV.
 lists (`{ strokes: [[x, y, x, y, …], …] }`, numbers rounded, coordinates 0–1000). Messages over
 about 12 KB are refused, so send a long drawing in a few parts. The TV redraws them.
 
-**Phones as gamepads (brawlers, racers).** Use the stock pad (`--controller pad`) and read
-`party.inputs[id]` like local controllers. Phone input takes 50–150 ms to reach the TV, which
+**Phones as gamepads (brawlers, racers, shooters).** Use a shared layout (`classic`, `twin`, `dpad`)
+and read `party.pad(id)`, which reads local controllers the same way. Phone input takes 50–150 ms to reach the TV, which
 is fine for party brawlers and bumper games and wrong for precise aiming. Keep the action on
 the TV, where everyone's looking.
+
+**Votes between rounds.** Switch every phone to `party.controls({ layout: 'choices', prompt,
+choices })`, take `{ pick: i }` from `party.on('msg')`, mark each player's pick with
+`party.controls({ picked: i }, id)`, then switch back. The party starter does this.
 
 **Phones as motion controllers (tilt, steer, swing, bowl).** Use `--controller motion` and the
 `motion-controls` skill. Gestures are detected and timed on the phone, and the TV syncs to the
@@ -127,14 +136,16 @@ else phoneMenus.publish(null)
 ```
 
 Taps go into the same menu, so Quit to library (inside the launcher), `onChange` and settings
-saving behave exactly as on the TV. Any phone can work them, not just whoever is playing. Give
-the phones a Pause button too (`controller.send({ pause: true })`).
+saving behave exactly as on the TV. Any phone can work them, not just whoever is playing. Every
+shared layout has a pause button: pause when any player's `party.pad(id).pressed('menu')`. A custom
+screen needs one too (`controller.send({ pause: true })`).
 
 ## Testing
 
 - `pushplay dev`: the local relay listens on your Wi-Fi, so scan the lobby's QR code with a
   real phone. Open the join address in a few browser windows (one per player) to test alone.
-- `pushplay check`: headless phones join by code, send input, must each see exactly their
-  own `party.view(id)`, and one reloads to check it gets its seat back.
+- `pushplay check`: headless phones join by code, press a button on the game's shared layout
+  (it must reach `party.pad(id)`), send input, must each see exactly their own `party.view(id)`,
+  and one reloads to check it gets its seat back.
 - Test menus from the phone side: a phone pauses, opens Settings, changes a value, goes Back
   and resumes, all through `{ menu }` messages, without a key pressed on the TV.

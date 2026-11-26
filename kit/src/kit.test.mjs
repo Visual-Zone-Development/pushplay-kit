@@ -1,7 +1,7 @@
 // End-to-end tests of the build kit against throwaway game repos (DRY_RUN: no GitHub calls).
 // Each run builds games in headless Chromium, so these take a few seconds each.
 import { execFileSync, spawnSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -258,6 +258,77 @@ describe('build kit', () => {
     expect(output).not.toMatch(/KB\/s through the relay/)
   }, 150_000)
 
+  it('scaffolds party games on a shared phone layout and on their own phone screen, and both pass the party check', () => {
+    const root = makeRepo((r) => mkdirSync(join(r, 'games')))
+    const unknown = runKit('new-game.mjs', root, ['nope', '--party', '--controller', 'joystick'])
+    expect(unknown.status).toBe(1)
+    expect(unknown.output).toMatch(/classic, pad, twin, dpad, tap, swipe, slider, trackpad, choices, motion/)
+
+    const twin = runKit('new-game.mjs', root, ['brawl', '--party', '--controller', 'twin', '--players', '2-4'])
+    expect(twin.status, twin.output).toBe(0)
+    expect(twin.output).toMatch(/the twin phone layout/)
+    const brawl = join(root, 'games/brawl')
+    expect(existsSync(join(brawl, 'controller.html'))).toBe(false)
+    for (const file of ['party.js', 'controller.js', 'controller-layouts.js']) expect(existsSync(join(brawl, file)), file).toBe(true)
+    expect(readFileSync(join(brawl, 'game.js'), 'utf8')).toContain("const CONTROLS = 'twin'")
+
+    const custom = runKit('new-game.mjs', root, ['quiz', '--party', '--controller', 'custom', '--players', '2-4'])
+    expect(custom.status, custom.output).toBe(0)
+    const quiz = join(root, 'games/quiz')
+    expect(existsSync(join(quiz, 'controller.html'))).toBe(true)
+    expect(readFileSync(join(quiz, 'game.js'), 'utf8')).toContain('const CONTROLS = null')
+
+    for (const [id, dir] of [['brawl', brawl], ['quiz', quiz]]) {
+      const m = JSON.parse(readFileSync(join(dir, MANIFEST_FILE), 'utf8'))
+      write(join(dir, MANIFEST_FILE), { ...m, description: `A party game (${id}) where phones move dots on the TV.` })
+      write(join(dir, 'art/cover.svg'), SVG)
+      write(join(dir, 'art/hero.svg'), SVG)
+    }
+    const { status, output, index } = runCi(root)
+    expect(status, output).toBe(0)
+    expect(index.games.brawl).toMatchObject({ party: true, error: null })
+    expect(index.games.quiz).toMatchObject({ party: true, error: null })
+  }, 240_000)
+
+  it('scaffolds a one-player game that takes phones as controllers, and a phone that joins moves it', () => {
+    const root = makeRepo((r) => mkdirSync(join(r, 'games')))
+    expect(runKit('new-game.mjs', root, ['both', '--party', '--phones']).status).toBe(1)
+    const made = runKit('new-game.mjs', root, ['solo-orbs', '--phones', '--name', 'Solo Orbs'])
+    expect(made.status, made.output).toBe(0)
+    expect(made.output).toMatch(/phones as controllers/)
+    const dir = join(root, 'games/solo-orbs')
+    for (const file of ['phone-pads.js', 'party.js', 'qr.js', 'controller.js', 'controller-layouts.js', 'net.js']) expect(existsSync(join(dir, file)), file).toBe(true)
+    for (const file of ['party-lobby.js', 'phone-menus.js', 'controller.html']) expect(existsSync(join(dir, file)), file).toBe(false)
+    const code = readFileSync(join(dir, 'game.js'), 'utf8')
+    expect(code).toContain("import { connectPhones } from './phone-pads.js'")
+    expect(code).toContain('phones.menuItem')
+    expect(code).not.toContain('{{PHONES}}')
+    // Without --phones the starter has none of it.
+    expect(runKit('new-game.mjs', root, ['plain-orbs']).status).toBe(0)
+    expect(readFileSync(join(root, 'games/plain-orbs/game.js'), 'utf8')).not.toMatch(/phone-pads|connectPhones|PHONES/)
+
+    const m = JSON.parse(readFileSync(join(dir, MANIFEST_FILE), 'utf8'))
+    write(join(dir, MANIFEST_FILE), { ...m, description: 'Collect orbs with a controller, a keyboard, or your phone.' })
+    write(join(dir, 'art/cover.svg'), SVG)
+    write(join(dir, 'art/hero.svg'), SVG)
+    rmSync(join(root, 'games/plain-orbs'), { recursive: true })
+    const { status, output, index } = runCi(root)
+    expect(status, output).toBe(0)
+    expect(index.games['solo-orbs'].error).toBeNull()
+  }, 200_000)
+
+  it('update-runtime gives a game that imports phone-pads.js the files it needs', () => {
+    const root = makeRepo((r) => {
+      write(join(r, 'games/takes-phones/game.js'), "import { input } from './input.js'\nimport { connectPhones } from './phone-pads.js'")
+      write(join(r, 'games/takes-phones/input.js'), `${RUNTIME_HEADER}1 — old\nexport const input = {}`)
+      write(join(r, 'games/takes-phones', MANIFEST_FILE), manifest('takes-phones'))
+    })
+    const { status, output } = runKit('update-runtime.mjs', root)
+    expect(status, output).toBe(0)
+    for (const file of ['phone-pads.js', 'party.js', 'qr.js', 'controller.js', 'controller-layouts.js', 'net.js']) expect(existsSync(join(root, 'games/takes-phones', file)), file).toBe(true)
+    expect(existsSync(join(root, 'games/takes-phones/party-lobby.js'))).toBe(false)
+  })
+
   it('scaffolds a phone game that passes the touch-only phone pass, and fails one whose text is too small', () => {
     const root = makeRepo((r) => mkdirSync(join(r, 'games')))
     const bare = runKit('new-game.mjs', root, ['tap-tap', '--phone'])
@@ -416,6 +487,26 @@ describe('build kit', () => {
     expect(output).toMatch(/input\.extendKeys/)
     expect(output).toMatch(/kept .*games\/forked\/save\.js/)
     expect(runKit('update-runtime.mjs', root).output).toMatch(/already those of kit/)
+  })
+
+  it('update-runtime gives party games the shared phone layouts, and refreshes motion.js only where the game has the kit’s copy', () => {
+    const root = makeRepo((r) => {
+      for (const id of ['old-party', 'own-motion', 'kit-motion']) {
+        write(join(r, `games/${id}/game.js`), 'import { createParty } from "./party.js"')
+        write(join(r, `games/${id}/input.js`), `${RUNTIME_HEADER}1 — old\nexport const input = {}`)
+        write(join(r, `games/${id}/party.js`), `${RUNTIME_HEADER}10 — old\nexport const createParty = () => {}`)
+        write(join(r, `games/${id}`, MANIFEST_FILE), manifest(id))
+      }
+      write(join(r, 'games/own-motion/motion.js'), '// the game’s own motion code\nexport const createMotion = () => {}')
+      write(join(r, 'games/kit-motion/motion.js'), `${RUNTIME_HEADER}23 — old\nexport const createMotion = () => {}`)
+    })
+    const { status, output } = runKit('update-runtime.mjs', root)
+    expect(status, output).toBe(0)
+    const tree = kitTree()
+    expect(readFileSync(join(root, 'games/old-party/controller-layouts.js'), 'utf8')).toBe(tree['templates/party/controller-layouts.js'])
+    expect(existsSync(join(root, 'games/old-party/motion.js'))).toBe(false)
+    expect(readFileSync(join(root, 'games/own-motion/motion.js'), 'utf8')).toContain('the game’s own motion code')
+    expect(readFileSync(join(root, 'games/kit-motion/motion.js'), 'utf8')).toBe(tree['templates/party-motion/motion.js'])
   })
 
   it('promote makes the new repo from the game and the one workflow file, with no template', () => {

@@ -1,5 +1,8 @@
-// {{NAME}}: party starter. The game runs here, on the TV; players join from their phones
-// (controller.html) or with controllers plugged into this machine. Replace startRound(),
+// {{NAME}}: party starter. The game runs here, on the TV; players join from their phones or with
+// controllers plugged into this machine. Phones show a shared layout (CONTROLS below, changed any
+// time with party.controls(): a round moves dots with the stick, then every phone becomes a list of
+// choices for a vote), or this game's own controller.html when CONTROLS is null. Read every player
+// through party.pad(id): a phone and a controller read the same. Replace startRound(),
 // playUpdate() and drawPlay() with the real game and keep the screens:
 // title (Start a party / Settings), lobby (party-lobby.js), pause (Resume / Settings / End party), settings.
 // The pause and settings menus also show on every phone (phone-menus.js), so nobody has to touch the TV.
@@ -39,11 +42,13 @@ const settings = createSettings(ID) // <id>-settings-v1: volumes, reduced shake,
 const audio = createAudio({ settings })
 
 /** Numbers worth tuning live here so they're easy to find (and to change from the ?debug console). */
-const TUNING = { speed: 420, radius: 26 }
+const TUNING = { speed: 420, radius: 26, moveTime: 20, voteTime: 12 }
+/** What the phones show while moving: a shared layout and its settings (null: this game's controller.html). */
+const CONTROLS = {{CONTROLS}}
 const CHOICES = ['Red', 'Blue', 'Green', 'Gold']
 const SECRETS = ['banana', 'rocket', 'teapot', 'cactus', 'walrus', 'lantern', 'pickle', 'comet']
 
-const party = createParty({ input, minPlayers: {{MIN_PLAYERS}}, maxPlayers: {{MAX_PLAYERS}} })
+const party = createParty({ input, minPlayers: {{MIN_PLAYERS}}, maxPlayers: {{MAX_PLAYERS}}, controls: CONTROLS })
 const lobby = createPartyLobby(party, input, { title: '{{NAME}}' })
 // Every menu the TV shows is on the phones too (as buttons), so nobody has to touch the TV.
 const phoneMenus = createPhoneMenus(party, input)
@@ -54,7 +59,9 @@ const state = {
   resumeTo: 'lobby',
   /** TV-only game state: phones never see this. */
   dots: {},
-  picks: {}
+  picks: {},
+  phase: 'move', // move | vote
+  timer: 0
 }
 // The check presses Start and expects state.screen 'paused', taps titleMenu's first item, and clicks pauseButton.
 window.__game = { state, TUNING, party, settings, get titleMenu() { return titleMenu }, get pauseMenu() { return pauseMenu }, get pauseButton() { return pauseButton() } }
@@ -99,11 +106,12 @@ party.on('join', (p) => {
   if (state.screen === 'playing' || state.screen === 'paused') deal(p)
 })
 party.on('leave', (p) => delete state.dots[p.id])
-// Phones send choices with controller.send(...).
+// The choices layout (and a custom controller.html) sends { pick: i }.
 party.on('msg', ({ from, data }) => {
-  if (state.screen !== 'playing' || typeof data?.pick !== 'number') return
+  if (state.screen !== 'playing' || state.phase !== 'vote' || typeof data?.pick !== 'number') return
   state.picks[from] = data.pick
-  party.view(from).picked = data.pick
+  party.view(from).picked = data.pick // a custom controller.html reads this
+  if (CONTROLS) party.controls({ picked: data.pick }, from) // the choices layout: this phone only
   audio.tone({ freq: 520 + data.pick * 80, dur: 0.06 })
 })
 party.on('end', () => {
@@ -135,11 +143,32 @@ function endParty() {
 
 function startRound() {
   state.dots = {}
-  state.picks = {}
-  party.public.prompt = 'Pick a colour!'
-  party.public.choices = CHOICES
   party.public.paused = false
   for (const p of party.players) deal(p)
+  startMove()
+}
+
+/** Phones are gamepads: move the dots. */
+function startMove() {
+  state.phase = 'move'
+  state.timer = TUNING.moveTime
+  party.public.prompt = 'Move with your phone!'
+  delete party.public.choices
+  if (CONTROLS) {
+    party.controls(CONTROLS)
+    for (const p of party.players) party.controls(null, p.id)
+  }
+}
+
+/** Every phone becomes a list of choices, then back to moving. */
+function startVote() {
+  state.phase = 'vote'
+  state.timer = TUNING.voteTime
+  state.picks = {}
+  for (const p of party.players) delete party.view(p.id).picked
+  party.public.prompt = 'Pick a colour!'
+  party.public.choices = CHOICES // a custom controller.html reads these
+  if (CONTROLS) party.controls({ layout: 'choices', prompt: 'Pick a colour!', choices: CHOICES })
 }
 
 /** A dot on the TV, and a secret only this player's phone shows. */
@@ -198,17 +227,24 @@ function update(dt) {
   else phoneMenus.publish(null)
 }
 
-/** One frame of the game. Inputs look the same from a phone's pad and a local controller. */
+/** One frame of the game. party.pad(id) reads the same from a phone and a local controller. */
 function playUpdate(dt) {
   if (input.pointer.pressed && inside(input.pointer, pauseButton())) input.requestMenu()
-  if (input.pressed('menu')) return pause()
+  // The pause button on any phone pauses too.
+  if (input.pressed('menu') || party.players.some((p) => party.pad(p.id).pressed('menu'))) return pause()
+  state.timer -= dt
+  if (state.phase === 'move' && state.timer <= 0) startVote()
+  const voters = party.players.filter((p) => p.kind === 'phone' && p.connected)
+  if (state.phase === 'vote' && (state.timer <= 0 || (voters.length && voters.every((p) => p.id in state.picks)))) startMove()
   for (const p of party.players) {
     const dot = state.dots[p.id]
     if (!dot) continue
-    const i = party.inputs[p.id] ?? {}
-    dot.x = clamp(dot.x + (i.x ?? 0) * TUNING.speed * dt, TUNING.radius, MIN_W - TUNING.radius)
-    dot.y = clamp(dot.y + (i.y ?? 0) * TUNING.speed * dt, 160, MIN_H - TUNING.radius)
-    if (party.pressed(p.id, 'a')) {
+    const pad = party.pad(p.id)
+    if (state.phase === 'move') {
+      dot.x = clamp(dot.x + pad.x * TUNING.speed * dt, TUNING.radius, MIN_W - TUNING.radius)
+      dot.y = clamp(dot.y + pad.y * TUNING.speed * dt, 160, MIN_H - TUNING.radius)
+    }
+    if (pad.pressed('a')) {
       dot.pop = 1
       audio.tone({ freq: 880, dur: 0.05 })
     }
@@ -257,12 +293,14 @@ function draw() {
 function drawPlay() {
   ctx.fillStyle = '#eef0f5'
   ctx.font = font(800, 44)
-  ctx.fillText(party.public.prompt ?? '', W / 2, 80)
-  // The TV shows how many picked each choice, never who: that's on their phones.
-  const counts = CHOICES.map((_, i) => Object.values(state.picks).filter((p) => p === i).length)
-  ctx.font = font(600, 24)
-  ctx.fillStyle = '#9aa3b5'
-  ctx.fillText(CHOICES.map((c, i) => `${c} ${counts[i]}`).join('     '), W / 2, 130)
+  ctx.fillText(`${party.public.prompt ?? ''}  ${Math.max(0, Math.ceil(state.timer))}`, W / 2, 80)
+  if (state.phase === 'vote') {
+    // The TV shows how many picked each choice, never who: that's on their phones.
+    const counts = CHOICES.map((_, i) => Object.values(state.picks).filter((p) => p === i).length)
+    ctx.font = font(600, 24)
+    ctx.fillStyle = '#9aa3b5'
+    ctx.fillText(CHOICES.map((c, i) => `${c} ${counts[i]}`).join('     '), W / 2, 130)
+  }
 
   const f = field()
   ctx.save()

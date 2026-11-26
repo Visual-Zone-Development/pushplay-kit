@@ -3,6 +3,7 @@
 //
 //   pushplay new-game <id> [--workshop] [--vite] [--online | --party] [--phone portrait|landscape] [--name "Title"]
 //   pushplay dev [id] [--host]        play a game in a browser, with live reload
+//   pushplay controllers [--host]     try every shared phone layout, and see what a game reads from it
 //   pushplay check [id ...]           build the games and play them headlessly; must pass before pushing
 //   pushplay setup                    install the headless browser the check plays games in
 //   pushplay art [id] [--dry] …       painted art from your own image API key (asks before it costs anything)
@@ -29,6 +30,7 @@ const ZIP = process.env.PUSHPLAY_KIT_ZIP ?? join(HERE, '../kit.zip')
 const SCRIPTS = {
   'new-game': 'new-game.mjs',
   dev: 'dev.mjs',
+  controllers: 'controllers.mjs',
   check: 'check.mjs',
   art: 'art/generate.mjs',
   'art-shots': 'art/shots.mjs',

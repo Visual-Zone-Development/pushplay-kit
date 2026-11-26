@@ -17,7 +17,7 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { INDEX_ASSET, KIT_VERSION, RELAY_URL, RELEASE_TAG, releaseTagFor, WORKFLOW_FILE } from './config.mjs'
-import { channelBranches, distDir, layout, listGames, log, readManifest, ROOT, validateIndex, WORK_DIR } from './repo.mjs'
+import { channelBranches, distDir, layout, listGames, log, readManifest, ROOT, usesPhonePads, validateIndex, WORK_DIR } from './repo.mjs'
 
 const env = process.env
 const dryRun = Boolean(env.DRY_RUN)
@@ -149,8 +149,8 @@ async function build() {
  * proves which repo built the game. No secrets needed. If it fails the game still ships, it just
  * can't go online until the next build. Runs in the build stage, before the game is zipped.
  */
-async function onlinePass(out, manifest) {
-  if (!(manifest.online || manifest.party) || dryRun) return []
+async function onlinePass(out, manifest, game) {
+  if (!(manifest.online || manifest.party || (game && usesPhonePads(game.dir))) || dryRun) return []
   if (!RELAY_URL) return ['no online relay is configured for this kit (brand.json relayUrl), so online play is off in this build']
   const base = RELAY_URL.replace(/^ws/, 'http').replace(/\/+$/, '')
   let token = ''

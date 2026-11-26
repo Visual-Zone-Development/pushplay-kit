@@ -47,8 +47,9 @@ Run it from the game's repo. It never leaves a file in the repo except what the 
 
 | Command | What it does |
 |---|---|
-| `pushplay new-game <id> [--workshop] [--vite] [--online --players 2-4 \| --party [--controller pad\|custom\|motion]] [--phone portrait\|landscape] [--name "Title"]` | Scaffold a JavaScript game on the runtime files (repo root, or `games/<id>/` with `--workshop` or an existing `games/`), and add the workflow file if the repo has none |
+| `pushplay new-game <id> [--workshop] [--vite] [--online --players 2-4 \| --party [--controller <layout>\|custom] \| --phones] [--phone portrait\|landscape] [--name "Title"]` | Scaffold a JavaScript game on the runtime files (repo root, or `games/<id>/` with `--workshop` or an existing `games/`), and add the workflow file if the repo has none |
 | `pushplay dev [id] [--host]` | Play it in a browser with live reload, http://localhost:5173 |
+| `pushplay controllers [--host]` | The shared phone layouts in a gallery: press them and see what the game reads; `--host` to open it on a phone |
 | `pushplay check [id ...]` | Build and play the games headlessly; prints ✗ problems, ⚠ notes and the absolute paths of the cover, hero and screenshot PNGs |
 | `pushplay setup` | Install the headless browser the check uses (the first `check` tries by itself) |
 | `pushplay art [id] [--dry] [--approve <$>]` | Painted art from the user's own image API key (asks before any cost) |
