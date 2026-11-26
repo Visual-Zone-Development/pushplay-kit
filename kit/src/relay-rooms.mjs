@@ -63,10 +63,19 @@ export const LIMITS = {
   hostGraceMs: 60_000,
   idlePartyMs: 30 * 60_000,
   /** A phone that hasn't joined a party by then is disconnected. */
-  joinTimeoutMs: 20_000
+  joinTimeoutMs: 20_000,
+  /**
+   * Room codes are short (typed off a TV), so wrong ones are counted: a socket is closed after
+   * this many, and an address with joinFailuresPerIp in joinFailureWindowMs is refused for
+   * joinBlockMs. Guessing drops from thousands of codes a second to about one a minute.
+   */
+  joinFailuresPerSocket: 3,
+  joinFailuresPerIp: 10,
+  joinFailureWindowMs: 10 * 60_000,
+  joinBlockMs: 10 * 60_000
 }
 
-export const CLOSE = { rate: 4029, tooBig: 4013, replaced: 4001, noParty: 4004 }
+export const CLOSE = { rate: 4029, tooBig: 4013, replaced: 4001, noParty: 4004, wrongCodes: 4030 }
 
 const PHONE_MESSAGES = new Set(['party-join', 'send', 'leave'])
 
@@ -91,17 +100,21 @@ export class Relay {
     this.parties = new Map()
     this.clients = new Set()
     this.nextId = 1
+    /** ip → { count, since, blockedUntil }: wrong room codes, for joinFailuresPerIp. */
+    this.joinFailures = new Map()
   }
 
   /**
    * Attach a socket. `game` namespaces rooms (repo, game id and version), so games never mix.
    * `phone` is an unsigned party player: it may only join a party and talk to its host.
    */
-  connect(socket, { game = null, phone = false }) {
+  connect(socket, { game = null, phone = false, ip = '' }) {
     const client = {
       id: `p${this.nextId++}`,
       game,
       phone,
+      ip,
+      failedJoins: 0,
       socket,
       room: null,
       /** Token to take this slot back after a drop (started rooms); the time the socket dropped. */
@@ -149,6 +162,7 @@ export class Relay {
       else for (const seat of [...party.seats.values()]) if (!seat.client && seat.away < now - seatGraceMs) this.#removeSeat(party, seat)
     }
     for (const client of this.clients) if (client.phone && !client.party && client.connected < now - joinTimeoutMs) client.socket.close(CLOSE.noParty, 'no party joined')
+    for (const [ip, f] of this.joinFailures) if (f.blockedUntil < now && f.since < now - this.limits.joinFailureWindowMs) this.joinFailures.delete(ip)
   }
 
   /** Close every connection (budget exhausted, shutdown). */
@@ -466,8 +480,13 @@ export class Relay {
 
   #joinParty(client, { room, name, color, resume }) {
     if (!client.phone) return this.#send(client, { t: 'error', code: 'bad-message' })
+    const blocked = this.joinFailures.get(client.ip)
+    if (blocked && blocked.blockedUntil > this.now()) {
+      this.#send(client, { t: 'error', code: 'slow-down' })
+      return client.socket.close(CLOSE.wrongCodes, 'too many wrong room codes')
+    }
     const party = this.parties.get(String(room ?? '').toUpperCase())
-    if (!party) return this.#send(client, { t: 'error', code: 'not-found' })
+    if (!party) return this.#joinFailed(client, 'not-found')
     const seat = typeof resume === 'string' ? [...party.seats.values()].find((s) => s.resume === resume) : null
     if (seat) {
       if (seat.client === client) return this.#send(client, { t: 'party-joined', room: party.code, you: seat.id, resume: seat.resume })
@@ -487,8 +506,8 @@ export class Relay {
       if (!party.host) this.#send(client, { t: 'host-away' })
       return
     }
-    if (party.locked) return this.#send(client, { t: 'error', code: 'locked' })
-    if (party.seats.size >= party.max) return this.#send(client, { t: 'error', code: 'full' })
+    if (party.locked) return this.#joinFailed(client, 'locked')
+    if (party.seats.size >= party.max) return this.#joinFailed(client, 'full')
     this.#leaveParty(client)
     const fresh = {
       id: client.id,
@@ -505,6 +524,20 @@ export class Relay {
     this.#send(client, { t: 'party-joined', room: party.code, you: fresh.id, resume: fresh.resume })
     if (party.host) this.#send(party.host, { t: 'peer-join', id: fresh.id, name: fresh.name, color: fresh.color })
     else this.#send(client, { t: 'host-away' })
+  }
+
+  /** A join that didn't get in: counted against the socket and its address (see joinFailuresPerIp). */
+  #joinFailed(client, code) {
+    const now = this.now()
+    const { joinFailuresPerSocket, joinFailuresPerIp, joinFailureWindowMs, joinBlockMs } = this.limits
+    let f = this.joinFailures.get(client.ip)
+    if (!f || f.since < now - joinFailureWindowMs) {
+      f = { count: 0, since: now, blockedUntil: f?.blockedUntil ?? 0 }
+      this.joinFailures.set(client.ip, f)
+    }
+    if (++f.count >= joinFailuresPerIp) f.blockedUntil = now + joinBlockMs
+    this.#send(client, { t: 'error', code })
+    if (++client.failedJoins >= joinFailuresPerSocket || f.blockedUntil > now) client.socket.close(CLOSE.wrongCodes, 'too many wrong room codes')
   }
 
   /** Leave on purpose: a host ends the party, a phone gives up its seat. */

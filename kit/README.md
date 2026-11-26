@@ -49,6 +49,12 @@ The kit builds a JavaScript project itself (`npm run build`, or the folder as it
 
 The play passes need Playwright's Chromium (`npm run setup` in a game repo installs it). Where that download is blocked, set `KIT_BROWSER=/path/to/chrome` to use an installed Chrome or Chromium; with no browser at all, `check.mjs` runs the static checks and says what it skipped.
 
+## v24: the launcher's remote phones follow the player in
+
+- `party.js`: tells the launcher the room code when the room opens and `null` when it closes (`window.<slug>.phoneRoom`), so phones that are the launcher's remote join by themselves, on the same page, and go back to the remote afterwards. `party.phonesWaiting`: how many there were at start. Nothing changes outside the launcher. The header now says plainly that `party.on('msg')` data and `party.inputs` come from strangers.
+- `phone-pads.js`: opens the room at start when the launcher has remote phones connected. New phones get in only while the card shows and for 30 seconds after; then the room locks (phones already in can still come back).
+- The join page (`relay-public/shell.js`) keeps a home room and a game room, and the relay copy (`relay-rooms.mjs`) closes a socket after 3 wrong room codes and refuses an address for 10 minutes after 10 in 10 minutes. Tested in `phone-handoff.test.mjs`.
+
 ## v23: shared phone controllers, and phones in any game
 
 - `templates/party/controller-layouts.js` (new runtime file): ten shared phone layouts (`classic`, `pad`, `twin`, `dpad`, `tap`, `swipe`, `slider`, `trackpad`, `choices`, `motion`), with labels, hidden buttons and a theme set from the TV. A party game that passes `controls` to `createParty` sends phones this page instead of its own `controller.html`; it is the same in every game, so phones cache it once.

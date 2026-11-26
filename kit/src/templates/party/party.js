@@ -1,4 +1,4 @@
-// {{SLUG}} runtime v23 — shared runtime file, replaced by update-runtime; don't edit
+// {{SLUG}} runtime v24 — shared runtime file, replaced by update-runtime; don't edit
 // Party games: the game runs on the TV (a handheld or PC plugged into it), and players join from
 // their phones or any browser: scan the QR code or type the room code on the join page. Local
 // controllers can join too, so a party game works with phones, pads, or both.
@@ -33,6 +33,13 @@
 // Input goes both ways and the first copy wins, so nothing is lost if the direct link drops;
 // party.players[i].link says which way it's coming ('direct' | 'relay'). Turn it off with
 // createParty({ direct: false }); give stun: ['stun:…'] to try a direct link across networks too.
+//
+// In the launcher, the party tells it the room's code when it opens (and when it closes), and the
+// launcher sends the phones that are its remote straight in: no second code to scan. Their players
+// join like anyone else. party.phonesWaiting is how many there were when the game started.
+//
+// Everything a phone sends comes from whoever is holding it. party.pad(id) checks and clamps it;
+// party.inputs[id] and party.on('msg') data are as sent, so check them before using them.
 import { diff, snapshot } from './net.js'
 
 export const PARTY_VERSION = 1
@@ -59,6 +66,9 @@ const CLOSE_REASONS = {
   4009: 'Too many connections from this network.',
   4029: 'The game sent too much data.'
 }
+
+/** The launcher's game API, when the game runs in the launcher. */
+const launcherApi = () => (typeof window === 'undefined' ? undefined : window['{{SLUG}}'])
 
 export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, localPlayers = true, controls = null, direct = true, stun = [] } = {}) {
   let ws = null
@@ -88,6 +98,15 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
   const lastSeq = {}
   const stunServers = (Array.isArray(stun) ? stun : []).filter((u) => typeof u === 'string' && /^stuns?:/.test(u))
   const listeners = {}
+  /** The room code last told to the launcher (see the top of this file). */
+  let announced = null
+  function announce(code) {
+    if (code === announced) return
+    announced = code
+    try {
+      launcherApi()?.phoneRoom?.(code ? { code } : null)
+    } catch {}
+  }
 
   const party = {
     /** idle | connecting | open | reconnecting | error */
@@ -106,6 +125,10 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
     /** Each player's private view, by id. party.view(id) creates one. */
     views: {},
     locked: false,
+    /** The launcher's remote phones connected when the game started: they come into the room by themselves. */
+    get phonesWaiting() {
+      return Math.max(0, Number(launcherApi()?.phonesWaiting) || 0)
+    },
 
     view: (id) => (party.views[id] ??= {}),
     player: (id) => party.players.find((p) => p.id === id),
@@ -169,6 +192,7 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
       session('set', null)
       party.status = 'idle'
       party.code = null
+      announce(null)
       for (const id of Object.keys(links)) closeLink(id)
       party.players = party.players.filter((p) => p.kind === 'local')
     },
@@ -314,6 +338,7 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
         }
         sentPlayers = ''
         if (party.locked) send({ t: 'lock' })
+        announce(party.code)
         emit('open', party.code)
         return
       }
@@ -336,6 +361,7 @@ export function createParty({ input = null, minPlayers = 2, maxPlayers = 8, loca
         ws = null
         resume = null
         session('set', null)
+        announce(null)
         return fail(msg.reason === 'idle' ? 'The party closed after a quiet spell.' : 'The party closed.')
       case 'error':
         if (msg.code === 'busy') fail('The server is busy. Try again soon.')

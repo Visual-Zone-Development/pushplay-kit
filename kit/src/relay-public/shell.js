@@ -3,8 +3,17 @@
 // between the two. It survives locked phones and Wi-Fi changes: the seat is kept on the relay
 // and taken back with a resume token.
 //
+// Two rooms at most. The one joined from the form or the QR code is home. Its host can send the
+// phone into a game's room ({k:'go'}): the launcher does, so a phone that's its remote becomes the
+// controller of a game that takes phones, then comes back when it ends. Home stays connected
+// (its frame hidden) the whole time, so getting back is instant and can't fail.
+//
 // Messages inside the relay's `send` payload (d), host → phone:
 //   {k:'cb', h, i, n, s}   controller chunk i of n (n = 0: "use the one you have", h = its hash)
+//   {k:'go', room, game}   home only: join this room on this relay (four letters) as the same player
+//   {k:'home', room}       home only: leave that game room (none: whichever) and show home again
+//   {k:'peek', on}         home only: show home's controller over the game's while on (the
+//                          launcher's pause menu is open), staying in the game room
 //   anything else          passed to the controller
 // Controller ↔ join page, besides the relay: a controller that wants the phone's motion sensors
 // posts {type:'motion', on:true}; the join page asks for permission only then (iOS needs a tap
@@ -16,9 +25,10 @@
 // o:[b,g,a]} (age in ms before the message was posted, a without gravity, g with it, w the rotation
 // rate in deg/s, o the latest orientation), so a controller can detect gestures at the full sensor rate.
 // phone → host:
-//   {k:'hi', h, rtc}       "I'm (back) here; I have controller h": the host replies with the
+//   {k:'hi', h, rtc, key}  "I'm (back) here; I have controller h": the host replies with the
 //                          controller if needed, then everything the controller should show.
-//                          rtc: 1 when this phone can take a direct link (below)
+//                          rtc: 1 when this phone can take a direct link (below). key: home only,
+//                          the room's key when the page was opened with one (below)
 //   {k:'i', i, q}          the controller's held input, numbered (q) so the host can drop a stale copy
 //   anything else          from the controller
 //
@@ -27,6 +37,12 @@
 // all inside the relay's send. Once the data channel is open, each input goes on it as well as
 // through the relay: the channel is quicker on the same Wi-Fi, the relay copy always arrives, and
 // the host keeps whichever comes first (q). Nothing else uses the channel. ?rtc=0 turns it off.
+//
+// A key in the fragment: the mobile app opens /j/<CODE>#k=<key>&n=<name> for a launcher signed
+// into the same account (it got the key from the account server). The page takes them out of the
+// address at once (a fragment never reaches the server), joins as that name without the form and
+// says hi with the key, which lets the phone straight in. The key is kept for the tab's session
+// so a reload still has it.
 
 const COLORS = ['#ffb547', '#ff6b6b', '#4dd8a8', '#5aa9ff', '#c38bff', '#ff8fd0', '#f5e663', '#8ce05a']
 const store = {
@@ -59,36 +75,285 @@ const session = {
   }
 }
 const $ = (id) => document.getElementById(id)
+const CODE = /^[A-Z]{4}$/
 
 const ERRORS = {
   'not-found': 'No party with that code. Check the TV.',
   full: 'That party is full.',
   locked: "That game has started and isn't letting new players in.",
+  'slow-down': 'Too many wrong codes from this network. Wait a few minutes, then try again.',
   'bad-message': 'Something went wrong. Try again.'
 }
 const CLOSED = { 'host-left': 'The game ended.', idle: 'The party closed after a quiet spell.', kicked: 'You were removed from the party.' }
+/** The relay closed us for too many wrong codes: trying again at once would only make it worse. */
+const WRONG_CODES = 4030
 
-let ws = null
-let code = ''
-let me = null // { id, name, color }
-let resume = null
-let left = false
-let retry = 0
-let retryTimer = null
-let frame = null
-let frameReady = false
-let pending = [] // messages for the controller until it's ready
-let chunks = null
+let home = null // the room joined from the form or QR code
+let game = null // a room home's host sent us into
+let color = store.get('party:color') ?? COLORS[Math.floor(Math.random() * COLORS.length)]
 let wakeLock = null
-let rtc = null // { pc, dc, ready, early: [] }: the direct link, while there is one
-let seq = 0 // numbers this page's input messages
+/** True while home's host wants its controller on screen over the game's (a pause menu). */
+let peek = false
+const shown = () => (game && !peek ? game : home)
+const rooms = () => [home, game].filter(Boolean)
+
+/** One room: its socket, its seat, its controller frame and its direct link. */
+class Room {
+  constructor({ code, name, role, resume = null, gameName = '' }) {
+    Object.assign(this, { code, role, resume, gameName })
+    this.me = { id: null, name, color }
+    this.ws = null
+    this.left = false
+    this.retry = 0
+    this.retryTimer = null
+    this.frame = null
+    this.frameReady = false
+    this.pending = [] // messages for the controller until it's ready
+    this.chunks = null
+    this.rtc = null // { pc, dc, ready, early: [] }: the direct link, while there is one
+    this.seq = 0 // numbers this room's input messages
+  }
+
+  get cacheKey() {
+    return `party:controller:${this.role}`
+  }
+
+  connect() {
+    clearTimeout(this.retryTimer)
+    if (this.ws && this.ws.readyState !== WebSocket.CLOSED && this.ws.readyState !== WebSocket.CLOSING) return
+    const socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/?party=1`)
+    this.ws = socket
+    socket.onopen = () => this.send({ t: 'party-join', room: this.code, name: this.me.name, color: this.me.color, resume: this.resume })
+    socket.onmessage = (e) => this.receive(JSON.parse(e.data))
+    socket.onclose = (e) => {
+      if (this.ws !== socket || this.left) return
+      this.ws = null
+      if (e.code === WRONG_CODES) return this.fail('slow-down')
+      if (e.code === 4001) return this.notice('This party is open in another tab.', 'Use this tab', () => this.connect())
+      if (e.code === 4008) return this.notice('Online play is resting until tomorrow.')
+      // Lost the connection (locked phone, Wi-Fi change): the seat waits for us, so keep trying.
+      this.notice('Reconnecting…')
+      this.retryTimer = setTimeout(() => this.connect(), Math.min(8000, 500 * 2 ** this.retry++))
+    }
+  }
+
+  send(msg) {
+    if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(msg))
+  }
+
+  /** Only the room on screen speaks to the player. */
+  notice(text, button, onClick) {
+    if (shown() === this) notice(text, button, onClick)
+  }
+
+  receive(msg) {
+    switch (msg.t) {
+      case 'party-joined':
+        this.retry = 0
+        this.me.id = msg.you
+        this.resume = msg.resume
+        session.set(`party:resume:${this.code}`, this.resume)
+        keepAwake()
+        this.hello()
+        return
+      case 'host-away':
+        return this.notice('The TV lost its connection. Hang on…')
+      case 'host-back':
+        return this.hello()
+      case 'closed':
+        session.set(`party:resume:${this.code}`, null)
+        return this.end(CLOSED[msg.reason] ?? 'The party closed.')
+      case 'error':
+        if (msg.code === 'not-found' && this.resume) session.set(`party:resume:${this.code}`, null)
+        return this.fail(msg.code)
+      case 'msg':
+        return this.fromHost(msg.d)
+    }
+  }
+
+  /** Couldn't get in (or was thrown out for wrong codes). */
+  fail(code) {
+    this.close()
+    if (this.role === 'game') return backHome(ERRORS[code] ?? ERRORS['bad-message'])
+    showForm(ERRORS[code] ?? ERRORS['bad-message'])
+  }
+
+  /** The room is over. A game room just sends us home; home says so and offers another. */
+  end(text) {
+    this.close()
+    if (this.role === 'game') return backHome(text)
+    if (game) leaveGame()
+    home = null
+    notice(text, 'Join another', () => {
+      history.replaceState(null, '', '/')
+      $('code').value = ''
+      showForm()
+    })
+  }
+
+  /** Stop: no more reconnecting, the socket and the frame gone. */
+  close() {
+    this.left = true
+    clearTimeout(this.retryTimer)
+    this.ws?.close(1000)
+    this.ws = null
+    this.unmount()
+  }
+
+  /** Give up the seat on purpose. */
+  leave() {
+    this.send({ t: 'leave' })
+    session.set(`party:resume:${this.code}`, null)
+    this.close()
+  }
+
+  /** Tell the host we're here, and which controller we already have. */
+  hello() {
+    this.notice(this.role === 'game' ? `Joining ${this.gameName || 'the game'}…` : 'Getting the game ready…')
+    const key = this.role === 'home' ? session.get(`party:key:${this.code}`) : null
+    this.send({ t: 'send', d: { k: 'hi', h: store.get(`${this.cacheKey}-hash`), ...(canDirect() ? { rtc: 1 } : {}), ...(key ? { key } : {}) } })
+  }
+
+  fromHost(d) {
+    if (!d || typeof d !== 'object') return
+    if (d.k === 'rtc') return this.fromHostRtc(d)
+    // Only home's host may move the phone, and only to a room code: never to another server.
+    if (d.k === 'go') return this.role === 'home' && typeof d.room === 'string' && CODE.test(d.room) && enterGame(d.room, typeof d.game === 'string' ? d.game.slice(0, 40) : '')
+    if (d.k === 'home') return this.role === 'home' && game && (!d.room || d.room === game.code) && backHome()
+    if (d.k === 'peek') return this.role === 'home' && ((peek = d.on === true), show())
+    if (d.k !== 'cb') return this.toController(d)
+    if (d.n === 0) {
+      const html = store.get(`${this.cacheKey}-hash`) === d.h ? store.get(this.cacheKey) : null
+      if (html) return this.mount(html)
+      // The cache went missing since we said hello: ask again, with nothing cached.
+      return this.send({ t: 'send', d: { k: 'hi', h: null } })
+    }
+    if (!this.chunks || this.chunks.h !== d.h) this.chunks = { h: d.h, parts: [] }
+    this.chunks.parts[d.i] = d.s
+    if (this.chunks.parts.filter((p) => p !== undefined).length < d.n) return
+    const html = this.chunks.parts.join('')
+    this.chunks = null
+    store.set(this.cacheKey, html)
+    store.set(`${this.cacheKey}-hash`, d.h)
+    this.mount(html)
+  }
+
+  // ---- the controller frame ----
+
+  mount(html) {
+    // Keep messages waiting for the controller: the host sends everything right after the
+    // controller pages, which are paced, so the state often arrives first.
+    this.frame?.remove()
+    this.frameReady = false
+    const frame = document.createElement('iframe')
+    frame.setAttribute('sandbox', 'allow-scripts')
+    frame.setAttribute('allow', 'fullscreen; accelerometer; gyroscope')
+    frame.src = '/frame.html'
+    frame.html = html
+    frame.hidden = shown() !== this
+    this.frame = frame
+    $('stage').append(frame)
+  }
+
+  unmount() {
+    this.closeDirect()
+    if (motion.room === this) motionOff()
+    this.frame?.remove()
+    this.frame = null
+    this.frameReady = false
+    this.pending = []
+  }
+
+  toController(d) {
+    if (this.frameReady) this.frame.contentWindow.postMessage({ type: 'msg', d }, '*')
+    else this.pending.push(d)
+  }
+
+  fromController(m) {
+    if (m.type === 'frame') this.frame.contentWindow.postMessage({ type: 'load', html: this.frame.html }, '*')
+    else if (m.type === 'ready') {
+      this.frameReady = true
+      this.frame.contentWindow.postMessage({ type: 'me', me: { ...this.me, room: this.code } }, '*')
+      for (const d of this.pending.splice(0)) this.toController(d)
+      this.notice(null)
+    } else if (m.type === 'send') this.sendFromController(m.d)
+    else if (m.type === 'vibrate') navigator.vibrate?.(Math.min(1000, Number(m.ms) || 0))
+    else if (m.type === 'motion') m.on ? motionOn(this) : motion.room === this && motionOff()
+  }
+
+  // ---- the direct link ----
+
+  /** The controller's messages: input is numbered, and goes on the direct link too when it's open. */
+  sendFromController(d) {
+    if (d?.k !== 'i') return this.send({ t: 'send', d })
+    const numbered = { ...d, q: ++this.seq }
+    if (this.rtc?.dc?.readyState === 'open') {
+      try {
+        this.rtc.dc.send(JSON.stringify(numbered))
+      } catch {}
+    }
+    this.send({ t: 'send', d: numbered })
+  }
+
+  /** The host's offer and candidates: answer, and keep candidates until the offer is in. */
+  async fromHostRtc(d) {
+    if (!canDirect()) return
+    try {
+      if (d.sdp) {
+        this.closeDirect()
+        const servers = Array.isArray(d.s) ? d.s.filter((u) => typeof u === 'string' && /^stuns?:/.test(u)) : []
+        const pc = new RTCPeerConnection({ iceServers: servers.map((urls) => ({ urls })) })
+        const link = { pc, dc: null, ready: false, early: [] }
+        this.rtc = link
+        pc.onicecandidate = (e) => e.candidate && this.rtc === link && this.send({ t: 'send', d: { k: 'rtc', c: e.candidate.toJSON() } })
+        pc.ondatachannel = (e) => {
+          if (this.rtc !== link) return
+          link.dc = e.channel
+          e.channel.onclose = () => this.rtc === link && (link.dc = null)
+        }
+        pc.onconnectionstatechange = () => ['failed', 'closed'].includes(pc.connectionState) && this.rtc === link && this.closeDirect()
+        await pc.setRemoteDescription(d.sdp)
+        await pc.setLocalDescription(await pc.createAnswer())
+        if (this.rtc !== link) return
+        this.send({ t: 'send', d: { k: 'rtc', sdp: pc.localDescription.toJSON() } })
+        link.ready = true
+        for (const c of link.early.splice(0)) await pc.addIceCandidate(c).catch(() => {})
+      } else if (d.c && this.rtc) {
+        if (this.rtc.ready) await this.rtc.pc.addIceCandidate(d.c).catch(() => {})
+        else this.rtc.early.push(d.c)
+      }
+    } catch {
+      this.closeDirect()
+    }
+  }
+
+  closeDirect() {
+    const link = this.rtc
+    this.rtc = null
+    try {
+      link?.pc.close()
+    } catch {}
+  }
+}
+
+const canDirect = () => typeof RTCPeerConnection === 'function' && new URLSearchParams(location.search).get('rtc') !== '0'
 
 // ---- join form ---------------------------------------------------------------------------
 
 const fromPath = /^\/j\/([A-Za-z]{4})\/?$/.exec(location.pathname)?.[1]?.toUpperCase()
-let color = store.get('party:color') ?? COLORS[Math.floor(Math.random() * COLORS.length)]
 $('code').value = fromPath ?? ''
 $('name').value = store.get('party:name') ?? ''
+// Opened by the mobile app with the room's key (see the top): keep it for this room, out of the address.
+const fragment = new URLSearchParams(location.hash.slice(1))
+const keyFor = fromPath && /^[A-Za-z0-9_-]{43}$/.test(fragment.get('k') ?? '') ? fromPath : null
+if (keyFor) {
+  session.set(`party:key:${keyFor}`, fragment.get('k'))
+  const n = (fragment.get('n') ?? '').trim().slice(0, 20)
+  if (n) session.set(`party:name:${keyFor}`, n)
+}
+// The name the app gave, for this room and this tab (a reload keeps it; the form's own name isn't changed).
+if (fromPath && session.get(`party:name:${fromPath}`)) $('name').value = session.get(`party:name:${fromPath}`)
+if (location.hash) history.replaceState(null, '', location.pathname + location.search)
 for (const c of COLORS) {
   const b = document.createElement('button')
   b.type = 'button'
@@ -102,10 +367,6 @@ for (const c of COLORS) {
   $('colors').append(b)
 }
 
-// Back on the page with a seat still held (reload, or the browser dropped the tab): rejoin.
-const held = fromPath && session.get(`party:resume:${fromPath}`)
-if (held && $('name').value) join(fromPath, $('name').value, held)
-else showForm()
 
 function showForm(error = '') {
   $('play').hidden = true
@@ -119,7 +380,7 @@ $('join').onsubmit = (e) => {
   e.preventDefault()
   const c = $('code').value.trim().toUpperCase()
   const name = $('name').value.trim()
-  if (!/^[A-Z]{4}$/.test(c)) return showForm('Room codes are four letters.')
+  if (!CODE.test(c)) return showForm('Room codes are four letters.')
   if (!name) return showForm('Pick a name.')
   store.set('party:name', name)
   store.set('party:color', color)
@@ -127,226 +388,108 @@ $('join').onsubmit = (e) => {
   join(c, name, session.get(`party:resume:${c}`))
 }
 
+// ✕ leaves everything: the game room and home.
 $('leave').onclick = () => {
-  left = true
-  send({ t: 'leave' })
-  session.set(`party:resume:${code}`, null)
-  ws?.close(1000)
-  unmount()
+  game?.leave()
+  game = null
+  home?.leave()
+  home = null
   history.replaceState(null, '', '/')
   $('code').value = ''
   showForm()
 }
+// ⌂ (in a game room): the launcher's pause menu, through home.
+$('home-button').onclick = () => {
+  home?.send({ t: 'send', d: { k: 'm', d: { a: 'home' } } })
+  navigator.vibrate?.(15)
+}
+// Back to the remote: leave the game room, show home.
+$('back-button').onclick = () => {
+  if (!game) return
+  game.leave()
+  game = null
+  show()
+}
 
-// ---- connection --------------------------------------------------------------------------
-
-function join(c, name, token) {
-  code = c
-  resume = token
-  me = { id: null, name, color }
-  left = false
+function join(code, name, resume) {
+  for (const r of rooms()) r.close()
+  game = null
+  home = new Room({ code, name, role: 'home', resume })
   $('go').disabled = true
   $('join').hidden = true
   $('play').hidden = false
-  $('who').textContent = name
-  $('swatch').style.background = color
-  $('room').textContent = code
+  show()
   notice('Joining…')
-  connect()
+  home.connect()
 }
 
-function connect() {
-  clearTimeout(retryTimer)
-  if (ws && ws.readyState !== WebSocket.CLOSED && ws.readyState !== WebSocket.CLOSING) return
-  const socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/?party=1`)
-  ws = socket
-  socket.onopen = () => send({ t: 'party-join', room: code, name: me.name, color: me.color, resume })
-  socket.onmessage = (e) => receive(JSON.parse(e.data))
-  socket.onclose = (e) => {
-    if (ws !== socket || left) return
-    ws = null
-    if (e.code === 4001) return notice('This party is open in another tab.', 'Use this tab', connect)
-    if (e.code === 4008) return notice('Online play is resting until tomorrow.')
-    // Lost the connection (locked phone, Wi-Fi change): the seat waits for us, so keep trying.
-    notice('Reconnecting…')
-    retryTimer = setTimeout(connect, Math.min(8000, 500 * 2 ** retry++))
-  }
+/** Home's host sent us into a game's room: join it as the same player, keep home connected. */
+function enterGame(code, gameName) {
+  if (game?.code === code || code === home?.code) return
+  if (game) game.leave()
+  game = new Room({ code, name: home.me.name, role: 'game', resume: session.get(`party:resume:${code}`), gameName })
+  peek = false
+  show()
+  notice(`Joining ${gameName || 'the game'}…`)
+  game.connect()
 }
 
-function send(msg) {
-  if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg))
+/** Leave the game room (or what's left of it) and show home again. */
+function backHome(text = '') {
+  if (!game) return
+  game.close()
+  game = null
+  peek = false
+  show()
+  if (text) flash(`${text} Back to the remote.`)
+}
+function leaveGame() {
+  game?.leave()
+  game = null
+  peek = false
 }
 
-function receive(msg) {
-  switch (msg.t) {
-    case 'party-joined':
-      retry = 0
-      me.id = msg.you
-      resume = msg.resume
-      session.set(`party:resume:${code}`, resume)
-      keepAwake()
-      hello()
-      return
-    case 'host-away':
-      return notice('The TV lost its connection. Hang on…')
-    case 'host-back':
-      return hello()
-    case 'closed':
-      left = true
-      session.set(`party:resume:${code}`, null)
-      ws?.close(1000)
-      unmount()
-      return notice(CLOSED[msg.reason] ?? 'The party closed.', 'Join another', () => {
-        history.replaceState(null, '', '/')
-        $('code').value = ''
-        showForm()
-      })
-    case 'error':
-      if (msg.code === 'not-found' && resume) session.set(`party:resume:${code}`, null)
-      left = true
-      ws?.close(1000)
-      return showForm(ERRORS[msg.code] ?? ERRORS['bad-message'])
-    case 'warn':
-      return
-    case 'msg':
-      return fromHost(msg.d)
-  }
+/** Show the room on screen: its frame, its name in the header, and the buttons for getting back. */
+function show() {
+  const on = shown()
+  for (const r of rooms()) if (r.frame) r.frame.hidden = r !== on
+  if (motion.room && motion.room !== on) motionOff()
+  $('who').textContent = on?.me.name ?? ''
+  $('swatch').style.background = color
+  $('room').textContent = game ? (peek ? 'Paused' : game.gameName || game.code) : (home?.code ?? '')
+  $('room').classList.toggle('named', Boolean(game && (peek || game.gameName)))
+  document.querySelector('header').classList.toggle('in-game', Boolean(game))
+  $('home-button').hidden = !game
+  $('back-button').hidden = !game
+  if (on?.frameReady) notice(null)
 }
 
-/** Tell the host we're here, and which controller we already have. */
-function hello() {
-  notice('Getting the game ready…')
-  send({ t: 'send', d: { k: 'hi', h: store.get('party:controller-hash'), ...(canDirect() ? { rtc: 1 } : {}) } })
-}
-
-function fromHost(d) {
-  if (!d || typeof d !== 'object') return
-  if (d.k === 'rtc') return fromHostRtc(d)
-  if (d.k !== 'cb') return toController(d)
-  if (d.n === 0) {
-    const html = store.get('party:controller-hash') === d.h ? store.get('party:controller') : null
-    if (html) return mount(html)
-    // The cache went missing since we said hello: ask again, with nothing cached.
-    return send({ t: 'send', d: { k: 'hi', h: null } })
-  }
-  if (!chunks || chunks.h !== d.h) chunks = { h: d.h, parts: [] }
-  chunks.parts[d.i] = d.s
-  if (chunks.parts.filter((p) => p !== undefined).length < d.n) return
-  const html = chunks.parts.join('')
-  chunks = null
-  store.set('party:controller', html)
-  store.set('party:controller-hash', d.h)
-  mount(html)
-}
-
-// ---- the controller frame ----------------------------------------------------------------
-
-function mount(html) {
-  // Keep messages waiting for the controller: the host sends everything right after the
-  // controller pages, which are paced, so the state often arrives first.
-  frame?.remove()
-  frameReady = false
-  frame = document.createElement('iframe')
-  frame.setAttribute('sandbox', 'allow-scripts')
-  frame.setAttribute('allow', 'fullscreen; accelerometer; gyroscope')
-  frame.src = '/frame.html'
-  frame.html = html
-  $('stage').append(frame)
-}
-
-function unmount() {
-  closeDirect()
-  motionOff()
-  frame?.remove()
-  frame = null
-  frameReady = false
-  pending = []
-}
-
-function toController(d) {
-  if (frameReady) frame.contentWindow.postMessage({ type: 'msg', d }, '*')
-  else pending.push(d)
-}
-
+// Messages from a controller frame go to the room that owns it.
 addEventListener('message', (e) => {
-  if (!frame || e.source !== frame.contentWindow || !e.data) return
-  const m = e.data
-  if (m.type === 'frame') frame.contentWindow.postMessage({ type: 'load', html: frame.html }, '*')
-  else if (m.type === 'ready') {
-    frameReady = true
-    frame.contentWindow.postMessage({ type: 'me', me: { ...me, room: code } }, '*')
-    for (const d of pending.splice(0)) toController(d)
-    notice(null)
-  } else if (m.type === 'send') sendFromController(m.d)
-  else if (m.type === 'vibrate') navigator.vibrate?.(Math.min(1000, Number(m.ms) || 0))
-  else if (m.type === 'motion') m.on ? motionOn() : motionOff()
+  if (!e.data) return
+  const room = rooms().find((r) => r.frame && e.source === r.frame.contentWindow)
+  room?.fromController(e.data)
 })
 
-// ---- the direct link --------------------------------------------------------------------
-
-const canDirect = () => typeof RTCPeerConnection === 'function' && new URLSearchParams(location.search).get('rtc') !== '0'
-
-/** The controller's messages: input is numbered, and goes on the direct link too when it's open. */
-function sendFromController(d) {
-  if (d?.k !== 'i') return send({ t: 'send', d })
-  const numbered = { ...d, q: ++seq }
-  if (rtc?.dc?.readyState === 'open') {
-    try {
-      rtc.dc.send(JSON.stringify(numbered))
-    } catch {}
-  }
-  send({ t: 'send', d: numbered })
-}
-
-/** The host's offer and candidates: answer, and keep candidates until the offer is in. */
-async function fromHostRtc(d) {
-  if (!canDirect()) return
-  try {
-    if (d.sdp) {
-      closeDirect()
-      const servers = Array.isArray(d.s) ? d.s.filter((u) => typeof u === 'string' && /^stuns?:/.test(u)) : []
-      const pc = new RTCPeerConnection({ iceServers: servers.map((urls) => ({ urls })) })
-      const link = { pc, dc: null, ready: false, early: [] }
-      rtc = link
-      pc.onicecandidate = (e) => e.candidate && rtc === link && send({ t: 'send', d: { k: 'rtc', c: e.candidate.toJSON() } })
-      pc.ondatachannel = (e) => {
-        if (rtc !== link) return
-        link.dc = e.channel
-        e.channel.onclose = () => rtc === link && (link.dc = null)
-      }
-      pc.onconnectionstatechange = () => ['failed', 'closed'].includes(pc.connectionState) && rtc === link && closeDirect()
-      await pc.setRemoteDescription(d.sdp)
-      await pc.setLocalDescription(await pc.createAnswer())
-      if (rtc !== link) return
-      send({ t: 'send', d: { k: 'rtc', sdp: pc.localDescription.toJSON() } })
-      link.ready = true
-      for (const c of link.early.splice(0)) await pc.addIceCandidate(c).catch(() => {})
-    } else if (d.c && rtc) {
-      if (rtc.ready) await rtc.pc.addIceCandidate(d.c).catch(() => {})
-      else rtc.early.push(d.c)
-    }
-  } catch {
-    closeDirect()
+/** For tests and troubleshooting: which way input goes now, a way to drop the direct link, and where we are. */
+window.partyLink = {
+  get state() {
+    return shown()?.rtc?.dc?.readyState === 'open' ? 'direct' : 'relay'
+  },
+  drop: () => shown()?.closeDirect(),
+  get rooms() {
+    return { home: home?.code ?? null, game: game?.code ?? null }
   }
 }
-
-function closeDirect() {
-  const link = rtc
-  rtc = null
-  try {
-    link?.pc.close()
-  } catch {}
-}
-
-/** For tests and troubleshooting: which way input goes now, and a way to drop the direct link. */
-window.partyLink = { get state() { return rtc?.dc?.readyState === 'open' ? 'direct' : 'relay' }, drop: closeDirect }
 
 // ---- motion sensors, only for controllers that ask ----------------------------------------
 
-const motion = { wanted: false, granted: false, listening: false, tilt: null, peak: null, samples: [], timer: null, button: null, seen: false }
-const toFrame = (d) => frame?.contentWindow?.postMessage({ type: 'motion', ...d }, '*')
+// One room at a time can use the sensors: the one whose controller asked (the room on screen).
+const motion = { wanted: false, granted: false, listening: false, tilt: null, peak: null, samples: [], timer: null, button: null, seen: false, room: null }
+const toFrame = (d) => motion.room?.frame?.contentWindow?.postMessage({ type: 'motion', ...d }, '*')
 
-function motionOn() {
+function motionOn(room) {
+  motion.room = room
   motion.wanted = true
   if (!window.isSecureContext) return toFrame({ state: 'insecure' })
   if (typeof DeviceOrientationEvent === 'undefined') return toFrame({ state: 'unsupported' })
@@ -455,12 +598,30 @@ async function keepAwake() {
   } catch {}
 }
 
+/** A message that clears itself (coming back from a game). */
+let flashTimer = null
+function flash(text) {
+  notice(text)
+  clearTimeout(flashTimer)
+  flashTimer = setTimeout(() => $('notice-text').textContent === text && notice(null), 2500)
+}
+
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState !== 'visible' || !me?.id || left) return
-  keepAwake()
+  if (document.visibilityState !== 'visible') return
+  if (rooms().some((r) => r.me.id && !r.left)) keepAwake()
   // Phones often kill sockets in the background without telling us.
-  if (ws?.readyState !== WebSocket.OPEN) {
-    retry = 0
-    connect()
+  for (const r of rooms()) {
+    if (!r.me.id || r.left || r.ws?.readyState === WebSocket.OPEN) continue
+    r.retry = 0
+    r.connect()
   }
 })
+
+// ---- start ---------------------------------------------------------------------------------
+// Last, so everything above exists: back on the page with a seat still held (reload, or the
+// browser dropped the tab), rejoin. (A game room comes back on its own: home's host sends us in again.)
+// Opened by the mobile app with a key: straight in, no form. (It still can't do anything the TV hasn't allowed.)
+const held = fromPath && session.get(`party:resume:${fromPath}`)
+if (held && $('name').value) join(fromPath, $('name').value, held)
+else if (keyFor && $('name').value) join(keyFor, $('name').value, null)
+else showForm()
