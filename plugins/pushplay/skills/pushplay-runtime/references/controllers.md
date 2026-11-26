@@ -26,8 +26,11 @@ watch what the game reads (`--host` opens it on a phone on your Wi-Fi). Write a 
 | `choices` | portrait: prompt, private card, answers | `{ pick: i }` through `party.on('msg')` | quizzes, votes, hidden roles |
 | `motion` | portrait: tilt, wheel, swings, one big button | `motion.js` (`createMotion(party)`, [motion.md](motion.md)) | swinging, steering, motion games |
 
-Every layout has a pause button in its top bar, read as `pressed('menu')`. Pause the game on it.
-A layout that wants the phone sideways says so on the phone, and still works upright.
+Every layout has a pause button, read as `pressed('menu')`: pause the game on it. On the sideways
+layouts it floats in a spot the layout keeps clear (top centre; on the trackpad, above A and B),
+so the sticks and buttons get the whole height under the join page's slim header; the upright
+layouts have room for it in a top bar. A layout that wants the phone sideways says so on the
+phone, and still works upright.
 
 ## Picking and adjusting a layout
 

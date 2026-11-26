@@ -133,13 +133,20 @@
     .pp-chip:empty { display: none; }
     .pp-chip.on { background: #8ce05a; color: #0d0f14; } .pp-chip.warn { background: #ffb547; color: #0d0f14; } .pp-chip.bad { background: #ff6b6b; color: #0d0f14; }
     .pp-pause { margin-left: auto; width: 48px; height: 44px; border-radius: 12px; background: var(--pp-button); font-size: 20px; }
+    /* Landscape layouts have no bar: every pixel of height goes to the sticks and buttons, and the
+       pause button floats in a spot the layout keeps clear (top centre; the trackpad: over its buttons). */
+    #pp.pp-float .pp-bar { position: absolute; top: 0; left: 0; right: 0; min-height: 0; padding: 0; z-index: 5; pointer-events: none; }
+    #pp.pp-float .pp-chip { display: none; }
+    #pp.pp-float .pp-pause { position: absolute; top: 6px; left: 50%; margin: 0 0 0 -24px; pointer-events: auto; background: color-mix(in srgb, var(--pp-button) 85%, transparent); }
+    #pp.pp-float[data-layout="trackpad"] .pp-pause { left: auto; right: calc(24px + var(--cell) / 2 - 24px); margin: 0; }
     .pp-stage { position: relative; flex: 1; min-height: 0; }
     .pp-hint { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; color: color-mix(in srgb, var(--pp-fg) 55%, transparent); font-size: 14px; pointer-events: none; }
     .pp-zone { position: absolute; top: 0; bottom: 0; }
     .pp-base { position: absolute; width: 150px; height: 150px; margin: -75px; border-radius: 50%; border: 3px solid color-mix(in srgb, var(--pp-fg) 18%, transparent); left: 50%; top: 50%; pointer-events: none; }
     .pp-knob { position: absolute; width: 70px; height: 70px; margin: -35px; border-radius: 50%; background: var(--pp-accent); left: 50%; top: 50%; pointer-events: none; }
     .pp-cap { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; font-size: 13px; opacity: 0.5; pointer-events: none; text-transform: uppercase; letter-spacing: 0.08em; }
-    #pp { --cell: min(84px, calc((100vh - 64px) / 3.2)); --big: min(104px, calc((100vh - 64px) / 2.6)); }
+    #pp { --pp-top: 50px; --cell: min(84px, calc((100vh - var(--pp-top) - 16px) / 3.2)); --big: min(104px, calc((100vh - var(--pp-top) - 16px) / 2.6)); }
+    #pp.pp-float { --pp-top: 0px; }
     .pp-btn { display: grid; place-items: center; width: 96px; height: 96px; border-radius: var(--pp-radius); background: var(--pp-button); font-size: 30px; font-weight: 800; padding: 0; touch-action: none; }
     #pp .pp-btn.main { background: var(--pp-accent); color: #0d0f14; }
     .pp-btn.long { font-size: 18px; }
@@ -160,7 +167,9 @@
     #pp[data-layout="twin"] .pp-base, #pp[data-layout="twin"] .pp-knob { top: 58%; }
     .pp-cross { position: absolute; width: 210px; height: 210px; left: 25%; top: 50%; margin: -105px; touch-action: none; }
     .pp-cross i { position: absolute; background: var(--pp-button); border-radius: 12px; display: grid; place-items: center; font-style: normal; font-size: 24px; }
-    .pp-cross { width: min(210px, calc(100vh - 80px)); height: min(210px, calc(100vh - 80px)); margin: calc(min(210px, calc(100vh - 80px)) / -2); }
+    .pp-cross { width: min(210px, calc(100vh - var(--pp-top) - 32px)); height: min(210px, calc(100vh - var(--pp-top) - 32px)); margin: calc(min(210px, calc(100vh - var(--pp-top) - 32px)) / -2); }
+    .pp-tcol { position: absolute; right: 24px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 16px; padding-bottom: 16px; }
+    .pp-tcol .pp-btn { width: var(--cell); height: var(--cell); font-size: calc(var(--cell) * 0.31); }
     .pp-cross i.down { background: var(--pp-accent); color: #0d0f14; }
     #pp .pp-full { position: absolute; inset: 10px; border-radius: 28px; background: var(--pp-accent); color: #0d0f14; font-size: 56px; font-weight: 900; display: grid; place-items: center; text-align: center; }
     .pp-full.down { filter: brightness(0.8); }
@@ -555,10 +564,10 @@
       mount(s) {
         const surface = el('div', 'pp-surface', s.prompt ?? 'Drag to move · tap to click')
         const side = ['a', 'b'].filter((b) => shown(s, b))
-        surface.style.right = side.length ? '150px' : '10px'
-        const col = el('div')
-        col.style.cssText = 'position:absolute;right:24px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;gap:22px'
-        for (const b of side) col.append(button(s, b, b === 'a'))
+        // A and B at the bottom of their column, under the thumb; the pause button sits above them.
+        surface.style.right = side.length ? 'calc(var(--cell) + 48px)' : '10px'
+        const col = el('div', 'pp-tcol')
+        for (const b of [...side].reverse()) col.append(button(s, b, b === 'a')) // B above, A at the bottom
         stage.append(surface, col)
         st.p ??= { x: 0, y: 0, d: false }
         const speed = clamp(Number(s.speed ?? 1), 0.1, 5)
@@ -1028,6 +1037,7 @@
     stage.replaceChildren()
     letGo()
     root.dataset.layout = s.layout
+    root.classList.toggle('pp-float', def.orient !== 'portrait')
     current = { name: s.layout, key, api: def.mount(s) ?? null }
     if (def.orient === 'landscape') stage.append(hint)
     orient()
