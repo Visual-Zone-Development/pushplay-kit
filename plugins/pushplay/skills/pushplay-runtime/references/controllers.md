@@ -57,6 +57,7 @@ phones.controls({ layout: 'dpad' })
 | `vertical`, `spring` | `slider` |
 | `speed` | `trackpad` (default 1) |
 | `btn`, `cfg` | `motion`: the big button's label, swing tuning ([motion.md](motion.md)) |
+| `knocks` | `true`, or `{ left, right, thr }`: knocks on the phone's edges as buttons (below). Any layout but `motion` |
 | `theme` | `{ accent, bg, fg, button, font, radius, icons }`, below |
 
 **Theme.** Colours are any CSS colour. The accent defaults to the player's own colour, which
@@ -69,6 +70,25 @@ the button's text colour (`fill="currentColor"`). Anything else is ignored.
 Anything beyond settings and theme (a hand of cards, a drawing pad, a typed answer) is a custom
 `controller.html`. Layouts are never forked or edited in a game: that is what keeps every game's
 phones working the same and getting fixes.
+
+## Knocks: the phone's edges as buttons
+
+With `knocks: true`, a sharp fingertip knock on the phone's left or right edge (or on the top edge
+near that end, as a shoulder button would be) is one press: `lt`/`rt` on `twin`, `lb`/`rb` on
+every other layout, or the buttons named in `{ left: 'b', right: 'a' }`. It's read from the motion
+sensors: the sideways jolt gives the side, and for a knock on the top edge the gyro's turn does.
+The jolt of a screen tap (within about 0.1 s of a touch), gentle movement and the phone being
+swung are ignored; `thr` (m/s², default 6) sets how hard a knock must be. The knocked edge flashes.
+
+- **Presses only.** A knock is `pressed()` for one frame, never `held()`: right for a dodge, a
+  reload or a bomb, wrong for a trigger held to keep firing.
+- **Never the only way.** Every knock action also needs an on-screen button or a controller button
+  (on `twin`, knocks are a second way to press the triggers). Some phones have no sensors, iPhones
+  ask permission first (the join page shows an "Allow motion controls" button) and only on the
+  published https build, and some players won't want to knock.
+- **Tune it on real phones.** How hard a knock is varies with the phone, its case and the grip;
+  try it on the published build, and raise `thr` if presses fire on their own. The gallery
+  (`pushplay controllers`, `twin`) has buttons that knock a pretend phone.
 
 ## How a press reaches the game
 

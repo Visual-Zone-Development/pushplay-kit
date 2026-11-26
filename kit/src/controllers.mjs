@@ -26,7 +26,7 @@ export function sharedPage() {
 const EXAMPLES = {
   classic: { layout: 'classic', labels: { a: 'Jump', b: 'Dash' } },
   pad: { layout: 'pad' },
-  twin: { layout: 'twin', labels: { rt: 'Fire', lt: 'Bomb' } },
+  twin: { layout: 'twin', labels: { rt: 'Fire', lt: 'Bomb' }, knocks: true },
   dpad: { layout: 'dpad', labels: { a: 'Rotate', b: 'Drop' } },
   tap: { layout: 'tap', labels: { a: 'FLAP' } },
   swipe: { layout: 'swipe', prompt: 'Swipe to steer · tap to boost' },
@@ -63,6 +63,8 @@ export function galleryHtml() {
   .frame { border: 10px solid #000; border-radius: 34px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.18); }
   iframe { display: block; border: 0; width: 100%; height: 100%; }
   .frame.portrait { width: 300px; height: 600px; } .frame.landscape { width: 600px; height: 300px; }
+  .knocks { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .knocks[hidden] { display: none; }
   .turn { font: inherit; font-size: 13px; color: var(--quiet); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
   .side { display: grid; gap: 14px; min-width: 0; }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; min-width: 0; }
@@ -88,6 +90,10 @@ export function galleryHtml() {
   <div class="phone">
     <div class="frame landscape" id="frame"><iframe id="phone" title="Phone controller" allow="accelerometer; gyroscope"></iframe></div>
     <button class="turn" id="turn">Turn the phone</button>
+    <div class="knocks" id="knocks" hidden>
+      <button class="turn" id="knock-left">Knock the left edge</button>
+      <button class="turn" id="knock-right">Knock the right edge</button>
+    </div>
   </div>
   <div class="side">
     <div class="card"><h2>Made for</h2><p class="about" id="about"></p></div>
@@ -102,7 +108,7 @@ export function galleryHtml() {
   const ABOUT = {
     classic: 'Most action games: a floating stick and A B X Y. Reads as x, y and held("a"…"y").',
     pad: 'The smallest gamepad: a stick and A and B (classic with X and Y hidden).',
-    twin: 'Twin-stick shooters: move with the left stick, aim with the right (aimX, aimY), triggers LT and RT.',
+    twin: 'Twin-stick shooters: move with the left stick, aim with the right (aimX, aimY), triggers LT and RT. With knocks on, a knock on the phone’s left or right edge is a press of LT or RT: try the buttons under the phone.',
     dpad: 'Retro, puzzle and grid games: an 8-way d-pad (up, down, left, right, x and y in steps) and A and B.',
     tap: 'Rhythm, one-button and reaction games: the whole screen is A. Every finger is a press.',
     swipe: 'Snake, sliding blocks, lanes: each swipe is one press of up, down, left or right; a tap is A.',
@@ -161,6 +167,7 @@ export function galleryHtml() {
   // The join page's side of the frame: load the page, say who the phone is, pass the TV's state.
   const post = (m) => phone.contentWindow?.postMessage(m, '*')
   function publish() {
+    $('knocks').hidden = !settings?.knocks || settings.layout === 'motion'
     if (!ready) return
     post({ type: 'msg', d: { k: 'P', s: { controls: settings } } })
   }
@@ -219,6 +226,25 @@ export function galleryHtml() {
     const html = rows.map(([k, v]) => '<dt>' + k + '</dt><dd>' + v + '</dd>').join('')
     if ($('reads').innerHTML !== html) $('reads').innerHTML = html
   }
+  // A knock as the phone's sensors would report it: a sharp sideways jolt, over in a few readings.
+  function knock(side) {
+    const w = phone.contentWindow
+    let t = w.performance.now()
+    const ax = side === 'right' ? -9 : 9
+    for (const [x, y] of [[0, 0], [ax, 0.4], [ax / 2, 0.2], [0.3, 0], [0, 0]]) {
+      t += 8
+      const e = new w.Event('devicemotion')
+      Object.defineProperties(e, {
+        acceleration: { value: { x, y, z: 0 } },
+        accelerationIncludingGravity: { value: null },
+        rotationRate: { value: { alpha: 0, beta: 0, gamma: 0 } },
+        timeStamp: { value: t }
+      })
+      w.dispatchEvent(e)
+    }
+  }
+  $('knock-left').onclick = () => knock('left')
+  $('knock-right').onclick = () => knock('right')
   phone.srcdoc = PAGE
   choose('classic')
   show()

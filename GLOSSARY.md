@@ -19,6 +19,9 @@ A WebRTC data channel between a phone's join page and the game, opened through t
 **Join page**
 The page a phone opens from the QR code or the address and room code (`/j/<CODE>` on the relay). It joins the room and runs the controller layout in a sandboxed frame with no network. Avoid: "lobby" (the lobby is the TV's screen).
 
+**Knock**
+A sharp fingertip tap on the phone's edge, read from its motion sensors, that a shared layout with `knocks` on turns into one press of a button (by default LT/RT on `twin`, LB/RB elsewhere). A press only, never held. Avoid: "side tap" in code, "squeeze" (phones can't sense one).
+
 **Party game**
 A game that runs on the machine plugged into a TV while everyone plays from a phone or a plugged-in controller (`--party`, `"party": true`, `party.js`). Avoid: "TV game", "Jackbox game".
 

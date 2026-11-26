@@ -279,3 +279,103 @@ describe('shared layouts: what they send', () => {
     expect(last().h).toBeUndefined()
   })
 })
+
+describe('knocks: the phone’s edges as buttons', () => {
+  // Readings as the phone's sensors give them to the frame (device axes; this test's clock).
+  let clock = 0
+  const reading = (ax, ay, wz = 0) => {
+    clock += 8
+    const e = new Event('devicemotion')
+    Object.defineProperties(e, {
+      acceleration: { value: { x: ax, y: ay, z: 0 } },
+      accelerationIncludingGravity: { value: null },
+      rotationRate: { value: { alpha: 0, beta: 0, gamma: wz } },
+      timeStamp: { value: clock }
+    })
+    window.dispatchEvent(e)
+  }
+  /** A fingertip knock: a still phone, a jolt over in a few readings, still again. */
+  const knock = (ax, ay, wz = 0) => {
+    reading(0, 0)
+    reading(ax, ay, wz)
+    reading(ax * 0.5, ay * 0.5, wz)
+    reading(0.4, 0.2)
+    reading(0, 0)
+    clock += 300 // past the cooldown
+  }
+  const presses = () => last()?.c ?? {}
+  const sideways = (angle) => Object.defineProperty(screen, 'orientation', { value: angle === null ? undefined : { angle }, configurable: true })
+
+  beforeEach(() => {
+    clock = performance.now()
+    sideways(null)
+  })
+
+  it('asks for the motion sensors only when knocks are on, and gives them back when they go off', () => {
+    expect(posted).not.toContainEqual({ type: 'motion', on: true })
+    update({ controls: { layout: 'classic', knocks: true } })
+    expect(posted).toContainEqual({ type: 'motion', on: true })
+    update({ controls: { layout: 'classic' } })
+    expect(posted).toContainEqual({ type: 'motion', on: false })
+  })
+
+  it('counts a knock on the right edge as one press of RB, and on the left as LB', () => {
+    update({ controls: { layout: 'classic', knocks: true } })
+    knock(-9, 0.5) // knocked from the right: the phone jolts left
+    expect(presses()).toEqual({ rb: 1 })
+    knock(9, -0.5)
+    expect(presses()).toEqual({ rb: 1, lb: 1 })
+    expect(last().h).toBeUndefined() // a press, never held
+  })
+
+  it('presses the triggers on twin, or the buttons the game names', () => {
+    update({ controls: { layout: 'twin', knocks: true } })
+    knock(-9, 0)
+    expect(presses()).toEqual({ rt: 1 })
+    update({ controls: { layout: 'dpad', knocks: { left: 'b', right: 'a' } } })
+    knock(9, 0)
+    expect(presses()).toEqual({ rt: 1, b: 1 })
+  })
+
+  it('tells which end of the top edge was knocked from the way the phone turns', () => {
+    update({ controls: { layout: 'classic', knocks: true } })
+    knock(0.5, -9, -120) // knocked down near the right end: turns clockwise
+    expect(presses()).toEqual({ rb: 1 })
+    knock(-0.5, -9, 120)
+    expect(presses()).toEqual({ rb: 1, lb: 1 })
+    knock(0, -9, 3) // the middle of the edge: no side to give
+    expect(presses()).toEqual({ rb: 1, lb: 1 })
+  })
+
+  it('ignores the jolt of a screen tap, gentle movement and the phone being swung', () => {
+    update({ controls: { layout: 'classic', knocks: true } })
+    fire(btn('a'), 'pointerdown')
+    knock(-9, 0) // right after the tap
+    fire(btn('a'), 'pointerup')
+    clock = performance.now() + 1000
+    knock(-3, 0) // too gentle
+    reading(0, 0)
+    for (let i = 0; i < 20; i++) reading(-9, 2) // a swing, 160 ms long
+    reading(0, 0)
+    expect(presses()).toEqual({ a: 1 })
+  })
+
+  it('reads the edges as the player sees them when the phone is held sideways', () => {
+    sideways(90)
+    update({ controls: { layout: 'classic', knocks: true } })
+    knock(0, 9) // the phone's own y is the screen's -x when turned a quarter
+    expect(presses()).toEqual({ rb: 1 })
+  })
+
+  it('flashes the edge that was knocked', () => {
+    update({ controls: { layout: 'classic', knocks: true } })
+    knock(9, 0)
+    expect($('.pp-knock.left').classList.contains('show')).toBe(true)
+    expect($('.pp-knock.right').classList.contains('show')).toBe(false)
+  })
+
+  it('leaves the motion layout’s sensors alone', () => {
+    update({ controls: { layout: 'motion', knocks: true } })
+    expect($('.pp-knock')).toBeNull()
+  })
+})

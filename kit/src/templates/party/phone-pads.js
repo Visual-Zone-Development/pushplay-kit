@@ -6,6 +6,7 @@
 //
 //   import { connectPhones } from './phone-pads.js'
 //   const phones = connectPhones(input, { layout: 'classic', labels: { a: 'Jump' }, max: 4 })
+//   (also hide, theme and knocks, as for party.controls; or controls: { …all of them })
 //   on a "Connect a phone" screen:  phones.drawCard(ctx, x, y)       (opens the room the first time)
 //   a menu item for it:             phones.menuItem                  ({ id: 'phones', label: 'Connect a phone' })
 //   change the layout any time:     phones.controls({ layout: 'dpad' })   (or (settings, id) for one phone)
@@ -20,8 +21,8 @@ import { drawQr, makeQr } from './qr.js'
 
 const BUTTONS = ['a', 'b', 'x', 'y', 'lb', 'rb', 'lt', 'rt', 'select', 'start', 'up', 'down', 'left', 'right', 'menu']
 
-export function connectPhones(input, { layout = 'classic', labels, hide, theme, controls = null, max = 4 } = {}) {
-  const settings = controls ?? { layout, ...(labels ? { labels } : {}), ...(hide ? { hide } : {}), ...(theme ? { theme } : {}) }
+export function connectPhones(input, { layout = 'classic', labels, hide, theme, knocks, controls = null, max = 4 } = {}) {
+  const settings = controls ?? { layout, ...(labels ? { labels } : {}), ...(hide ? { hide } : {}), ...(theme ? { theme } : {}), ...(knocks ? { knocks } : {}) }
   const party = createParty({ input: null, minPlayers: 1, maxPlayers: max, localPlayers: false, controls: settings })
   /** Phone id → its pad in input.pads. */
   const pads = new Map()

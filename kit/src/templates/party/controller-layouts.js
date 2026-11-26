@@ -14,6 +14,10 @@
 //   prompt, card, choices, picked           what the choices and motion layouts show
 //   vertical, spring, speed                 slider: upright track, spring back to the middle; trackpad: speed
 //   btn, cfg                                motion: the big button's label, swing tuning (see motion.js)
+//   knocks   true, or { left: 'lb', right: 'rb', thr }: a sharp knock on the phone's left or right
+//            edge (or the top edge near that end) is one press of that button: lt/rt on twin, lb/rb
+//            elsewhere. Presses only, never held; uses the motion sensors (iPhones ask first) and
+//            ignores the jolt of a screen tap. Never the only way to do something: keep a button.
 //   theme    { accent, bg, fg, button, font, radius, icons: { a: '<svg…>' } }
 //            font: system | rounded | serif | mono | condensed (phones get no network, so no web fonts)
 //
@@ -195,6 +199,9 @@
     .pp-meter .thr { position: absolute; top: 0; bottom: 0; width: 4px; background: #ffb547; }
     .pp-meter.hit .fill { background: #8ce05a; }
     .pp-center { min-height: 56px; border-radius: 16px; background: var(--pp-button); font-weight: 800; }
+    .pp-knock { position: absolute; top: 0; bottom: 0; width: 14px; background: var(--pp-accent); opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 4; }
+    .pp-knock.left { left: 0; border-radius: 0 10px 10px 0; } .pp-knock.right { right: 0; border-radius: 10px 0 0 10px; }
+    .pp-knock.show { opacity: 0.9; transition: none; }
     #pp [hidden] { display: none !important; }
   `
   document.head.append(style)
@@ -1016,6 +1023,130 @@
     }
   }
 
+  // ---- knocks: the phone's edges as buttons ------------------------------------------------------
+  // A fingertip knock on the frame is a sharp jolt of the phone, over in a few hundredths of a
+  // second. On the left or right edge it pushes the phone sideways (the push gives the side); on
+  // the top edge near one end it pushes it down and turns it about the screen (the turn, from the
+  // gyro, gives the side). A jolt within ~0.1 s of a screen touch is that touch, and anything
+  // longer than a knock is the phone being moved: both are ignored.
+
+  const KNOCK = { thr: 6, quiet: 0.4, maxMs: 90, touchMs: 110, cooldownMs: 160, turn: 25 }
+
+  /** Readings of the phone's motion, in screen axes (x right, y up, z out; m/s², deg/s). */
+  function sensorFeed(onSample) {
+    const off = new AbortController()
+    const on = (type, fn) => addEventListener(type, fn, { signal: off.signal })
+    const angle = () => screen.orientation?.angle ?? (typeof window.orientation === 'number' ? window.orientation : 0)
+    const toScreen = (x, y) => {
+      const r = (angle() * Math.PI) / 180
+      return [x * Math.cos(r) - y * Math.sin(r), x * Math.sin(r) + y * Math.cos(r)]
+    }
+    let lastT = -Infinity
+    let directAt = -1e9
+    let grav = null
+    const feed = { state: 'waiting' }
+    const take = (t, a, g, w) => {
+      if (t <= lastT) return // already seen (both sources overlapping)
+      lastT = t
+      // Movement without gravity; some phones only give it with: take a slow average off.
+      if (!a && g) {
+        grav = grav ? grav.map((v, i) => v + (g[i] - v) * 0.08) : [...g]
+        a = g.map((v, i) => v - grav[i])
+      }
+      if (!a) return
+      const [ax, ay] = toScreen(a[0], a[1])
+      const [wx, wy] = w ? toScreen(w[0], w[1]) : [0, 0]
+      onSample({ t, a: [ax, ay, a[2]], w: [wx, wy, w ? w[2] : 0] })
+    }
+    parent.postMessage({ type: 'motion', on: true }, '*')
+    on('message', (e) => {
+      if (e.source !== parent || e.data?.type !== 'motion') return
+      if (e.data.state) feed.state = e.data.state
+      if (performance.now() - directAt < 150) return // this frame hears the sensors itself
+      const at = performance.now()
+      for (const x of Array.isArray(e.data.s) ? e.data.s : []) take(at - (x.age || 0), x.a, x.g, x.w)
+    })
+    // Android only sends sensor events to the focused frame: listen here too.
+    const vec = (v, ...k) => (v && typeof v[k[0]] === 'number' ? k.map((n) => v[n]) : null)
+    on('devicemotion', (e) => {
+      const a = vec(e.acceleration, 'x', 'y', 'z')
+      const g = vec(e.accelerationIncludingGravity, 'x', 'y', 'z')
+      // The rates are named alpha, beta, gamma and are x, y, z in that order.
+      const w = vec(e.rotationRate, 'alpha', 'beta', 'gamma')
+      if (!a && !g) return
+      directAt = performance.now()
+      take(e.timeStamp || directAt, a, g, w)
+    })
+    feed.stop = () => {
+      off.abort()
+      parent.postMessage({ type: 'motion', on: false }, '*')
+    }
+    return feed
+  }
+
+  /** Knocks in a stream of readings: onKnock('left' | 'right'). */
+  function knockDetector(cfg, onKnock) {
+    let hit = null
+    let cooldown = -Infinity
+    const touches = []
+    return {
+      touched(t) {
+        touches.push(t)
+        if (touches.length > 8) touches.shift()
+      },
+      sample({ t, a, w }) {
+        const m = Math.hypot(a[0], a[1])
+        if (!hit) {
+          if (m >= cfg.thr && t >= cooldown) hit = { t0: t, ax: a[0], ay: a[1], wz: w[2] }
+          return
+        }
+        if (Math.abs(w[2]) > Math.abs(hit.wz)) hit.wz = w[2]
+        if (m >= cfg.thr * cfg.quiet) return // still jolting
+        const h = hit
+        hit = null
+        cooldown = t + cfg.cooldownMs
+        if (t - h.t0 > cfg.maxMs) return // moved, not knocked
+        if (touches.some((x) => Math.abs(x - h.t0) < cfg.touchMs)) return // a screen tap's jolt
+        let side = null
+        // Knocked on the right edge, the phone first moves left (and the other way round)…
+        if (Math.abs(h.ax) >= Math.abs(h.ay)) side = h.ax < 0 ? 'right' : 'left'
+        // …knocked down on the top edge near one end, it turns about the screen.
+        else if (Math.abs(h.wz) >= cfg.turn) side = h.wz < 0 ? 'right' : 'left'
+        if (side) onKnock(side)
+      }
+    }
+  }
+
+  let knocks = null // { feed, stop() } while the layout has knocks on
+  function startKnocks(s) {
+    const opts = typeof s.knocks === 'object' && s.knocks ? s.knocks : {}
+    const twin = s.layout === 'twin'
+    const buttons = { left: opts.left ?? (twin ? 'lt' : 'lb'), right: opts.right ?? (twin ? 'rt' : 'rb') }
+    const cfg = { ...KNOCK, ...(typeof opts.thr === 'number' ? { thr: opts.thr } : {}) }
+    const flash = { left: el('div', 'pp-knock left'), right: el('div', 'pp-knock right') }
+    stage.append(flash.left, flash.right)
+    const timers = {}
+    const detector = knockDetector(cfg, (side) => {
+      tap(buttons[side], 25)
+      flash[side].classList.add('show')
+      clearTimeout(timers[side])
+      timers[side] = setTimeout(() => flash[side].classList.remove('show'), 80)
+    })
+    const touched = () => detector.touched(performance.now())
+    root.addEventListener('pointerdown', touched, true)
+    root.addEventListener('pointerup', touched, true)
+    const feed = sensorFeed((x) => detector.sample(x))
+    return {
+      feed,
+      stop() {
+        feed.stop()
+        root.removeEventListener('pointerdown', touched, true)
+        root.removeEventListener('pointerup', touched, true)
+        for (const t of Object.values(timers)) clearTimeout(t)
+      }
+    }
+  }
+
   // ---- switching layouts -----------------------------------------------------------------------
 
   let current = null // { name, key, api }
@@ -1028,17 +1159,21 @@
     const legacy = s.layout === 'choices' || s.layout === 'motion' ? [C.public.prompt, C.public.choices, C.public.btn, C.mine.prompt, C.mine.secret, C.mine.picked, C.mine.btn] : null
     const key = JSON.stringify([s, C.me.color, legacy])
     if (current?.key === key) return
-    if (current?.name === s.layout && current.api?.update) {
+    if (current?.name === s.layout && current.api?.update && JSON.stringify(current.knocks) === JSON.stringify(s.knocks)) {
       current.key = key
       current.api.update(s)
       return
     }
     current?.api?.destroy?.()
+    knocks?.stop()
+    knocks = null
     stage.replaceChildren()
     letGo()
     root.dataset.layout = s.layout
     root.classList.toggle('pp-float', def.orient !== 'portrait')
-    current = { name: s.layout, key, api: def.mount(s) ?? null }
+    current = { name: s.layout, key, knocks: s.knocks, api: def.mount(s) ?? null }
+    // The motion layout reads the sensors its own way; every other layout can take knocks.
+    if (s.knocks && s.layout !== 'motion') knocks = startKnocks(s)
     if (def.orient === 'landscape') stage.append(hint)
     orient()
   }

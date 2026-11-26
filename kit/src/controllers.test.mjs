@@ -50,6 +50,16 @@ describe('the controller gallery', () => {
     await expect.poll(() => page.textContent('#reads')).toMatch(/held\s*—/)
   }, 30_000)
 
+  it('lets you try knocks on a layout that has them, without a phone', async () => {
+    await page.click('#tabs button[data-name="twin"]')
+    await expect.poll(layoutShown).toBe('twin')
+    expect(await page.isVisible('#knock-right')).toBe(true)
+    await page.click('#knock-right')
+    await expect.poll(() => page.textContent('#reads')).toMatch(/pressed\s*rt/)
+    await page.click('#tabs button[data-name="classic"]')
+    expect(await page.isVisible('#knock-right')).toBe(false)
+  }, 30_000)
+
   it('applies settings typed into the panel', async () => {
     await page.click('#tabs button[data-name="classic"]')
     await page.fill('#settings', JSON.stringify({ layout: 'classic', labels: { a: 'Kick' }, hide: ['x', 'y'] }))
