@@ -69,13 +69,14 @@ const until = async (fn, what, ms = 10_000) => {
 /** A scripted host (the launcher's remote room): records what phones send, can send them anything. */
 async function scriptedHost(page = REMOTE_PAGE) {
   const ws = new WebSocket(`${relay.url}?game=local`)
-  const host = { code: null, heard: [], phones: [], ws }
+  const host = { code: null, heard: [], his: [], phones: [], ws }
   ws.on('message', (data) => {
     const m = JSON.parse(String(data))
     if (m.t === 'party') host.code = m.room
     if (m.t === 'peer-join') host.phones.push(m.id)
     if (m.t !== 'msg') return
     if (m.d?.k === 'hi') {
+      host.his.push({ from: m.from, ...m.d })
       ws.send(JSON.stringify({ t: 'send', to: m.from, d: { k: 'cb', h: 'remote', i: 0, n: 1, s: page } }))
       host.onHi?.(m.from)
     } else host.heard.push(m.d)
@@ -232,4 +233,28 @@ describe('a launcher remote phone, game after game', () => {
     await g.tv.context().close()
     await phone.context().close()
   }, 60_000)
+
+  it('joins straight in when the PushPlay app opens it with the room’s key, and keeps the key out of the address', async () => {
+    const launcher = await scriptedHost()
+    const key = 'k'.repeat(40) + 'abc'
+    const page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage()
+    await page.goto(`${relay.joinBase}/j/${launcher.code}#k=${key}&n=Tom`)
+    await until(() => launcher.his.length, 'the phone says hi')
+    expect(launcher.his[0]).toMatchObject({ key })
+    expect(await page.isVisible('#join')).toBe(false)
+    expect(new URL(page.url()).hash).toBe('')
+    expect(await page.textContent('#who')).toBe('Tom')
+    // A reload still has it (same tab), and rejoins the same seat.
+    await page.reload()
+    await until(() => launcher.his.length >= 2, 'hi again after a reload')
+    expect(launcher.his[1]).toMatchObject({ key, from: launcher.his[0].from })
+    // A key that isn't one is ignored: the form, as from a QR code.
+    const other = await (await browser.newContext()).newPage()
+    await other.goto(`${relay.joinBase}/j/${launcher.code}#k=short&n=Eve`)
+    expect(await other.isVisible('#join')).toBe(true)
+    await page.context().close()
+    await other.context().close()
+    launcher.close()
+  }, 60_000)
 })
+

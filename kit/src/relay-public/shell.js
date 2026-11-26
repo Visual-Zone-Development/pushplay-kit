@@ -25,9 +25,10 @@
 // o:[b,g,a]} (age in ms before the message was posted, a without gravity, g with it, w the rotation
 // rate in deg/s, o the latest orientation), so a controller can detect gestures at the full sensor rate.
 // phone → host:
-//   {k:'hi', h, rtc}       "I'm (back) here; I have controller h": the host replies with the
+//   {k:'hi', h, rtc, key}  "I'm (back) here; I have controller h": the host replies with the
 //                          controller if needed, then everything the controller should show.
-//                          rtc: 1 when this phone can take a direct link (below)
+//                          rtc: 1 when this phone can take a direct link (below). key: home only,
+//                          the room's key when the page was opened with one (below)
 //   {k:'i', i, q}          the controller's held input, numbered (q) so the host can drop a stale copy
 //   anything else          from the controller
 //
@@ -36,6 +37,12 @@
 // all inside the relay's send. Once the data channel is open, each input goes on it as well as
 // through the relay: the channel is quicker on the same Wi-Fi, the relay copy always arrives, and
 // the host keeps whichever comes first (q). Nothing else uses the channel. ?rtc=0 turns it off.
+//
+// A key in the fragment: the mobile app opens /j/<CODE>#k=<key>&n=<name> for a launcher signed
+// into the same account (it got the key from the account server). The page takes them out of the
+// address at once (a fragment never reaches the server), joins as that name without the form and
+// says hi with the key, which lets the phone straight in. The key is kept for the tab's session
+// so a reload still has it.
 
 const COLORS = ['#ffb547', '#ff6b6b', '#4dd8a8', '#5aa9ff', '#c38bff', '#ff8fd0', '#f5e663', '#8ce05a']
 const store = {
@@ -203,7 +210,8 @@ class Room {
   /** Tell the host we're here, and which controller we already have. */
   hello() {
     this.notice(this.role === 'game' ? `Joining ${this.gameName || 'the game'}…` : 'Getting the game ready…')
-    this.send({ t: 'send', d: { k: 'hi', h: store.get(`${this.cacheKey}-hash`), ...(canDirect() ? { rtc: 1 } : {}) } })
+    const key = this.role === 'home' ? session.get(`party:key:${this.code}`) : null
+    this.send({ t: 'send', d: { k: 'hi', h: store.get(`${this.cacheKey}-hash`), ...(canDirect() ? { rtc: 1 } : {}), ...(key ? { key } : {}) } })
   }
 
   fromHost(d) {
@@ -335,6 +343,17 @@ const canDirect = () => typeof RTCPeerConnection === 'function' && new URLSearch
 const fromPath = /^\/j\/([A-Za-z]{4})\/?$/.exec(location.pathname)?.[1]?.toUpperCase()
 $('code').value = fromPath ?? ''
 $('name').value = store.get('party:name') ?? ''
+// Opened by the mobile app with the room's key (see the top): keep it for this room, out of the address.
+const fragment = new URLSearchParams(location.hash.slice(1))
+const keyFor = fromPath && /^[A-Za-z0-9_-]{43}$/.test(fragment.get('k') ?? '') ? fromPath : null
+if (keyFor) {
+  session.set(`party:key:${keyFor}`, fragment.get('k'))
+  const n = (fragment.get('n') ?? '').trim().slice(0, 20)
+  if (n) session.set(`party:name:${keyFor}`, n)
+}
+// The name the app gave, for this room and this tab (a reload keeps it; the form's own name isn't changed).
+if (fromPath && session.get(`party:name:${fromPath}`)) $('name').value = session.get(`party:name:${fromPath}`)
+if (location.hash) history.replaceState(null, '', location.pathname + location.search)
 for (const c of COLORS) {
   const b = document.createElement('button')
   b.type = 'button'
@@ -601,6 +620,8 @@ document.addEventListener('visibilitychange', () => {
 // ---- start ---------------------------------------------------------------------------------
 // Last, so everything above exists: back on the page with a seat still held (reload, or the
 // browser dropped the tab), rejoin. (A game room comes back on its own: home's host sends us in again.)
+// Opened by the mobile app with a key: straight in, no form. (It still can't do anything the TV hasn't allowed.)
 const held = fromPath && session.get(`party:resume:${fromPath}`)
 if (held && $('name').value) join(fromPath, $('name').value, held)
+else if (keyFor && $('name').value) join(keyFor, $('name').value, null)
 else showForm()
