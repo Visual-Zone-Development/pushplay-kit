@@ -475,7 +475,7 @@ Inside the launcher a game must work offline and without dialogs. To keep analyt
 | `restart()` | Restart the game |
 | `onPause(cb)`, `onResume(cb)` | Called when the launcher pauses and resumes the game |
 | `phonesWaiting` | How many phones were connected as the launcher's remote when the game started (a game that takes phones opens its room at once when this is above 0) |
-| `phoneRoom({ code } \| null)` | Tell the launcher the four-letter code of the game's phone room when it opens, and `null` when it closes: the launcher sends its remote phones in, and back when it closes or the game ends |
+| `phoneRoom({ code } \| null)` | Tell the launcher the four-letter code of the game's phone room when it opens, and `null` when it closes: the launcher sends its remote phones in, and back when it closes or the game ends. Optional for a game on PushPlay's relay: the launcher also hears a party's room from the relay itself |
 
 The window also gets the events `pushplay:pause` and `pushplay:resume`. Always write `window.pushplay?.…`: outside the launcher the object is undefined.
 
