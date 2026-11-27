@@ -49,6 +49,10 @@ The kit builds a JavaScript project itself (`npm run build`, or the folder as it
 
 The play passes need Playwright's Chromium (`npm run setup` in a game repo installs it). Where that download is blocked, set `KIT_BROWSER=/path/to/chrome` to use an installed Chrome or Chromium; with no browser at all, `check.mjs` runs the static checks and says what it skipped.
 
+## v25: phones join in `dev` for any game that takes them
+
+- `dev.mjs`: a game with `phone-pads.js` (phones as controllers, not a party game) now gets the local relay too, listening on the Wi-Fi like a party game's, so its "Connect a phone" card opens a room and a real phone can join. Before, `dev` only started the relay for `online` and `party` games, and the card said it couldn't reach the game server. Which relay `dev` starts is `devRelay(manifest, { phonePads })` in `local-relay.mjs`, tested in `dev-relay.test.mjs`.
+
 ## v24: the launcher's remote phones follow the player in
 
 - `party.js`: tells the launcher the room code when the room opens and `null` when it closes (`window.<slug>.phoneRoom`), so phones that are the launcher's remote join by themselves, on the same page, and go back to the remote afterwards. (Launchers from the release after v24 also hear the room from the relay connection, so older games get this too.) A game picks up these runtime files with `update-runtime`, not by being rebuilt. `party.phonesWaiting`: how many there were at start. Nothing changes outside the launcher. The header now says plainly that `party.on('msg')` data and `party.inputs` come from strangers.

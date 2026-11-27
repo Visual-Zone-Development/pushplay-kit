@@ -176,7 +176,8 @@ What phones send is untrusted: `party.pad(id)` clamps it, but `party.on('msg')` 
 
 - `pushplay controllers`: every layout, and what the game would read as you press.
 - `pushplay dev`: open "Connect a phone" (or the party lobby) and scan the QR code with a phone
-  on the same Wi-Fi.
+  on the same Wi-Fi. For a party game or a `phone-pads.js` game, `dev` starts a local relay that
+  listens on the Wi-Fi and prints where phones join.
 - `pushplay check`: for a party game on a layout, a headless phone presses a button that must
   reach `party.pad(id)`; for a `phone-pads.js` game, a phone joins and its stick must move
   `input.pads`.

@@ -6,8 +6,8 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { CMD, LOCAL_RELAY_PORT } from './config.mjs'
-import { startLocalRelay } from './local-relay.mjs'
-import { findGame, listGames, log, readManifest, ROOT, WORK_DIR } from './repo.mjs'
+import { devRelay, startLocalRelay } from './local-relay.mjs'
+import { findGame, listGames, log, readManifest, ROOT, usesPhonePads, WORK_DIR } from './repo.mjs'
 
 const args = process.argv.slice(2)
 const host = args.includes('--host')
@@ -19,17 +19,12 @@ if (!game) {
   process.exit(1)
 }
 // Online games find this relay on their own when served from localhost: open two browser
-// windows to play against yourself. Party games' relay also listens on the Wi-Fi, so phones
-// can scan the QR code on the game's lobby screen.
-const manifest = readManifest(game)
-if (manifest.online || manifest.party) {
-  await startLocalRelay(LOCAL_RELAY_PORT, { lan: Boolean(manifest.party) }).then(
-    (r) =>
-      log(
-        manifest.party
-          ? `Local party relay: phones on this Wi-Fi join at ${r.joinBase} (or scan the QR code in the game's lobby)`
-          : `Local online relay on ws://localhost:${LOCAL_RELAY_PORT} (open the game in two windows to test online play)`
-      ),
+// windows to play against yourself. For party games and games that take phones (phone-pads.js)
+// it also listens on the Wi-Fi, so a phone can scan the game's QR code (devRelay says which).
+const relay = devRelay(readManifest(game), { phonePads: usesPhonePads(game.dir) }, LOCAL_RELAY_PORT)
+if (relay) {
+  await startLocalRelay(LOCAL_RELAY_PORT, { lan: relay.lan }).then(
+    (r) => log(relay.message(r.joinBase)),
     (err) => log(`Couldn't start the local relay on port ${LOCAL_RELAY_PORT}: ${err.message}`)
   )
 }
