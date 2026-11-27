@@ -8,7 +8,7 @@ export const brand = JSON.parse(readFileSync(join(import.meta.dirname, 'brand.js
  * Bumped whenever the kit's files change (kit-lock.json holds their hash; a test enforces the bump).
  * ci.mjs writes it into the release index, so the launcher can tell a repo its kit is outdated.
  */
-export const KIT_VERSION = 24
+export const KIT_VERSION = 25
 /**
  * Runtime modules copied into every game; `update-runtime` replaces them by this header. The number
  * after `v` is the KIT_VERSION that shipped the file, so a game folder says which kit it carries.

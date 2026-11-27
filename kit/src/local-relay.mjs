@@ -16,6 +16,25 @@ const { shellHandler } = await import(pathToFileURL(here('relay-shell.mjs')).hre
 const SHELL_DIR = here('relay-public')
 const BRAND = JSON.parse(readFileSync(here('brand.json', 'brand.json'), 'utf8'))
 
+/**
+ * Which local relay `dev` starts for a game, or null for none. Online games get one on localhost
+ * (two browser windows play each other). Party games and games that take phones as controllers
+ * (phone-pads.js) get one that also listens on the Wi-Fi, so a real phone can scan the game's QR
+ * code and join. `message(joinBase)` is the line `dev` prints once it's up.
+ */
+export function devRelay(manifest, { phonePads = false } = {}, port = 5174) {
+  if (manifest.party || phonePads)
+    return {
+      lan: true,
+      message: (joinBase) =>
+        manifest.party
+          ? `Local party relay: phones on this Wi-Fi join at ${joinBase} (or scan the QR code in the game's lobby)`
+          : `Local phone relay: phones on this Wi-Fi join at ${joinBase} (or scan the QR code on the game's Connect a phone screen)`
+    }
+  if (manifest.online) return { lan: false, message: () => `Local online relay on ws://localhost:${port} (open the game in two windows to test online play)` }
+  return null
+}
+
 /** This machine's address on the local network, for phones on the same Wi-Fi. */
 export function lanAddress() {
   for (const list of Object.values(networkInterfaces())) for (const a of list ?? []) if (a.family === 'IPv4' && !a.internal) return a.address
